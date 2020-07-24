@@ -20,15 +20,15 @@ int main(int argc, char **argv)
     data = my_rank;
     /* Send messages to other processes with my_rank + 5*/
 
-    /*@ assert 0 <=  __MPI_COMM_WORLD_rank_ACSL < 5;*/
-    /*@ assert 5 <=  my_rank + 5 < 10;*/
+    /* assert 0 <=  __MPI_COMM_WORLD_rank_ACSL < 5;*/
+    /* assert 5 <=  my_rank + 5 < 10;*/
     MPI_Ssend(&data, 1, MPI_INT, my_rank + 5, 0, MPI_COMM_WORLD);
   } else{
     if (my_rank < 10){
 
       /* Receive message from process my_rank-5 */
-      /*@ assert 5 <=  __MPI_COMM_WORLD_rank_ACSL < 10;*/
-      /*@ assert 0 <= my_rank-5 < 5;*/
+      /* assert 5 <=  __MPI_COMM_WORLD_rank_ACSL < 10;*/
+      /* assert 0 <= my_rank-5 < 5;*/
       MPI_Recv(&data, 1, MPI_INT, my_rank-5, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
   }

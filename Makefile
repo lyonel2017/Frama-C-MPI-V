@@ -12,6 +12,7 @@ PLUGIN_DISTRIBUTED:=$(PLUGIN_ENABLE)
 PLUGIN_NAME := MPI_V
 
 PLUGIN_CMO := MPI_V_options \
+	MPI_V_core \
 	mpi_utils \
 	mpi_recv \
 	mpi_ssend \
