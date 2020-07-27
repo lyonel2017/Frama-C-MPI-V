@@ -500,10 +500,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
 /*@ ghost int __MPI_Init_count = 0;*/
 
 /*@ requires __MPI_Init_count == 0;
-  // additional hyôthesis; can be hadded to search deed code with eva
-  //@ ensures 0 <= __MPI_COMM_WORLD_rank_ACSL < __MPI_COMM_WORLD_size_ACSL;
-  @ ensures 0 <= __MPI_COMM_WORLD_rank_ACSL;
-  @ ensures 0 <= __MPI_COMM_WORLD_size_ACSL;
+  @ ensures 0 <= __MPI_COMM_WORLD_rank_ACSL < __MPI_COMM_WORLD_size_ACSL;
   @ ensures __MPI_Init_count == 1;
   @ assigns __MPI_COMM_WORLD_size_ACSL,__MPI_COMM_WORLD_rank_ACSL,__MPI_Init_count;*/
 int MPI_Init(int *argc, char ***argv);
@@ -547,7 +544,6 @@ int MPI_Finalize(void);
   @ requires 0 <= dest < __MPI_COMM_WORLD_size_ACSL;
   @ requires 0 <= count;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
-  @ requires 0 <= __MPI_COMM_WORLD_rank_ACSL < __MPI_COMM_WORLD_size_ACSL;
   @ assigns \result;
   @ behavior type_int :
   @   assumes datatype == MPI_INT;
@@ -574,7 +570,6 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @ requires positive_count: 0 <= count;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
   @ requires status == MPI_STATUS_IGNORE;
-  @ requires 0 <= __MPI_COMM_WORLD_rank_ACSL < __MPI_COMM_WORLD_size_ACSL;
   @ assigns \result;
   @ behavior type_int :
   @   assumes datatype == MPI_INT;
@@ -589,11 +584,6 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 */
 int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
 	     int source, int tag, MPI_Comm comm, MPI_Status* status);
-
-
-
-
-
 
 
 
