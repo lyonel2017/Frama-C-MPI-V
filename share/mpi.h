@@ -512,7 +512,6 @@ int MPI_Init(int *argc, char ***argv);
   @ assigns *rank,\result;*/
 int MPI_Comm_rank(MPI_Comm comm, int *rank);
 
-
 /*@ requires \valid(size);
   @ requires comm == MPI_COMM_WORLD;
   @ ensures __MPI_COMM_WORLD_size_ACSL == *size;
@@ -523,8 +522,6 @@ int MPI_Comm_size(MPI_Comm comm, int *size);
   @ ensures __MPI_Init_count == 0;
   @ assigns \result,__MPI_Init_count;*/
 int MPI_Finalize(void);
-
-
 
 /*@ predicate empty_block_int{L}(int *s) =
   @   \block_length((int*)s) == 0 && \offset((int*)s) == 0;
@@ -543,6 +540,7 @@ int MPI_Finalize(void);
 /*@ requires comm == MPI_COMM_WORLD;
   @ requires 0 <= dest < __MPI_COMM_WORLD_size_ACSL;
   @ requires 0 <= count;
+  @ requires 0 <= tag;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
   @ assigns \result;
   @ behavior type_int :
@@ -558,7 +556,6 @@ int MPI_Finalize(void);
 */
 int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 
-
 /*@ predicate valid_or_empty_int{L}(int *s, int n) =
   @   (empty_block_int(s) && n == 0) || \valid(((int*)s)+(0..n-1));*/
 
@@ -566,7 +563,8 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @   (empty_block_char(s) && n == 0) || \valid(((char*)s)+(0..n-1));*/
 
 /*@ requires comm == MPI_COMM_WORLD;
-  @ requires 0 <= source < __MPI_COMM_WORLD_size_ACSL;
+  @ requires 0 <= source < __MPI_COMM_WORLD_size_ACSL || source == MPI_ANY_SOURCE;
+  @ requires 0 <= tag || tag == MPI_ANY_TAG;
   @ requires positive_count: 0 <= count;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
   @ requires status == MPI_STATUS_IGNORE;
