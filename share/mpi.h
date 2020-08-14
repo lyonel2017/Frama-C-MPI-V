@@ -502,25 +502,27 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
 /*@ requires __MPI_Init_count == 0;
   @ ensures 0 <= __MPI_COMM_WORLD_rank_ACSL < __MPI_COMM_WORLD_size_ACSL;
   @ ensures __MPI_Init_count == 1;
-  @ assigns __MPI_COMM_WORLD_size_ACSL,__MPI_COMM_WORLD_rank_ACSL,__MPI_Init_count;*/
+  @ assigns __MPI_COMM_WORLD_size_ACSL,__MPI_COMM_WORLD_rank_ACSL,__MPI_Init_count, \result;*/
 int MPI_Init(int *argc, char ***argv);
 
 
 /*@ requires \valid(rank);
+  @ requires __MPI_Init_count == 1;
   @ requires comm == MPI_COMM_WORLD;
   @ ensures __MPI_COMM_WORLD_rank_ACSL == *rank;
-  @ assigns *rank,\result;*/
+  @ assigns *rank, \result;*/
 int MPI_Comm_rank(MPI_Comm comm, int *rank);
 
 /*@ requires \valid(size);
+  @ requires __MPI_Init_count == 1;
   @ requires comm == MPI_COMM_WORLD;
   @ ensures __MPI_COMM_WORLD_size_ACSL == *size;
-  @ assigns *size;*/
+  @ assigns *size, \result;*/
 int MPI_Comm_size(MPI_Comm comm, int *size);
 
 /*@ requires __MPI_Init_count == 1;
-  @ ensures __MPI_Init_count == 0;
-  @ assigns \result,__MPI_Init_count;*/
+  @ ensures __MPI_Init_count == -1;
+  @ assigns \result, __MPI_Init_count;*/
 int MPI_Finalize(void);
 
 /*@ predicate empty_block_int{L}(int *s) =
@@ -538,7 +540,9 @@ int MPI_Finalize(void);
   @   \forall  integer i; 0 ≤ i < n ⇒ ¬\dangling((char*)s + i);*/
 
 /*@ requires comm == MPI_COMM_WORLD;
+  @ requires __MPI_Init_count == 1;
   @ requires 0 <= dest < __MPI_COMM_WORLD_size_ACSL;
+  @ requires dest != __MPI_COMM_WORLD_rank_ACSL;
   @ requires 0 <= count;
   @ requires 0 <= tag;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
@@ -563,7 +567,9 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @   (empty_block_char(s) && n == 0) || \valid(((char*)s)+(0..n-1));*/
 
 /*@ requires comm == MPI_COMM_WORLD;
+  @ requires __MPI_Init_count == 1;
   @ requires 0 <= source < __MPI_COMM_WORLD_size_ACSL || source == MPI_ANY_SOURCE;
+  @ requires source != __MPI_COMM_WORLD_rank_ACSL;
   @ requires 0 <= tag || tag == MPI_ANY_TAG;
   @ requires positive_count: 0 <= count;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
