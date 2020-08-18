@@ -1,0 +1,145 @@
+module MPI_Protocol
+
+use int.Int
+use option.Option
+
+type mpi_type =
+| MPI_int int
+| MPI_char int
+
+type protocol =
+  | IntVal (pred int) (cont int)
+  | Message int int mpi_type protocol
+  | Foreach int int (cont int) protocol
+  | Skip
+  | Dead
+with pred 'a = 'a -> bool
+with cont 'a = 'a -> protocol
+with foreach_data = {body:(cont int); low: int; high:int}
+
+type mpi_protocol = {mutable p:protocol}
+
+function project (p:protocol) (rank: int): protocol =
+     match p with
+     | Message source dest _ remainingProtocol ->
+            if rank <> source /\ rank <> dest
+            then project remainingProtocol rank
+            else p
+     | _ -> p
+     end
+
+function matches (t d : mpi_type) : bool =
+     match t,d with
+     | MPI_int n, MPI_int m ->
+                    if n = m
+		    then true
+		    else false
+     | _ , _ -> false
+     end
+
+val send (dest:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
+    writes { s.p }
+    requires { 0 <= dest /\ dest < size }
+    requires { match project s.p rank with
+              | Message src dst d _ -> src = rank /\ dest = dst /\ matches t d
+              | _ -> false
+             end }
+     ensures { s.p = match project (old s).p rank with
+              | Message _ _ _ remainingprotocol -> remainingprotocol
+	      | _ -> Dead
+             end }
+
+val recv (source:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
+    writes { s.p }
+    requires { 0 <= source /\ source < size }
+    requires { match project s.p rank with
+              | Message src dst d _ -> src = source /\ dst = rank /\ matches t d
+              | _ -> false
+             end }
+     ensures { s.p = match project (old s).p rank with
+              | Message _ _ _ remainingprotocol -> remainingprotocol
+	      | _ -> Dead
+             end }
+
+val apply_int (v: int) (s:mpi_protocol) (rank: int) (size: int): int
+    writes { s.p }
+    requires { match project s.p rank with
+        | IntVal p _ -> p v
+        | _ -> false
+	end }
+    ensures {s.p = match project (old s).p rank with
+        | IntVal _ c -> c v
+        | __ -> Dead
+	end}
+    ensures { result = v }
+
+val foreach (s:mpi_protocol) (rank:int): option foreach_data
+    writes { s.p }
+    requires { match project s.p rank with
+        | Foreach _ _ _ _ -> true
+        | _ -> false
+         end }
+    ensures { s.p = match project (old s).p rank with
+              | Foreach _ _ _ remainingprotocol -> remainingprotocol
+    	      | _ -> Dead
+             end }
+    ensures { result = match project (old s).p rank with
+              | Foreach low high body _ -> Some {body= body;low=low;high=high}
+    	      | _ -> None
+             end}
+
+val function expand (fd:option foreach_data) (i:int) : mpi_protocol
+    requires {  match fd with
+    	       | None -> false
+	       | Some _ -> true
+	       end}
+    ensures {  match fd with
+    	       | None -> result = {p = Dead}
+	       | Some data -> if data.low <= i <= data.high
+	                      then result = {p = data.body i}
+			      else result = {p = Skip}
+	       end}
+
+val init (s:mpi_protocol) (p:protocol) (rank: int) (size: int) :unit
+    writes {s.p}
+    ensures{s.p=p}
+    ensures{0 <= rank < size}
+
+predicate isSkip (s: mpi_protocol) =
+	  match s.p with
+              | Skip -> true
+	      | _ -> false
+	      end
+
+ end
+
+module MPI_example
+
+use MPI_Protocol
+use int.Int
+
+val rank : int
+val size : int
+
+let p : mpi_protocol = {p =Dead}
+
+let test () : unit
+requires {size >= 2}
+=
+    init p (Foreach 0 0 (fun i -> Message i (i+1) (MPI_int 1) Skip) Skip) rank size;
+    let body = foreach p rank in
+    if rank = 0 then (
+       let f = expand body 0 in
+       send 1 (MPI_int 1) f rank size;
+       assert {isSkip f};
+       assert {forall x:int. x >= 0 /\ x < size /\ x <> 0 -> isSkip (expand body x)}
+    )
+    else if (rank = 1) then (
+         let f = expand body 0 in
+    	 recv 0 (MPI_int 1) f rank size;
+         assert {isSkip f};
+         assert {forall x:int. x >= 0 /\ x < size /\ x <> 0 -> isSkip (expand body x)}
+    )
+    else ();
+   assert {isSkip p}
+end
