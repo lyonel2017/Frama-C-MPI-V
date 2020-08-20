@@ -8,9 +8,13 @@ type mpi_type =
 | MPI_char int
 
 type protocol =
-  | IntVal (pred int) (cont int)
-  | Message int int mpi_type protocol
+(*  | IntVal (pred int) (cont int)*)
+(*require to proof that the variable introduised is the same for all porcess: relational property*)
+  | Message int int mpi_type protocol  (*use an identifier to refer to the predicate that must be satified OU un predicqt qui prend en parametre un list ou un tableau d'étét mémoire*)
   | Foreach int int (cont int) protocol
+  (*| While int int (*number of iteration define by the interval*) (cont int) protocol*)
+  (*the destructor require to be annotated on a while loop and to have a counter variable (introduice by the destructor) playing also th erule as type index
+and a number of iteration (introduise by IntVal if needed of fixe by the protocole)*)
   | Skip
   | Dead
 with pred 'a = 'a -> bool
@@ -37,56 +41,43 @@ function matches (t d : mpi_type) : bool =
      | _ , _ -> false
      end
 
-val send (dest:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
-    writes { s.p }
-    requires { 0 <= dest /\ dest < size }
-    requires { match project s.p rank with
+predicate isSkip (s: mpi_protocol) =
+	  match s.p with
+              | Skip -> true
+	      | _ -> false
+	      end
+
+function extract_next (p:protocol) (rank: int): protocol =
+             match project p rank with
+              | Message _ _ _ remainingprotocol -> remainingprotocol
+              | Foreach _ _ _ remainingprotocol -> remainingprotocol
+	      | _ -> Dead
+	      end
+
+predicate isMessageforSend (p:protocol) (rank: int) (dest: int) (t: mpi_type)=
+	   match project p rank with
               | Message src dst d _ -> src = rank /\ dest = dst /\ matches t d
               | _ -> false
-             end }
-     ensures { s.p = match project (old s).p rank with
-              | Message _ _ _ remainingprotocol -> remainingprotocol
-	      | _ -> Dead
-             end }
+           end
 
-val recv (source:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
-    writes { s.p }
-    requires { 0 <= source /\ source < size }
-    requires { match project s.p rank with
+predicate isMessageforRecv (p:protocol) (rank: int) (source: int) (t: mpi_type)=
+            match project p rank with
               | Message src dst d _ -> src = source /\ dst = rank /\ matches t d
               | _ -> false
-             end }
-     ensures { s.p = match project (old s).p rank with
-              | Message _ _ _ remainingprotocol -> remainingprotocol
-	      | _ -> Dead
-             end }
+             end
 
-val apply_int (v: int) (s:mpi_protocol) (rank: int) (size: int): int
-    writes { s.p }
-    requires { match project s.p rank with
-        | IntVal p _ -> p v
-        | _ -> false
-	end }
-    ensures {s.p = match project (old s).p rank with
-        | IntVal _ c -> c v
-        | __ -> Dead
-	end}
-    ensures { result = v }
+predicate isForeach (p:protocol) (rank: int)=
+            match project p rank with
+	      | Foreach _ _ _ _ -> true
+              | _ -> false
+             end
 
-val foreach (s:mpi_protocol) (rank:int): option foreach_data
-    writes { s.p }
-    requires { match project s.p rank with
-        | Foreach _ _ _ _ -> true
-        | _ -> false
-         end }
-    ensures { s.p = match project (old s).p rank with
-              | Foreach _ _ _ remainingprotocol -> remainingprotocol
-    	      | _ -> Dead
-             end }
-    ensures { result = match project (old s).p rank with
+function extract_foreach (p:protocol) (rank:int) : option foreach_data =
+	 match project p rank with
               | Foreach low high body _ -> Some {body= body;low=low;high=high}
     	      | _ -> None
-             end}
+	  end
+
 
 val function expand (fd:option foreach_data) (i:int) : mpi_protocol
     requires {  match fd with
@@ -100,18 +91,53 @@ val function expand (fd:option foreach_data) (i:int) : mpi_protocol
 			      else result = {p = Skip}
 	       end}
 
+val send (dest:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
+    writes { s.p }
+    requires { 0 <= dest /\ dest < size }
+    requires { isMessageforSend (s.p) rank dest t}
+    ensures { s.p = extract_next (old s).p rank}
+
+val recv (source:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
+    writes { s.p }
+    requires { 0 <= source /\ source < size }
+    requires { isMessageforRecv (s.p) rank source t }
+    ensures { s.p = extract_next (old s).p rank}
+
+val foreach (s:mpi_protocol) (rank:int): option foreach_data
+    writes { s.p }
+    requires { isForeach (s.p) rank }
+    ensures { s.p = extract_next (old s).p rank }
+    ensures { result = extract_foreach (old s).p rank }
+
 val init (s:mpi_protocol) (p:protocol) (rank: int) (size: int) :unit
     writes {s.p}
     ensures{s.p=p}
     ensures{0 <= rank < size}
 
-predicate isSkip (s: mpi_protocol) =
-	  match s.p with
-              | Skip -> true
-	      | _ -> false
-	      end
 
- end
+(* val foreach_skip (s:mpi_protocol) (rank:int): unit *)
+(*     writes { s.p } *)
+(*     ensures { s.p = match project (old s).p rank with *)
+(*               | Foreach _ _ _ remainingprotocol -> remainingprotocol *)
+(*     	      | p -> p *)
+(*              end } *)
+
+(* val apply_int (v: int) (s:mpi_protocol) (rank: int) (size: int): int *)
+(*     writes { s.p } *)
+(*     requires { match project s.p rank with *)
+(*         | IntVal p _ -> p v *)
+(*         | _ -> false *)
+(* 	end } *)
+(*     ensures {s.p = match project (old s).p rank with *)
+(*         | IntVal _ c -> c v *)
+(*         | __ -> Dead *)
+(* 	end} *)
+(*     ensures { result = v } *)
+
+
+end
+
+
 
 module MPI_example
 
@@ -123,7 +149,7 @@ val size : int
 
 let p : mpi_protocol = {p =Dead}
 
-let test () : unit
+let test1 () : unit
 requires {size >= 2}
 =
     init p (Foreach 0 0 (fun i -> Message i (i+1) (MPI_int 1) Skip) Skip) rank size;
