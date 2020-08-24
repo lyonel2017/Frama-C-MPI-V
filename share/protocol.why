@@ -4,168 +4,173 @@ use int.Int
 use option.Option
 
 type mpi_type =
-| MPI_int int
-| MPI_char int
+| MPI_int
+| MPI_char
 
 type protocol =
-(*  | IntVal (pred int) (cont int)*)
-(*require to proof that the variable introduised is the same for all porcess: relational property*)
-  | Message int int mpi_type protocol  (*use an identifier to refer to the predicate that must be satified OU un predicqt qui prend en parametre un list ou un tableau d'étét mémoire*)
-  | Foreach int int (cont int) protocol
-  (*| While int int (*number of iteration define by the interval*) (cont int) protocol*)
-  (*the destructor require to be annotated on a while loop and to have a counter variable (introduice by the destructor) playing also th erule as type index
-and a number of iteration (introduise by IntVal if needed of fixe by the protocole)*)
+  | Message int int mpi_type
+  | Foreach int int (cont int)
+  | While int protocol
+  | Seq protocol protocol
   | Skip
   | Dead
+(*  | IntVal (pred int) (cont int)*)
+(*require to proof that the variable introduised is the same for all porcess: relational property*)
 with pred 'a = 'a -> bool
 with cont 'a = 'a -> protocol
-with foreach_data = {body:(cont int); low: int; high:int}
+
+
+val constant rank : int
+val constant size : int
 
 type mpi_protocol = {mutable p:protocol}
 
-function project (p:protocol) (rank: int): protocol =
-     match p with
-     | Message source dest _ remainingProtocol ->
+function simpl (p: protocol) : protocol =
+	 match p with
+	 | Seq Skip q -> q
+	 | Seq h Skip -> h
+	 | Seq h q -> Seq (simpl h) q
+         | Message source dest _ ->
             if rank <> source /\ rank <> dest
-            then project remainingProtocol rank
+            then Skip
             else p
-     | _ -> p
+	 | Foreach low high body ->
+	    if low <= high
+  	    then Seq (body low) (Foreach (low + 1) high body)
+ 	    else Skip
+	 | While n body ->
+	    if n < 0
+	    then Skip
+	    else Seq body (While (n-1) body)
+         | _ -> p
+         end
+
+predicate isSkip (p: protocol) =
+     match p with
+     | Skip -> true
+     | _ -> false
      end
+
+predicate foreach_is_Skip (body: cont int) (low high : int) =
+   forall i : int. low <= i <= high -> isSkip (simpl (body i))
+
+function split (p: protocol) (c : int): protocol  =
+        match p with
+	| Foreach low high body ->
+	  if low < c < high
+	  then Seq (Foreach low c body) (Foreach (c+1) high body)
+	  else p
+	| While n body ->
+	  if c < n
+	  then Seq (While c body) (While (n-c) body)
+	  else p
+	| _ -> p
+        end
 
 function matches (t d : mpi_type) : bool =
      match t,d with
-     | MPI_int n, MPI_int m ->
-                    if n = m
-		    then true
-		    else false
+     | MPI_int, MPI_int -> true
      | _ , _ -> false
      end
 
-predicate isSkip (s: mpi_protocol) =
-	  match s.p with
-              | Skip -> true
-	      | _ -> false
-	      end
+predicate isMessageforSend (p:protocol) (dest: int) (t: mpi_type) =
+       match p with
+         | Message src dst d -> src = rank /\ dest = dst /\ matches t d
+         | _ -> false
+       end
 
-function extract_next (p:protocol) (rank: int): protocol =
-             match project p rank with
-              | Message _ _ _ remainingprotocol -> remainingprotocol
-              | Foreach _ _ _ remainingprotocol -> remainingprotocol
-	      | _ -> Dead
-	      end
+predicate isMessageforRecv (p:protocol) (source: int) (t: mpi_type) =
+       match p with
+       | Message src dst d -> src = source /\ dst = rank /\ matches t d
+       | _ -> false
+       end
 
-predicate isMessageforSend (p:protocol) (rank: int) (dest: int) (t: mpi_type)=
-	   match project p rank with
-              | Message src dst d _ -> src = rank /\ dest = dst /\ matches t d
-              | _ -> false
-           end
+let rec function getFirst (p: protocol) : protocol variant {p} =
+           match p with
+	   | Seq (Seq h q) _ -> getFirst (Seq h q)
+	   | Seq h _ -> h
+	   | p -> p
+	   end
 
-predicate isMessageforRecv (p:protocol) (rank: int) (source: int) (t: mpi_type)=
-            match project p rank with
-              | Message src dst d _ -> src = source /\ dst = rank /\ matches t d
-              | _ -> false
-             end
-
-predicate isForeach (p:protocol) (rank: int)=
-            match project p rank with
-	      | Foreach _ _ _ _ -> true
-              | _ -> false
-             end
-
-function extract_foreach (p:protocol) (rank:int) : option foreach_data =
-	 match project p rank with
-              | Foreach low high body _ -> Some {body= body;low=low;high=high}
-    	      | _ -> None
-	  end
+let rec function getNext (p: protocol) : protocol variant {p} =
+           match p with
+	   | Seq (Seq h q) qq -> Seq (getNext (Seq h q)) qq
+	   | Seq _ q -> q
+	   | _ -> Dead
+	   end
+ end
 
 
-val function expand (fd:option foreach_data) (i:int) : mpi_protocol
-    requires {  match fd with
-    	       | None -> false
-	       | Some _ -> true
-	       end}
-    ensures {  match fd with
-    	       | None -> result = {p = Dead}
-	       | Some data -> if data.low <= i <= data.high
-	                      then result = {p = data.body i}
-			      else result = {p = Skip}
-	       end}
+module MPI_Function
 
-val send (dest:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
-    writes { s.p }
-    requires { 0 <= dest /\ dest < size }
-    requires { isMessageforSend (s.p) rank dest t}
-    ensures { s.p = extract_next (old s).p rank}
+use MPI_Protocol
+use int.Int
 
-val recv (source:int) (t:mpi_type) (s:mpi_protocol) (rank: int) (size: int): unit
-    writes { s.p }
-    requires { 0 <= source /\ source < size }
-    requires { isMessageforRecv (s.p) rank source t }
-    ensures { s.p = extract_next (old s).p rank}
-
-val foreach (s:mpi_protocol) (rank:int): option foreach_data
-    writes { s.p }
-    requires { isForeach (s.p) rank }
-    ensures { s.p = extract_next (old s).p rank }
-    ensures { result = extract_foreach (old s).p rank }
-
-val init (s:mpi_protocol) (p:protocol) (rank: int) (size: int) :unit
+val init (s:mpi_protocol) (p:protocol) :unit
     writes {s.p}
     ensures{s.p=p}
     ensures{0 <= rank < size}
 
+val send (dest:int) (t:mpi_type) (s:mpi_protocol): unit
+    writes { s.p }
+    requires { 0 <= dest /\ dest < size }
+    requires { isMessageforSend (getFirst s.p) dest t}
+    ensures { s.p = getNext (old s).p }
 
-(* val foreach_skip (s:mpi_protocol) (rank:int): unit *)
-(*     writes { s.p } *)
-(*     ensures { s.p = match project (old s).p rank with *)
-(*               | Foreach _ _ _ remainingprotocol -> remainingprotocol *)
-(*     	      | p -> p *)
-(*              end } *)
+val recv (source:int) (t:mpi_type) (s:mpi_protocol): unit
+    writes { s.p }
+    requires { 0 <= source /\ source < size }
+    requires { isMessageforRecv (getFirst s.p) source t }
+    ensures { s.p = getNext (old s).p }
 
-(* val apply_int (v: int) (s:mpi_protocol) (rank: int) (size: int): int *)
-(*     writes { s.p } *)
-(*     requires { match project s.p rank with *)
-(*         | IntVal p _ -> p v *)
-(*         | _ -> false *)
-(* 	end } *)
-(*     ensures {s.p = match project (old s).p rank with *)
-(*         | IntVal _ c -> c v *)
-(*         | __ -> Dead *)
-(* 	end} *)
-(*     ensures { result = v } *)
+val simpl (s:mpi_protocol): unit
+    writes {s.p}
+    ensures{s.p= simpl (old s).p}
 
+val simpl_foreach (s:mpi_protocol) : unit
+    writes {s.p}
+    (* requires { isForeach (getFirst s.p) && foreach_is_Skip} *)
+    (* ensures { s.p = getNext (old s).p } *)
+
+    (*requires a foreach and if all are skip take next*)
+
+
+val function finalize (s: mpi_protocol) : unit
+    requires {isSkip (s.p)}
 
 end
-
 
 
 module MPI_example
 
 use MPI_Protocol
+use MPI_Function
 use int.Int
 
-val rank : int
-val size : int
-
-let p : mpi_protocol = {p =Dead}
+let p : mpi_protocol = {p = Dead}
 
 let test1 () : unit
 requires {size >= 2}
 =
-    init p (Foreach 0 0 (fun i -> Message i (i+1) (MPI_int 1) Skip) Skip) rank size;
-    let body = foreach p rank in
+    init p (Foreach 0 0 (fun i -> Message i (i+1) MPI_int));
     if rank = 0 then (
-       let f = expand body 0 in
-       send 1 (MPI_int 1) f rank size;
-       assert {isSkip f};
-       assert {forall x:int. x >= 0 /\ x < size /\ x <> 0 -> isSkip (expand body x)}
+       simpl p;
+       send 1 MPI_int p;
+       simpl p;
+       assert {isSkip (p.p)}
     )
     else if (rank = 1) then (
-         let f = expand body 0 in
-    	 recv 0 (MPI_int 1) f rank size;
-         assert {isSkip f};
-         assert {forall x:int. x >= 0 /\ x < size /\ x <> 0 -> isSkip (expand body x)}
+         simpl p;
+    	 recv 0 MPI_int p;
+	 simpl p;
+       assert {isSkip (p.p)}
     )
-    else ();
-   assert {isSkip p}
+    else (
+    simpl p;
+    simpl p;
+    simpl p;
+    simpl p;
+    assert {isSkip (p.p)}
+    );
+   finalize p
 end
