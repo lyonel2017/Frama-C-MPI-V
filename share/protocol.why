@@ -10,12 +10,10 @@ type mpi_type =
 type protocol =
   | Message int int mpi_type
   | Foreach int int (cont int)
-  | While int protocol
-  | Seq protocol protocol
+  | While int protocol    
+  | Seq protocol protocol (*supprimer le sequent et remetre l'induction sur les autre contructeur *)
   | Skip
-  | Dead
-(*  | IntVal (pred int) (cont int)*)
-(*require to proof that the variable introduised is the same for all porcess: relational property*)
+(*  | IntVal (pred int) (cont int)*) (*require to proof that the variable introduised is the same for all porcess: relational property*)
 with pred 'a = 'a -> bool
 with cont 'a = 'a -> protocol
 
@@ -51,19 +49,17 @@ predicate isSkip (p: protocol) =
      | _ -> false
      end
 
-predicate foreach_is_Skip (body: cont int) (low high : int) =
-   forall i : int. low <= i <= high -> isSkip (simpl (body i))
-
 function split (p: protocol) (c : int): protocol  =
         match p with
 	| Foreach low high body ->
-	  if low < c < high
-	  then Seq (Foreach low c body) (Foreach (c+1) high body)
+	  if low <= c <= high
+	  then Seq (Foreach low (c-1) body) (Foreach c high body)
 	  else p
 	| While n body ->
 	  if c < n
 	  then Seq (While c body) (While (n-c) body)
 	  else p
+	| Seq h q -> Seq (split h c) q
 	| _ -> p
         end
 
@@ -72,6 +68,12 @@ function matches (t d : mpi_type) : bool =
      | MPI_int, MPI_int -> true
      | _ , _ -> false
      end
+
+predicate isMessage (p:protocol) =
+       match p with
+         | Message _ _ _ -> true
+         | _ -> false
+       end
 
 predicate isMessageforSend (p:protocol) (dest: int) (t: mpi_type) =
        match p with
@@ -82,6 +84,20 @@ predicate isMessageforSend (p:protocol) (dest: int) (t: mpi_type) =
 predicate isMessageforRecv (p:protocol) (source: int) (t: mpi_type) =
        match p with
        | Message src dst d -> src = source /\ dst = rank /\ matches t d
+       | _ -> false
+       end
+
+predicate isForeach (p:protocol) =
+       match p with
+       | Foreach _ _ _ -> true
+       | _ -> false
+       end
+
+predicate isForeachSkip (p:protocol) =
+       match p with
+       | Foreach low high body ->
+              forall i : int. low <= i <= high -> isSkip (simpl (body i))
+       | Skip -> true
        | _ -> false
        end
 
@@ -96,7 +112,7 @@ let rec function getNext (p: protocol) : protocol variant {p} =
            match p with
 	   | Seq (Seq h q) qq -> Seq (getNext (Seq h q)) qq
 	   | Seq _ q -> q
-	   | _ -> Dead
+	   | _ -> Skip
 	   end
  end
 
@@ -127,13 +143,14 @@ val simpl (s:mpi_protocol): unit
     writes {s.p}
     ensures{s.p= simpl (old s).p}
 
+val split (s:mpi_protocol) (c: int): unit
+    writes {s.p}
+    ensures{s.p= split (old s).p c}
+
 val simpl_foreach (s:mpi_protocol) : unit
     writes {s.p}
-    (* requires { isForeach (getFirst s.p) && foreach_is_Skip} *)
-    (* ensures { s.p = getNext (old s).p } *)
-
-    (*requires a foreach and if all are skip take next*)
-
+    requires { isForeachSkip (getFirst s.p)}
+    ensures { s.p = getNext (old s).p }
 
 val function finalize (s: mpi_protocol) : unit
     requires {isSkip (s.p)}
@@ -147,7 +164,7 @@ use MPI_Protocol
 use MPI_Function
 use int.Int
 
-let p : mpi_protocol = {p = Dead}
+let p : mpi_protocol = {p = Skip}
 
 let test1 () : unit
 requires {size >= 2}
@@ -157,20 +174,53 @@ requires {size >= 2}
        simpl p;
        send 1 MPI_int p;
        simpl p;
-       assert {isSkip (p.p)}
     )
     else if (rank = 1) then (
          simpl p;
     	 recv 0 MPI_int p;
 	 simpl p;
-       assert {isSkip (p.p)}
     )
     else (
-    simpl p;
-    simpl p;
-    simpl p;
-    simpl p;
-    assert {isSkip (p.p)}
+      simpl p;
+      simpl p;
+      simpl p;
+      simpl p;
     );
    finalize p
+
+let test2 () : unit
+requires {size >= 20}
+=
+    init p (Foreach 0 9 (fun i -> Message i (i+10) MPI_int));
+    if rank < 5 then (
+       split p rank;
+       assert {p.p = Seq (Foreach 0 (rank-1) (fun i -> Message i (i+10) MPI_int)) (Foreach rank 9 (fun i -> Message i (i+10) MPI_int))};
+       simpl_foreach p;
+       simpl p;
+       send (rank+10) MPI_int p;
+       simpl_foreach p
+    )
+    else if (rank < 10 ) then (
+       split p rank;
+       simpl_foreach p;
+       simpl p;
+       send (rank+10) MPI_int p;
+       simpl_foreach p
+    )
+    else if (rank < 20) then (
+       split p (rank-10);
+       assert {p.p = Seq (Foreach 0 (rank-10-1) (fun i -> Message i (i+10) MPI_int)) (Foreach (rank-10) 9 (fun i -> Message i (i+10) MPI_int))};
+       simpl_foreach p;
+       simpl p;
+       recv (rank - 10) MPI_int p;
+       simpl_foreach p
+    )
+    else (
+       simpl_foreach p;
+    );
+   finalize p
+
+
+(*While loop : unfold like a liste to list: look at example with lists: at the end empty list*)
+
 end
