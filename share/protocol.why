@@ -10,8 +10,8 @@ type mpi_type =
 type protocol =
   | Message int int mpi_type
   | Foreach int int (cont int)
-  | While int protocol    
-  | Seq protocol protocol (*supprimer le sequent et remetre l'induction sur les autre contructeur *)
+  | While int protocol
+  | Seq protocol protocol
   | Skip
 (*  | IntVal (pred int) (cont int)*) (*require to proof that the variable introduised is the same for all porcess: relational property*)
 with pred 'a = 'a -> bool
@@ -23,11 +23,40 @@ val constant size : int
 
 type mpi_protocol = {mutable p:protocol}
 
+predicate isMessage (p:protocol) =
+       match p with
+         | Message _ _ _ -> true
+         | _ -> false
+       end
+
+predicate isForeach (p:protocol) =
+       match p with
+       | Foreach _ _ _ -> true
+       | _ -> false
+       end
+
+predicate isSkip (p:protocol) =
+       match p with
+       | Skip -> true
+       | _ -> false
+end
+
+predicate isMessageforSend (p:protocol) (dest: int) (t: mpi_type) =
+       match p with
+         | Message src dst d -> src = rank /\ dest = dst /\ t = d
+         | _ -> false
+       end
+
+predicate isMessageforRecv (p:protocol) (source: int) (t: mpi_type) =
+       match p with
+       | Message src dst d -> src = source /\ dst = rank /\ t = d
+       | _ -> false
+       end
+
 function simpl (p: protocol) : protocol =
 	 match p with
 	 | Seq Skip q -> q
 	 | Seq h Skip -> h
-	 | Seq h q -> Seq (simpl h) q
          | Message source dest _ ->
             if rank <> source /\ rank <> dest
             then Skip
@@ -37,84 +66,86 @@ function simpl (p: protocol) : protocol =
   	    then Seq (body low) (Foreach (low + 1) high body)
  	    else Skip
 	 | While n body ->
-	    if n < 0
+	    if n <= 0
 	    then Skip
 	    else Seq body (While (n-1) body)
          | _ -> p
          end
 
-predicate isSkip (p: protocol) =
-     match p with
-     | Skip -> true
-     | _ -> false
-     end
-
 function split (p: protocol) (c : int): protocol  =
         match p with
-	| Foreach low high body ->
-	  if low <= c <= high
-	  then Seq (Foreach low (c-1) body) (Foreach c high body)
-	  else p
-	| While n body ->
-	  if c < n
-	  then Seq (While c body) (While (n-c) body)
-	  else p
-	| Seq h q -> Seq (split h c) q
-	| _ -> p
+       | Foreach low high body ->
+         if low <= c <= high
+         then Seq (Foreach low (c-1) body) (Foreach c high body)
+	 else if low <= high < c
+	 then Seq (Foreach low high body) (Foreach c high body)
+         else Seq (Foreach low c body) (Foreach low high body)
+       | While n body ->
+         if c < n
+         then Seq (While c body) (While (n-c) body)
+         else p
+       | _ -> p
         end
 
-function matches (t d : mpi_type) : bool =
-     match t,d with
-     | MPI_int, MPI_int -> true
-     | _ , _ -> false
-     end
-
-predicate isMessage (p:protocol) =
-       match p with
-         | Message _ _ _ -> true
-         | _ -> false
-       end
-
-predicate isMessageforSend (p:protocol) (dest: int) (t: mpi_type) =
-       match p with
-         | Message src dst d -> src = rank /\ dest = dst /\ matches t d
-         | _ -> false
-       end
-
-predicate isMessageforRecv (p:protocol) (source: int) (t: mpi_type) =
-       match p with
-       | Message src dst d -> src = source /\ dst = rank /\ matches t d
-       | _ -> false
-       end
-
-predicate isForeach (p:protocol) =
-       match p with
-       | Foreach _ _ _ -> true
-       | _ -> false
-       end
-
-predicate isForeachSkip (p:protocol) =
-       match p with
-       | Foreach low high body ->
-              forall i : int. low <= i <= high -> isSkip (simpl (body i))
-       | Skip -> true
-       | _ -> false
-       end
+function assoc (p:protocol) :protocol =
+	 match p with
+	 | Seq (Seq h q) p -> Seq h (Seq q p)
+	 | p -> p
+	 end
 
 let rec function getFirst (p: protocol) : protocol variant {p} =
            match p with
-	   | Seq (Seq h q) _ -> getFirst (Seq h q)
-	   | Seq h _ -> h
+	   | Seq h _ -> getFirst h
 	   | p -> p
 	   end
 
-let rec function getNext (p: protocol) : protocol variant {p} =
-           match p with
-	   | Seq (Seq h q) qq -> Seq (getNext (Seq h q)) qq
-	   | Seq _ q -> q
-	   | _ -> Skip
+let rec function aux (p: protocol) : option protocol variant {p} =
+          match p with
+	   | Seq h q ->
+               	   match (aux h) with
+         	   | None -> Some q
+	           | Some p ->  Some (Seq p q)
+		   end
+	   | _ -> None
 	   end
- end
+
+let function getNext (p: protocol): protocol =
+        match aux p with
+	| None -> Skip
+	| Some p -> p
+	end
+
+
+(*The following commnet elements are not required for the moment*)
+
+(* predicate isLineare (p : protocol) = *)
+(*         match p with *)
+(* 	   | Seq (Seq _ _ ) _ -> false *)
+(* 	   | _ -> true *)
+(*         end *)
+
+(* predicate isBasic (p : protocol) = *)
+(*         match p with *)
+(* 	   | Seq _ _  -> false *)
+(* 	   | _ -> true *)
+(*         end *)
+
+(* predicate isComposed (p : protocol) = *)
+(*         match p with *)
+(* 	   | Seq _ _  -> true *)
+(* 	   | _ -> false *)
+(*         end *)
+
+
+(* lemma test: forall p1,p2:protocol. isLineare (Seq p1 p2) -> getNext (Seq p1 p2) = p2 *)
+
+(* lemma test2: forall p1:protocol. isBasic p1 -> getNext p1 = Skip *)
+
+(* lemma test5: forall p1:protocol. isBasic p1 -> p1 = simpl (Seq (getFirst p1) (getNext p1)) *)
+
+(* lemma test6: forall p1:protocol. isComposed p1 /\ isLineare p1 -> p1 = Seq (getFirst p1 ) (getNext p1 ) *)
+
+end
 
 
 module MPI_Function
@@ -143,16 +174,20 @@ val simpl (s:mpi_protocol): unit
     writes {s.p}
     ensures{s.p= simpl (old s).p}
 
-val split (s:mpi_protocol) (c: int): unit
-    writes {s.p}
-    ensures{s.p= split (old s).p c}
+val unroll (s:mpi_protocol): unit
+    writes { s.p }
+    ensures { s.p = Seq (simpl (getFirst (old s).p)) (getNext (old s).p) }
 
-val simpl_foreach (s:mpi_protocol) : unit
-    writes {s.p}
-    requires { isForeachSkip (getFirst s.p)}
+val assoc (s:mpi_protocol): unit
+    writes { s.p }
+    ensures { s.p = assoc (old s).p}
+
+val toskip (s:mpi_protocol): unit
+    writes { s.p }
+    requires { isSkip (simpl (getFirst s.p)) }
     ensures { s.p = getNext (old s).p }
 
-val function finalize (s: mpi_protocol) : unit
+val finalize (s: mpi_protocol) : unit
     requires {isSkip (s.p)}
 
 end
@@ -169,20 +204,37 @@ let p : mpi_protocol = {p = Skip}
 let test1 () : unit
 requires {size >= 2}
 =
+    init p (Message 0 1 MPI_int);
+    if rank = 0 then (
+       send 1 MPI_int p;
+   )
+    else if (rank = 1) then (
+    	 recv 0 MPI_int p;
+    )
+    else (
+      toskip p;
+    );
+   finalize p
+
+let test12 () : unit
+requires {size >= 2}
+=
     init p (Foreach 0 0 (fun i -> Message i (i+1) MPI_int));
     if rank = 0 then (
        simpl p;
        send 1 MPI_int p;
        simpl p;
-    )
+       simpl p;
+   )
     else if (rank = 1) then (
          simpl p;
     	 recv 0 MPI_int p;
 	 simpl p;
+	 simpl p;
     )
     else (
       simpl p;
-      simpl p;
+      toskip p;
       simpl p;
       simpl p;
     );
@@ -192,35 +244,102 @@ let test2 () : unit
 requires {size >= 20}
 =
     init p (Foreach 0 9 (fun i -> Message i (i+10) MPI_int));
-    if rank < 5 then (
-       split p rank;
-       assert {p.p = Seq (Foreach 0 (rank-1) (fun i -> Message i (i+10) MPI_int)) (Foreach rank 9 (fun i -> Message i (i+10) MPI_int))};
-       simpl_foreach p;
-       simpl p;
+    if rank < 10 then (
+       label L1 in
+       let ref i = 0 in
+       while i < rank do
+	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
+	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ 0 <= i <= rank}
+	   variant {rank - i}
+       	   unroll p;
+	   assoc p;
+       	   toskip p;
+	   i <- i+1;
+       done;
+
+       unroll p;
+       assoc p;
        send (rank+10) MPI_int p;
-       simpl_foreach p
-    )
-    else if (rank < 10 ) then (
-       split p rank;
-       simpl_foreach p;
-       simpl p;
-       send (rank+10) MPI_int p;
-       simpl_foreach p
+
+       i <- i+1;
+       while i <= 9 do
+      	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
+	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ rank+1 <= i <= 10}
+	   variant {9 - i}
+       	   unroll p;
+	   assoc p;
+       	   toskip p;
+	   i <- i+1;
+       done;
+       toskip p;
     )
     else if (rank < 20) then (
-       split p (rank-10);
-       assert {p.p = Seq (Foreach 0 (rank-10-1) (fun i -> Message i (i+10) MPI_int)) (Foreach (rank-10) 9 (fun i -> Message i (i+10) MPI_int))};
-       simpl_foreach p;
-       simpl p;
+       label L1 in
+       let ref i = 0 in
+       while i < (rank-10) do
+	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
+	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ 0 <= i <= rank-10}
+	   variant { rank-10 - i}
+       	   unroll p;
+	   assoc p;
+       	   toskip p;
+	   i <- i+1;
+       done;
+
+       unroll p;
+       assoc p;
        recv (rank - 10) MPI_int p;
-       simpl_foreach p
+
+       i <- i+1;
+       while i <= 9 do
+      	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
+	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ rank+1 -10 <= i <= 10}
+	   variant {9 - i}
+       	   unroll p;
+	   assoc p;
+       	   toskip p;
+	   i <- i+1;
+       done;
+       toskip p;
     )
     else (
-       simpl_foreach p;
+       label L1 in
+       let ref i = 0 in
+       while i <= 9 do
+	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
+	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ 0 <= i <= 10}
+	   variant {9 - i}
+       	   unroll p;
+	   assoc p;
+       	   toskip p;
+	   i <- i+1;
+       done;
+       toskip p;
     );
    finalize p
 
-
-(*While loop : unfold like a liste to list: look at example with lists: at the end empty list*)
+(* let test3 () : unit *)
+(* requires {size >= 10} *)
+(* = *)
+(*     init p (While 10 (Message 0 1 MPI_int))); *)
+(*     if rank = 0 then ( *)
+(*        for i = 0 to 10 do *)
+(*           send 1 MPI_int p; *)
+(*        done; *)
+(*     ) *)
+(*     else if (rank = 1) then ( *)
+(*         for i = 0 to 10 do *)
+(*             recv 0 MPI_int p; *)
+(*         done; *)
+(*     ) *)
+(*     else ( *)
+(*        simpl_foreach p; *)
+(*     ); *)
+(*    finalize p *)
 
 end
