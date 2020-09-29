@@ -505,7 +505,6 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ assigns __MPI_COMM_WORLD_size_ACSL,__MPI_COMM_WORLD_rank_ACSL,__MPI_Init_count, \result;*/
 int MPI_Init(int *argc, char ***argv);
 
-
 /*@ requires \valid(rank);
   @ requires __MPI_Init_count == 1;
   @ requires comm == MPI_COMM_WORLD;
@@ -550,13 +549,13 @@ int MPI_Finalize(void);
   @ behavior type_int :
   @   assumes datatype == MPI_INT;
   @   requires valid_buf: valid_read_or_empty_int((int *)buf, count);
-  @  // requires initialization_buf: \initialized((int *)buf + (0 .. count - 1));
-  @  // requires danglingness_buf: non_escaping_int((int *)buf, count);
+  @   requires initialization_buf: \initialized((int *)buf + (0 .. count - 1));
+  @   requires danglingness_buf: non_escaping_int((int *)buf, count);
   @ behavior type_char :
   @   assumes datatype == MPI_CHAR;
   @   requires valid_buf: valid_read_or_empty_char((char *)buf, count);
-  @  // requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
-  @  // requires danglingness_buf: non_escaping_char((char *)buf, count);
+  @   requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
+  @   requires danglingness_buf: non_escaping_char((char *)buf, count);
 */
 int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 
@@ -578,17 +577,43 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @ behavior type_int :
   @   assumes datatype == MPI_INT;
   @   requires valid_buf: valid_or_empty_int((int *)buf, count);
-  @  // requires danglingness_buf: non_escaping_int((int *)buf, count);
+  @   requires danglingness_buf: non_escaping_int((int *)buf, count);
   @   assigns ((int *)buf)[0..count-1];
   @ behavior type_char :
   @   assumes datatype == MPI_CHAR;
   @   requires valid_buf: valid_or_empty_char((char *)buf, count);
-  @  // requires danglingness_buf: non_escaping_char((char *)buf, count);
+  @   requires danglingness_buf: non_escaping_char((char *)buf, count);
   @   assigns ((char *)buf)[0..count-1];
 */
 int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
 	     int source, int tag, MPI_Comm comm, MPI_Status* status);
 
+/*@ requires comm == MPI_COMM_WORLD;
+  @ requires positive_count: 0 <= count;
+  @ requires 0 <= root < __MPI_COMM_WORLD_size_ACSL
+  @ requires datatype == MPI_CHAR || datatype == MPI_INT;
+  @ assigns \result;
+  @ behavior type_int :
+  @   assumes datatype == MPI_INT;
+  @   requires valid_buf: valid_or_empty_int((int *)buf, count);
+  @   requires danglingness_buf: non_escaping_int((int *)buf, count);
+  @   assigns ((int *)buf)[0..count-1];
+  @ behavior type_char :
+  @   assumes datatype == MPI_CHAR;
+  @   requires valid_buf: valid_or_empty_char((char *)buf, count);
+  @   requires danglingness_buf: non_escaping_char((char *)buf, count);
+  @   assigns ((char *)buf)[0..count-1];
+*/
+ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
+                             int root, MPI_Comm comm);
+
+ /* int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, */
+ /*                              void *recvbuf, int recvcount, MPI_Datatype recvtype, */
+ /*                              int root, MPI_Comm comm); */
+
+ /* int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, */
+ /*                               void *recvbuf, int recvcount, MPI_Datatype recvtype, */
+ /*                               int root, MPI_Comm comm); */
 
 
 /*  int MPI_Abort(MPI_Comm comm, int errorcode); */
@@ -636,8 +661,6 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
 /*                                  MPI_Comm comm, MPI_Request *request); */
 /*  int MPI_Barrier(MPI_Comm comm); */
 /*  int MPI_Ibarrier(MPI_Comm comm, MPI_Request *request); */
-/*  int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, */
-/*                              int root, MPI_Comm comm); */
 /*  int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, */
 /*                              int dest, int tag, MPI_Comm comm); */
 /*  int MPI_Ibcast(void *buffer, int count, MPI_Datatype datatype, */
@@ -736,9 +759,6 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
 /*                               MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request); */
 /*  int MPI_Finalized(int *flag); */
 /*  int MPI_Free_mem(void *base); */
-/*  int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, */
-/*                               void *recvbuf, int recvcount, MPI_Datatype recvtype, */
-/*                               int root, MPI_Comm comm); */
 /*  int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, */
 /*                               void *recvbuf, int recvcount, MPI_Datatype recvtype, */
 /*                               int root, MPI_Comm comm, MPI_Request *request); */
@@ -939,9 +959,6 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
 /*                             MPI_Datatype datatype, MPI_Op op, MPI_Comm comm); */
 /*  int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, */
 /*                             MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request); */
-/*  int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, */
-/*                                void *recvbuf, int recvcount, MPI_Datatype recvtype, */
-/*                                int root, MPI_Comm comm); */
 /*  int MPI_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, */
 /*                                void *recvbuf, int recvcount, MPI_Datatype recvtype, */
 /*                                int root, MPI_Comm comm, MPI_Request *request); */
