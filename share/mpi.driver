@@ -1,0 +1,31 @@
+library mpi:
+type "mpi_datatype" = "mpi_datatype";
+
+logic mpi_datatype "get_mpi_char" = "get_mpi_char";
+logic mpi_datatype "get_mpi_int" =  "get_mpi_int";
+
+logic integer "MPI_COMM_WORLD_size_ACSL" = "size";
+logic integer "MPI_COMM_WORLD_rank_ACSL" = "rank";
+
+type "logic_protocol" = "protocol";
+
+logic logic_protocol "get_protocol_dead" = "get_protocol_dead";
+logic logic_protocol "seq" (logic_protocol,logical_protocol) = "seq";
+
+predicate "isDead" (logic_protocol) = "isDead";
+predicate "isMessage" (logic_protocol) = "isMessage";
+predicate "isForeach" (logic_protocol) = "isForeach";
+predicate "isSkip" (logil_protocol) = "isSkip";
+
+predicate "isMessageforSend" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforSend";
+predicate "isMessageforRecv" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforRecv";
+predicate "isBroadcast" (logic_protocol,integer,integer,mpi_datatype) = "isMessageforSend";
+
+logic logic_protocol "simpl" (logic_protocol) = "simpl";
+logic logic_protocol "split" (logic_protocol) = "split";
+logic logic_protocol "assoc" (logic_protocol) = "assoc";
+logic logic_protocol "getFirst" (logic_protocol) = "getFirst";
+logic logic_protocol "getNext" (logic_protocol) = "getNext";
+
+why3.file += "protocol.why:MPI_Protocol";
+why3.file += "protocol.why:MPI_prop";

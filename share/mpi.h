@@ -491,38 +491,73 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
 #define PMPI_Aint_diff(addr1, addr2) MPI_Aint_diff(addr1, addr2)
 
 /*
- * MPI API
+ * MPI Protocol
  */
 
-/*@ ghost int __MPI_COMM_WORLD_size_ACSL;*/
-/*@ ghost int __MPI_COMM_WORLD_rank_ACSL;*/
+/*@ axiomatic MPI_driver{
+  @ type mpi_datatype;
+  @
+  @ logic mpi_datatype get_mpi_char;
+  @ logic mpi_datatype get_mpi_int;
+  @
+  @ logic integer MPI_COMM_WORLD_size_ACSL;
+  @ logic integer MPI_COMM_WORLD_rank_ACSL;
+  @
+  @ predicate size_constrain(integer size);
+  @
+  @ type logic_protocol;
+  @
+  @ logic logic_protocol get_protocol_dead;
+  @ logic logic_protocol seq (logic_protocol p1, logic_protocol p2);
+  @
+  @ logic logic_protocol the_protocol;
+  @
+  @ predicate isDead(logic_protocol p);
+  @ predicate isMessage(logic_protocol p);
+  @ predicate isForeach(logic_protocol p);
+  @ predicate isSkip(logic_protocol p);
+  @
+  @ predicate isMessageforSend(logic_protocol p, integer dest, integer count, integer tag, mpi_datatype datatype);
+  @ predicate isMessageforRecv(logic_protocol p, integer source, integer count, integer tag, mpi_datatype datatype);
+  @ predicate isBroadcast(logic_protocol p, integer root, integer count, mpi_datatype datatype);
+  @
+  @ logic logic_protocol simpl(logic_protocol p);
+  @ logic logic_protocol split(logic_protocol p);
+  @ logic logic_protocol assoc(logic_protocol p);
+  @ logic logic_protocol getFirst(logic_protocol p);
+  @ logic logic_protocol getNext(logic_protocol p);
+}*/
 
-/*@ ghost int __MPI_Init_count = 0;*/
+struct c_protocol;
 
-/*@ requires __MPI_Init_count == 0;
-  @ ensures 0 <= __MPI_COMM_WORLD_rank_ACSL < __MPI_COMM_WORLD_size_ACSL;
-  @ ensures __MPI_Init_count == 1;
-  @ assigns __MPI_COMM_WORLD_size_ACSL,__MPI_COMM_WORLD_rank_ACSL,__MPI_Init_count, \result;*/
-int MPI_Init(int *argc, char ***argv);
+/*@ axiomatic Protocol_getter_setter{
+  @ predicate set_type(struct c_protocol s, logic_protocol p);
+  @ logic logic_protocol get_type(struct c_protocol s);
+  @ axiom link: \forall logic_protocol p, struct c_protocol s; set_type(s,p) ==> p == get_type(s);
+}*/
 
-/*@ requires \valid(rank);
-  @ requires __MPI_Init_count == 1;
-  @ requires comm == MPI_COMM_WORLD;
-  @ ensures __MPI_COMM_WORLD_rank_ACSL == *rank;
-  @ assigns *rank, \result;*/
-int MPI_Comm_rank(MPI_Comm comm, int *rank);
+struct c_protocol protocol;
 
-/*@ requires \valid(size);
-  @ requires __MPI_Init_count == 1;
-  @ requires comm == MPI_COMM_WORLD;
-  @ ensures __MPI_COMM_WORLD_size_ACSL == *size;
-  @ assigns *size, \result;*/
-int MPI_Comm_size(MPI_Comm comm, int *size);
+/*@ assigns protocol;
+  @ ensures set_type(protocol,simpl(\old(get_type(protocol))));*/
+void simpl();
 
-/*@ requires __MPI_Init_count == 1;
-  @ ensures __MPI_Init_count == -1;
-  @ assigns \result, __MPI_Init_count;*/
-int MPI_Finalize(void);
+/*@ assigns protocol;
+  @ ensures set_type(protocol,assoc(\old(get_type(protocol))));*/
+void assoc();
+
+/*@ assigns protocol;
+  @ ensures \let p = \old(get_type(protocol)); set_type(protocol,seq(getFirst(p),getNext(p)));*/
+void unroll();
+
+/*@ requires isSkip(simpl(getFirst(get_type(protocol))));
+  @ assigns protocol;
+  @ ensures set_type(protocol,getNext(\old(get_type(protocol))));*/
+void toskip();
+
+/*
+ * MPI Mem
+ */
 
 /*@ predicate empty_block_int{L}(int *s) =
   @   \block_length((int*)s) == 0 && \offset((int*)s) == 0;
@@ -538,10 +573,45 @@ int MPI_Finalize(void);
   @ predicate non_escaping_char{L}(char *s, int n) =
   @   \forall  integer i; 0 ≤ i < n ⇒ ¬\dangling((char*)s + i);*/
 
+/*@ predicate valid_or_empty_int{L}(int *s, int n) =
+  @   (empty_block_int(s) && n == 0) || \valid(((int*)s)+(0..n-1));*/
+/*@ predicate valid_or_empty_char{L}(char *s, int n) =
+  @   (empty_block_char(s) && n == 0) || \valid(((char*)s)+(0..n-1));*/
+
+/*
+ * MPI API
+ */
+
+// USe two different Dead: one for entry and one for exit: actualy init can be called after finallyse: maibe possible  ??????????
+
+/*@ ensures 0 <= MPI_COMM_WORLD_rank_ACSL < MPI_COMM_WORLD_size_ACSL;
+  @ ensures size_constrain(MPI_COMM_WORLD_size_ACSL);
+  @ ensures set_type(protocol,the_protocol);
+  @ assigns \result, protocol;*/
+int MPI_Init(int *argc, char ***argv);
+
+/*@ requires !isDead(get_type(protocol));
+  @ requires \valid(rank);
+  @ requires comm == MPI_COMM_WORLD;
+  @ ensures MPI_COMM_WORLD_rank_ACSL == *rank;
+  @ assigns *rank, \result;*/
+int MPI_Comm_rank(MPI_Comm comm, int *rank);
+
+/*@ requires !isDead(get_type(protocol));
+  @ requires \valid(size);
+  @ requires comm == MPI_COMM_WORLD;
+  @ ensures MPI_COMM_WORLD_size_ACSL == *size;
+  @ assigns *size, \result;*/
+int MPI_Comm_size(MPI_Comm comm, int *size);
+
+/*@ requires isSkip(get_type(protocol));
+  @ assigns \result, protocol;
+  @ ensures set_type(protocol,get_protocol_dead);*/
+int MPI_Finalize(void);
+
 /*@ requires comm == MPI_COMM_WORLD;
-  @ requires __MPI_Init_count == 1;
-  @ requires 0 <= dest < __MPI_COMM_WORLD_size_ACSL;
-  @ requires dest != __MPI_COMM_WORLD_rank_ACSL;
+  @ requires 0 <= dest < MPI_COMM_WORLD_size_ACSL;
+  @ requires dest != MPI_COMM_WORLD_rank_ACSL;
   @ requires 0 <= count;
   @ requires 0 <= tag;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
@@ -551,24 +621,26 @@ int MPI_Finalize(void);
   @   requires valid_buf: valid_read_or_empty_int((int *)buf, count);
   @   requires initialization_buf: \initialized((int *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
+  @
+  @   requires isMessageforSend(get_type(protocol),dest,count,tag,get_mpi_int);
+  @   assigns protocol;
+  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @
   @ behavior type_char :
   @   assumes datatype == MPI_CHAR;
   @   requires valid_buf: valid_read_or_empty_char((char *)buf, count);
   @   requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
+  @
+  @   requires isMessageforSend(get_type(protocol),dest,count,tag,get_mpi_char);
+  @   assigns protocol;
+  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
 */
 int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 
-/*@ predicate valid_or_empty_int{L}(int *s, int n) =
-  @   (empty_block_int(s) && n == 0) || \valid(((int*)s)+(0..n-1));*/
-
-/*@ predicate valid_or_empty_char{L}(char *s, int n) =
-  @   (empty_block_char(s) && n == 0) || \valid(((char*)s)+(0..n-1));*/
-
 /*@ requires comm == MPI_COMM_WORLD;
-  @ requires __MPI_Init_count == 1;
-  @ requires 0 <= source < __MPI_COMM_WORLD_size_ACSL || source == MPI_ANY_SOURCE;
-  @ requires source != __MPI_COMM_WORLD_rank_ACSL;
+  @ requires 0 <= source < MPI_COMM_WORLD_size_ACSL || source == MPI_ANY_SOURCE;
+  @ requires source != MPI_COMM_WORLD_rank_ACSL;
   @ requires 0 <= tag || tag == MPI_ANY_TAG;
   @ requires positive_count: 0 <= count;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
@@ -578,11 +650,21 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @   assumes datatype == MPI_INT;
   @   requires valid_buf: valid_or_empty_int((int *)buf, count);
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
+  @
+  @   requires isMessageforRecv(get_type(protocol),source,count,tag,get_mpi_int);
+  @   assigns protocol;
+  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @
   @   assigns ((int *)buf)[0..count-1];
   @ behavior type_char :
   @   assumes datatype == MPI_CHAR;
   @   requires valid_buf: valid_or_empty_char((char *)buf, count);
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
+  @
+  @   requires isMessageforRecv(get_type(protocol),source,count,tag,get_mpi_char);
+  @   assigns protocol;
+  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @
   @   assigns ((char *)buf)[0..count-1];
 */
 int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
@@ -590,7 +672,7 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
 
 /*@ requires comm == MPI_COMM_WORLD;
   @ requires positive_count: 0 <= count;
-  @ requires 0 <= root < __MPI_COMM_WORLD_size_ACSL
+  @ requires 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
   @ assigns \result;
   @ behavior type_int :
@@ -604,7 +686,7 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
   @   assigns ((char *)buf)[0..count-1];
 */
- int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
+int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
                              int root, MPI_Comm comm);
 
  /* int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, */
