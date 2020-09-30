@@ -20,13 +20,7 @@ let () =
   Cmdline.run_after_configuring_stage add_mpi_v_lib
 
 
-let run () =
-  if MPI_V_options.Enabled.get () then
-    begin
-      MPI_V_core.add_hypo ();
-      File.pretty_ast ();
-      Filecheck.check_ast "Rpp"
-    end
+let run () = ()
 
 let () =
   Instantiate.Transform.register (module Mpi_recv.M:Instantiate.Instantiator_builder.Generator_sig);
