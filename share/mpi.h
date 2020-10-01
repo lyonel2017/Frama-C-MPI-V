@@ -522,7 +522,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ predicate isBroadcast(logic_protocol p, integer root, integer count, mpi_datatype datatype);
   @
   @ logic logic_protocol simpl(logic_protocol p);
-  @ logic logic_protocol split(logic_protocol p);
+  @ logic logic_protocol split(logic_protocol p,integer i);
   @ logic logic_protocol assoc(logic_protocol p);
   @ logic logic_protocol getFirst(logic_protocol p);
   @ logic logic_protocol getNext(logic_protocol p);
@@ -547,7 +547,8 @@ void simpl();
 void assoc();
 
 /*@ assigns protocol;
-  @ ensures \let p = \old(get_type(protocol)); set_type(protocol,seq(getFirst(p),getNext(p)));*/
+  @ ensures \let p = \old(get_type(protocol));
+      set_type(protocol,seq(simpl(getFirst(p)),getNext(p)));*/
 void unroll();
 
 /*@ requires isSkip(simpl(getFirst(get_type(protocol))));

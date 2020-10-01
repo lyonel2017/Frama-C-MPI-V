@@ -22,7 +22,7 @@ predicate "isMessageforRecv" (logic_protocol,integer,integer,integer,mpi_datatyp
 predicate "isBroadcast" (logic_protocol,integer,integer,mpi_datatype) = "isMessageforSend";
 
 logic logic_protocol "simpl" (logic_protocol) = "simpl";
-logic logic_protocol "split" (logic_protocol) = "split";
+logic logic_protocol "split" (logic_protocol,integer) = "split";
 logic logic_protocol "assoc" (logic_protocol) = "assoc";
 logic logic_protocol "getFirst" (logic_protocol) = "getFirst";
 logic logic_protocol "getNext" (logic_protocol) = "getNext";
