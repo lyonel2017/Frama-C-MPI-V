@@ -1,0 +1,8 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+
+let constant the_protocol : protocol = While 10 (Message 0 1 2 0 MPI_char)
+
+end
