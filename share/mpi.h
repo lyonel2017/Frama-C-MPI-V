@@ -536,6 +536,9 @@ struct c_protocol;
   @ axiom link: \forall logic_protocol p, struct c_protocol s; set_type(s,p) ==> p == get_type(s);
 }*/
 
+
+// following C elements must be define as ghost
+
 struct c_protocol protocol;
 
 /*@ assigns protocol;
@@ -623,7 +626,7 @@ int MPI_Finalize(void);
   @   requires initialization_buf: \initialized((int *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
   @
-  @   requires isMessageforSend(get_type(protocol),dest,count,tag,get_mpi_int);
+  @   requires isMessageforSend(getFirst(get_type(protocol)),dest,count,tag,get_mpi_int);
   @   assigns protocol;
   @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
   @
@@ -633,7 +636,7 @@ int MPI_Finalize(void);
   @   requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
   @
-  @   requires isMessageforSend(get_type(protocol),dest,count,tag,get_mpi_char);
+  @   requires isMessageforSend(getFirst(get_type(protocol)),dest,count,tag,get_mpi_char);
   @   assigns protocol;
   @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
 */
@@ -652,7 +655,7 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @   requires valid_buf: valid_or_empty_int((int *)buf, count);
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
   @
-  @   requires isMessageforRecv(get_type(protocol),source,count,tag,get_mpi_int);
+  @   requires isMessageforRecv(getFirst(get_type(protocol)),source,count,tag,get_mpi_int);
   @   assigns protocol;
   @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
   @
@@ -662,7 +665,7 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @   requires valid_buf: valid_or_empty_char((char *)buf, count);
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
   @
-  @   requires isMessageforRecv(get_type(protocol),source,count,tag,get_mpi_char);
+  @   requires isMessageforRecv(getFirst(get_type(protocol)),source,count,tag,get_mpi_char);
   @   assigns protocol;
   @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
   @

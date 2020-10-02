@@ -28,7 +28,8 @@ class visitor_beh t formals = object(self)
   method! vterm _ =
     let f term =
       match term.term_node with
-      | TLval(TVar lv, _) when not(Cil_datatype.Logic_type.equal lv.lv_type term.term_type) ->
+      | TLval(TVar lv, _) when
+          not(Cil_datatype.Logic_type.equal lv.lv_type term.term_type) ->
         {term with term_type = lv.lv_type}
       | _ -> term
     in
@@ -44,20 +45,38 @@ class visitor_beh t formals = object(self)
         | Writes f2 -> Writes (f1@f2)
       end
 
+  method private filter_requires (lr: identified_predicate list) =
+    let aux r =
+      let name = r.ip_content.tp_statement.pred_name in
+      match name with
+      | [] -> true
+      | h :: [] ->
+        let b =String.equal h "danglingness_buf" in
+        not b
+      | _ -> true
+    in
+    List.filter aux lr
+
   method! vspec _ =
     let is_type_behavior b = String.equal b.b_name type_name  in
     let f fspec =
       let type_behavior =
         try List.find is_type_behavior fspec.spec_behavior with
-        | Not_found -> MPI_V_options.Self.abort "No behavior for type %a in " Cil_printer.pp_typ t
+        | Not_found ->
+          MPI_V_options.Self.abort "No behavior for type %a in " Cil_printer.pp_typ t
       in
       let default_behavior = List.find Cil.is_default_behavior fspec.spec_behavior in
-      let new_default_requires = default_behavior.b_requires @ type_behavior.b_requires in
+      let type_require = self#filter_requires type_behavior.b_requires in
+      let new_default_requires = default_behavior.b_requires @  type_require in
+      let new_default_ensures = default_behavior.b_post_cond @ type_behavior.b_post_cond in
       let new_default_assigns =
         self#merge_assigns default_behavior.b_assigns type_behavior.b_assigns
       in
-      let default_behavior = {default_behavior with b_requires = new_default_requires} in
-      let default_behavior = {default_behavior with b_assigns = new_default_assigns} in
+      let default_behavior = {default_behavior with
+                              b_requires = new_default_requires;
+                              b_post_cond = new_default_ensures;
+                              b_assigns = new_default_assigns}
+      in
       {fspec with spec_behavior = [default_behavior]}
     in
     Cil.DoChildrenPost f
