@@ -72,4 +72,4 @@ frama-c-*.tar.gz
 
 /.merlin
 /.frama-c/*
-/tests/.frama-c/*
+/tests/*/.frama-c/*
