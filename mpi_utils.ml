@@ -51,8 +51,9 @@ class visitor_beh t formals = object(self)
       match name with
       | [] -> true
       | h :: [] ->
-        let b =String.equal h "danglingness_buf" in
-        not b
+        let b1 = String.equal h "danglingness_buf" in
+        let b2 = String.equal h "initialization_buf" in
+        not b1 && not b2
       | _ -> true
     in
     List.filter aux lr
