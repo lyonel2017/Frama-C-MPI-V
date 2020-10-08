@@ -18,17 +18,17 @@ int main(int argc, char **argv){
   if (my_rank < 10) {
 
     data = my_rank;
+    /*@ ghost
   l1:;
-    /*ghost code*/
     int i = 0;
-    /*@ loop invariant 0 <= i <= my_rank;
+    /@ loop invariant 0 <= i <= my_rank;
       @ loop invariant getFirst(get_type(protocol)) ==
       @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
       @ loop invariant getNext(get_type(protocol)) ==
       @    getNext(\at(get_type(protocol),l1));
       @ loop assigns protocol,i;
       @ loop variant my_rank -i;
-    */
+      @/
     while (i < my_rank){
       unroll();
       assoc();
@@ -38,21 +38,21 @@ int main(int argc, char **argv){
 
     unroll();
     assoc();
-    /*ghost code*/
+    @*/
 
     /* Send messages to other processes with my_rank + 5*/
     MPI_Ssend(&data, 1, MPI_INT, my_rank + 10, 1, MPI_COMM_WORLD);
 
-    /*ghost code*/
+    /*@ ghost
     i++;
-    /*@ loop invariant my_rank + 1 <= i <= 10;
+    /@ loop invariant my_rank + 1 <= i <= 10;
       @ loop invariant getFirst(get_type(protocol)) ==
       @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
       @ loop invariant getNext(get_type(protocol)) ==
       @    getNext(\at(get_type(protocol),l1));
       @ loop assigns protocol,i;
       @ loop variant 9 -i;
-    */
+      @/
     while (i <= 9){
       unroll();
       assoc();
@@ -60,24 +60,22 @@ int main(int argc, char **argv){
       i++;
     }
     toskip();
-    /*ghost code*/
-
-
+    @*/
 
   } else{
     if (my_rank < 20){
 
+      /*@ ghost
     l2:;
-      /*ghost code*/
       int i = 0;
-      /*@ loop invariant 0 <= i <= my_rank-10;
+      /@ loop invariant 0 <= i <= my_rank-10;
 	@ loop invariant getFirst(get_type(protocol)) ==
 	@  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
 	@ loop invariant getNext(get_type(protocol)) ==
 	@    getNext(\at(get_type(protocol),l2));
 	@ loop assigns protocol,i;
 	@ loop variant my_rank-10 -i;
-      */
+      @/
       while (i < (my_rank-10)){
 	unroll();
 	assoc();
@@ -87,22 +85,21 @@ int main(int argc, char **argv){
 
       unroll();
       assoc();
-      /*ghost code*/
-
+      @*/
 
       /* Receive message from process my_rank-5 */
       MPI_Recv(&data, 1, MPI_INT, my_rank-10, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-      /*ghost code*/
+      /*@ ghost
       i++;
-      /*@ loop invariant my_rank + 1 -10 <= i <= 10;
+      /@ loop invariant my_rank + 1 -10 <= i <= 10;
 	@ loop invariant getFirst(get_type(protocol)) ==
 	@  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
 	@ loop invariant getNext(get_type(protocol)) ==
 	@    getNext(\at(get_type(protocol),l2));
 	@ loop assigns protocol,i;
 	@ loop variant 9 -i;
-      */
+      @/
       while (i <= 9){
 	unroll();
 	assoc();
@@ -110,22 +107,20 @@ int main(int argc, char **argv){
 	i++;
       }
       toskip();
-      /*ghost code*/
-
-
+      @*/
 
     }
-    /*ghost code*/
+    /*@ ghost
     else {
       int i = 0;
-      /*@ loop invariant 0 <= i <= 10;
+      /@ loop invariant 0 <= i <= 10;
 	@ loop invariant getFirst(get_type(protocol)) ==
 	@  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),i));
 	@ loop invariant getNext(get_type(protocol)) ==
 	@    getNext(\at(get_type(protocol),LoopEntry));
 	@ loop assigns protocol,i;
 	@ loop variant 9 -i;
-      */
+      @/
       while (i <= 9){
 	unroll();
 	assoc();
@@ -133,9 +128,8 @@ int main(int argc, char **argv){
 	i++;
       }
       toskip();
-      /*ghost code*/
-
     }
+  @*/
   }
 
   /* Tear down the communication infrastructure */

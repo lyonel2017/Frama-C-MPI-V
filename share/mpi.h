@@ -528,7 +528,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ logic logic_protocol getNext(logic_protocol p);
 }*/
 
-struct c_protocol;
+//@ ghost struct c_protocol;
 
 /*@ axiomatic Protocol_getter_setter{
   @ predicate set_type(struct c_protocol s, logic_protocol p);
@@ -537,27 +537,33 @@ struct c_protocol;
 }*/
 
 
-// following C elements must be define as ghost
+//@ ghost struct c_protocol protocol;
 
-struct c_protocol protocol;
+/*@ ghost
+     /@ assigns protocol;
+      @ ensures set_type(protocol,simpl(\old(get_type(protocol)))); @/
+     void simpl();
+ @*/
 
-/*@ assigns protocol;
-  @ ensures set_type(protocol,simpl(\old(get_type(protocol))));*/
-void simpl();
+/*@ ghost
+     /@ assigns protocol;
+      @ ensures set_type(protocol,assoc(\old(get_type(protocol))));@/
+     void assoc();
+ @*/
 
-/*@ assigns protocol;
-  @ ensures set_type(protocol,assoc(\old(get_type(protocol))));*/
-void assoc();
+/*@ ghost
+     /@ assigns protocol;
+      @ ensures \let p = \old(get_type(protocol));
+                set_type(protocol,seq(simpl(getFirst(p)),getNext(p)));@/
+      void unroll();
+  @*/
 
-/*@ assigns protocol;
-  @ ensures \let p = \old(get_type(protocol));
-      set_type(protocol,seq(simpl(getFirst(p)),getNext(p)));*/
-void unroll();
-
-/*@ requires isSkip(simpl(getFirst(get_type(protocol))));
-  @ assigns protocol;
-  @ ensures set_type(protocol,getNext(\old(get_type(protocol))));*/
-void toskip();
+/*@ ghost
+     /@ requires isSkip(simpl(getFirst(get_type(protocol))));
+      @ assigns protocol;
+      @ ensures set_type(protocol,getNext(\old(get_type(protocol))));@/
+     void toskip();
+  @*/
 
 /*
  * MPI Mem
