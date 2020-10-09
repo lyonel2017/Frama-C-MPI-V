@@ -1,0 +1,10 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+
+let constant the_protocol : protocol =
+    Seq (Foreach 1 (size-1) (fun i -> Message 0 i 2 0 MPI_char))
+        (Foreach 1 (size-1) (fun i -> Message i 0 2 0 MPI_char))
+
+end

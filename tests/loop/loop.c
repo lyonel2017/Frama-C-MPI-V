@@ -1,14 +1,11 @@
 /*
   "Hello World" MPI Test Program
 */
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include "../../share/mpi.h"
+#include "mpi.h"
 
 int main(int argc, char **argv)
 {
-    char buf[256];
+    char buf[2] = {'O','k'};;
     int my_rank, num_procs;
 
     /* Initialize the infrastructure necessary for communication */
@@ -24,35 +21,122 @@ int main(int argc, char **argv)
        Here, we check the rank to distinguish the roles of the programs */
     if (my_rank == 0) {
         int other_rank;
-        printf("We have %i processes.\n", num_procs);
-
         /* Send messages to all other processes */
-        for (other_rank = 1; other_rank < num_procs; other_rank++)
-        {
-            sprintf(buf, "Hello %i!", other_rank);
-            MPI_Send(buf, sizeof(buf), MPI_CHAR, other_rank,
-                     0, MPI_COMM_WORLD);
+	/*@ loop invariant 1 <= other_rank <= num_procs;
+	  @ loop invariant getFirst(get_type(protocol)) ==
+	  @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),other_rank));
+	  @ loop invariant getNext(get_type(protocol)) ==
+	  @   getNext(\at(get_type(protocol),LoopEntry));
+	  @ loop assigns other_rank, protocol;
+	  @ loop variant num_procs - other_rank;*/
+        for (other_rank = 1; other_rank < num_procs; other_rank++){
+	  //@ ghost unroll();
+	  //@ ghost assoc();
+	  MPI_Ssend(buf, sizeof(buf), MPI_CHAR, other_rank,0, MPI_COMM_WORLD);
         }
-
+	//@ ghost toskip();
         /* Receive messages from all other process */
-        for (other_rank = 1; other_rank < num_procs; other_rank++)
-        {
-            MPI_Recv(buf, sizeof(buf), MPI_CHAR, other_rank,
-                     0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("%s\n", buf);
+	/*@ loop invariant 1 <= other_rank <= num_procs;
+	  @ loop invariant getFirst(get_type(protocol)) ==
+	  @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),other_rank));
+	  @ loop invariant getNext(get_type(protocol)) ==
+	  @   getNext(\at(get_type(protocol),LoopEntry));
+	  @ loop assigns other_rank, protocol,buf[0..1];
+	  @ loop variant num_procs - other_rank;*/
+	for (other_rank = 1; other_rank < num_procs; other_rank++){
+	  //@ ghost unroll();
+	  //@ ghost assoc();
+	  MPI_Recv(buf, sizeof(buf), MPI_CHAR, other_rank,0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
-
+	//@ ghost toskip();
     } else {
 
+    /*@ ghost
+  l1:;
+    int i = 1;
+    /@ loop invariant 1 <= i <= my_rank;
+      @ loop invariant getFirst(get_type(protocol)) ==
+      @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
+      @ loop invariant getNext(get_type(protocol)) ==
+      @    getNext(\at(get_type(protocol),l1));
+      @ loop assigns protocol,i;
+      @ loop variant my_rank -i;
+      @/
+    while (i < my_rank){
+      unroll();
+      assoc();
+      toskip();
+      i++;
+    }
+
+    unroll();
+    assoc();
+    @*/
+
         /* Receive message from process #0 */
-        MPI_Recv(buf, sizeof(buf), MPI_CHAR, 0,
-                 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        assert(memcmp(buf, "Hello ", 6) == 0),
+        MPI_Recv(buf, sizeof(buf), MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    /*@ ghost
+    i++;
+    /@ loop invariant my_rank + 1 <= i <= num_procs;
+      @ loop invariant getFirst(get_type(protocol)) ==
+      @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
+      @ loop invariant getNext(get_type(protocol)) ==
+      @    getNext(\at(get_type(protocol),l1));
+      @ loop assigns protocol,i;
+      @ loop variant num_procs -i;
+      @/
+    while (i < num_procs){
+      unroll();
+      assoc();
+      toskip();
+      i++;
+    }
+    toskip();
+    @*/
+
+    /*@ ghost
+  l2:;
+     i = 1;
+    /@ loop invariant 1 <= i <= my_rank;
+      @ loop invariant getFirst(get_type(protocol)) ==
+      @  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
+      @ loop invariant getNext(get_type(protocol)) ==
+      @    getNext(\at(get_type(protocol),l2));
+      @ loop assigns protocol,i;
+      @ loop variant my_rank -i;
+      @/
+    while (i < my_rank){
+      unroll();
+      assoc();
+      toskip();
+      i++;
+    }
+    unroll();
+    assoc();
+    @*/
 
         /* Send message to process #0 */
-        sprintf(buf, "Process %i reporting for duty.", my_rank);
-        MPI_Send(buf, sizeof(buf), MPI_CHAR, 0,
-                 0, MPI_COMM_WORLD);
+        MPI_Ssend(buf, sizeof(buf), MPI_CHAR, 0,0, MPI_COMM_WORLD);
+
+    /*@ ghost
+    i++;
+     /@ loop invariant my_rank + 1 <= i <= num_procs;
+      @ loop invariant getFirst(get_type(protocol)) ==
+      @  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
+      @ loop invariant getNext(get_type(protocol)) ==
+      @    getNext(\at(get_type(protocol),l2));
+      @ loop assigns protocol,i;
+      @ loop variant num_procs -i;
+      @/
+    while (i < num_procs){
+      unroll();
+      assoc();
+      toskip();
+      i++;
+    }
+    toskip();
+    @*/
 
     }
 
