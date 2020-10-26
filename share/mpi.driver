@@ -9,10 +9,8 @@ logic integer "MPI_COMM_WORLD_rank_ACSL" = "rank";
 
 type "logic_protocol" = "protocol";
 
-logic logic_protocol "get_protocol_dead" = "get_protocol_dead";
 logic logic_protocol "seq" (logic_protocol,logical_protocol) = "seq";
 
-predicate "isDead" (logic_protocol) = "isDead";
 predicate "isMessage" (logic_protocol) = "isMessage";
 predicate "isForeach" (logic_protocol) = "isForeach";
 predicate "isSkip" (logil_protocol) = "isSkip";

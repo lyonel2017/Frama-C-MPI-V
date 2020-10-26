@@ -507,12 +507,10 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @
   @ type logic_protocol;
   @
-  @ logic logic_protocol get_protocol_dead;
   @ logic logic_protocol seq (logic_protocol p1, logic_protocol p2);
   @
   @ logic logic_protocol the_protocol;
   @
-  @ predicate isDead(logic_protocol p);
   @ predicate isMessage(logic_protocol p);
   @ predicate isForeach(logic_protocol p);
   @ predicate isSkip(logic_protocol p);
@@ -536,6 +534,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ axiom link: \forall logic_protocol p, struct c_protocol s; set_type(s,p) ==> p == get_type(s);
 }*/
 
+//@ ghost int priority = 0;
 
 //@ ghost struct c_protocol protocol;
 
@@ -592,22 +591,22 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
  * MPI API
  */
 
-// USe two different Dead: one for entry and one for exit: actualy init can be called after finallyse: maibe possible  ??????????
-
-/*@ ensures 0 <= MPI_COMM_WORLD_rank_ACSL < MPI_COMM_WORLD_size_ACSL;
+/*@ requires priority == 0;
+  @ ensures 0 <= MPI_COMM_WORLD_rank_ACSL < MPI_COMM_WORLD_size_ACSL;
   @ ensures size_constrain(MPI_COMM_WORLD_size_ACSL);
   @ ensures set_type(protocol,the_protocol);
-  @ assigns \result, protocol;*/
+  @ ensures priority == 1;
+  @ assigns \result, protocol, priority;*/
 int MPI_Init(int *argc, char ***argv);
 
-/*@ requires !isDead(get_type(protocol));
+/*@ requires priority == 1;
   @ requires \valid(rank);
   @ requires comm == MPI_COMM_WORLD;
   @ ensures MPI_COMM_WORLD_rank_ACSL == *rank;
   @ assigns *rank, \result;*/
 int MPI_Comm_rank(MPI_Comm comm, int *rank);
 
-/*@ requires !isDead(get_type(protocol));
+/*@ requires priority == 1;
   @ requires \valid(size);
   @ requires comm == MPI_COMM_WORLD;
   @ ensures MPI_COMM_WORLD_size_ACSL == *size;
@@ -615,11 +614,13 @@ int MPI_Comm_rank(MPI_Comm comm, int *rank);
 int MPI_Comm_size(MPI_Comm comm, int *size);
 
 /*@ requires isSkip(get_type(protocol));
-  @ assigns \result, protocol;
-  @ ensures set_type(protocol,get_protocol_dead);*/
+  @ requires priority == 1;
+  @ assigns \result, protocol, priority;
+  @ ensures priority == 2;*/
 int MPI_Finalize(void);
 
-/*@ requires comm == MPI_COMM_WORLD;
+/*@ requires priority == 1;
+  @ requires comm == MPI_COMM_WORLD;
   @ requires 0 <= dest < MPI_COMM_WORLD_size_ACSL;
   @ requires dest != MPI_COMM_WORLD_rank_ACSL;
   @ requires 0 <= count;
@@ -648,7 +649,13 @@ int MPI_Finalize(void);
 */
 int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 
-/*@ requires comm == MPI_COMM_WORLD;
+
+/*  int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, */
+/*                               int tag, MPI_Comm comm, MPI_Request *request); */
+
+
+/*@ requires priority == 1;
+  @ requires comm == MPI_COMM_WORLD;
   @ requires 0 <= source < MPI_COMM_WORLD_size_ACSL || source == MPI_ANY_SOURCE;
   @ requires source != MPI_COMM_WORLD_rank_ACSL;
   @ requires 0 <= tag || tag == MPI_ANY_TAG;
@@ -680,7 +687,8 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
 	     int source, int tag, MPI_Comm comm, MPI_Status* status);
 
-/*@ requires comm == MPI_COMM_WORLD;
+/*@ requires priority == 1;
+  @ requires comm == MPI_COMM_WORLD;
   @ requires positive_count: 0 <= count;
   @ requires 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires datatype == MPI_CHAR || datatype == MPI_INT;
@@ -944,8 +952,6 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
 /*                               int tag, MPI_Comm comm, MPI_Request *request); */
 /*  int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, */
 /*                              int tag, MPI_Comm comm, MPI_Request *request); */
-/*  int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, */
-/*                               int tag, MPI_Comm comm, MPI_Request *request); */
 /*  int MPI_Is_thread_main(int *flag); */
 /*  int MPI_Lookup_name(const char *service_name, MPI_Info info, char *port_name); */
 /*  int MPI_Mprobe(int source, int tag, MPI_Comm comm, */

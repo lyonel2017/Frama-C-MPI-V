@@ -22,13 +22,6 @@ type protocol =
   | Skip
   | Broadcast int int mpi_datatype
 
-
-  | Dead (*two different dead: entry en exit*)
-(* | Entry *)
-(* | Exit *)
-
-
-
 (* gather *)
 (* scater *)
 (* | Nondet protocol  protocol *)
@@ -40,14 +33,7 @@ type protocol =
     Maybe use a ghost broadcast
 *)
 
-let constant get_protocol_dead : protocol = Dead
 function seq (p1: protocol) (p2: protocol): protocol = Seq p1 p2
-
-predicate isDead(p: protocol) =
-         match p with
-           | Dead -> true
-           | _ -> false
-         end
 
 predicate isMessage (p:protocol) =
        match p with
