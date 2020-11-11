@@ -62,6 +62,7 @@ MPI_V_DISTRIBUTED_FILES=MPI_V_options.ml MPI_V_options.mli \
 	mpi_broadcast.ml mpi_broadcast.mli \
 	MPI_V_register.ml MPI_V_register.mli\
 	Makefile \
+	MPI_V.mli \
 	share/mpi.h \
 	share/mpi.driver \
 	share/protocol.why
