@@ -1,6 +1,6 @@
 open Cil_types
 
-let function_name = "MPI_Ssend"
+let function_name = "MPI_Bcast"
 
 let generate_spec t f _ : Cil_types.funspec =
   let kf = Globals.Functions.find_by_name function_name in
@@ -15,8 +15,7 @@ let generate_function_type t =
       ("buf" , Mpi_utils.const_of(Mpi_utils.ptr_of t), []) ;
       ("count", Cil.intType, []);
       ("datatype", Mpi_utils.mpi_datatype (), []);
-      ("dest", Cil.intType, []);
-      ("tag", Cil.intType, []);
+      ("root", Cil.intType, []);
       ("comm", Mpi_utils.mpi_comm (), [])
     ]
   in
@@ -28,11 +27,10 @@ let generate_prototype t =
   name, ftype
 
 let well_typed_call _ret _fct = function
-  | [ buf ; count ; datatype; source; tag; comm] ->
+  | [ buf ; count ; datatype; root; comm] ->
     let test =
       Cil.isIntegralType (Cil.typeOf count) &&
-      Cil.isIntegralType (Cil.typeOf source) &&
-      Cil.isIntegralType (Cil.typeOf tag) &&
+      Cil.isIntegralType (Cil.typeOf root) &&
       Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.mpi_datatype ()) &&
       Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.mpi_comm ())
     in
@@ -46,7 +44,7 @@ let well_typed_call _ret _fct = function
 
 let key_from_call _ret _fct args =
   match args with
-  | [ buf ; _ ; _ ; _ ; _ ; _ ] ->
+  | [ buf ; _ ; _ ; _ ; _ ] ->
     begin
       match Mpi_utils.exp_type_of_pointed buf with
       | None -> assert false
@@ -56,9 +54,9 @@ let key_from_call _ret _fct args =
 
 let retype_args _ args =
   match args with
-  | [ buf ; count ; datatype; source; tag; comm] ->
-    [ Cil.stripCasts buf ; count ; datatype; source; tag; comm]
-  | _ -> MPI_V_options.Self.abort "trying to retype arguments on an ill-typed call"
+  | [ buf ; count ; datatype; root; comm] ->
+    [ Cil.stripCasts buf ; count ; datatype; root; comm]
+  | _ -> assert false
 
 module M =
 struct

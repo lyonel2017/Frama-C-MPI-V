@@ -47,14 +47,14 @@ let well_typed_call _ret _fct = function
   | _ -> false
 
 let key_from_call _ret _fct args =
-  if List.length args <> 7 then
-    MPI_V_options.Self.abort "trying to retype arguments on an ill-typed call"
-  else
+  match args with
+  | [ buf ; _ ; _ ; _ ; _ ; _ ; _] ->
     begin
-      match Mpi_utils.exp_type_of_pointed (List.hd args) with
-      | None -> MPI_V_options.Self.abort "trying to retype arguments on an ill-typed call"
+      match Mpi_utils.exp_type_of_pointed buf with
+      | None -> assert false
       | Some typ -> typ
     end
+  | _ -> assert false
 
 let retype_args _ args =
     match args with

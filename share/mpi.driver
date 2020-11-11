@@ -13,11 +13,16 @@ logic logic_protocol "seq" (logic_protocol,logical_protocol) = "seq";
 
 predicate "isMessage" (logic_protocol) = "isMessage";
 predicate "isForeach" (logic_protocol) = "isForeach";
-predicate "isSkip" (logil_protocol) = "isSkip";
+predicate "isSkip" (logic_protocol) = "isSkip";
+predicate "isBroadcast" (logic_protocol) = "isBroadcast";
+predicate "isGather" (logic_protocol) = "isGather";
+predicate "isScatter" (logic_protocol) ="isScatter";
 
 predicate "isMessageforSend" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforSend";
 predicate "isMessageforRecv" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforRecv";
-predicate "isBroadcast" (logic_protocol,integer,integer,mpi_datatype) = "isMessageforSend";
+predicate "isforBroadcast" (logic_protocol,integer,integer,mpi_datatype) = "isforBroadcast";
+predicate "isforGather" (logic_protocol,integer,integer,mpi_datatype) = "isGather";
+predicate "isforScatter" (logic_protocol,integer,integer,mpi_datatype) = "isScatter";
 
 logic logic_protocol "simpl" (logic_protocol) = "simpl";
 logic logic_protocol "split" (logic_protocol,integer) = "split";

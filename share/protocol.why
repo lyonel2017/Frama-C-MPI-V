@@ -21,10 +21,18 @@ type protocol =
   | Seq protocol protocol
   | Skip
   | Broadcast int int mpi_datatype
+  | Gather int int mpi_datatype
+  | Scatter int int mpi_datatype
 
-(* gather *)
-(* scater *)
-(* | Nondet protocol  protocol *)
+(* | choice (int list) int int int mpi_datatype)
+    A nondet recev require a complete choice (all posibilitiase are in the choice)
+    A send check if send to the dest (define in the nondet), if yes he must by in the list of source, if
+     the send not to the dest he simpl to skip the nondet and check the rest of the protocol
+    The choice can be simpl like foreach
+ *)
+
+
+
 (*  | IntVal (pred int) (cont int)
     require
     to proof that the variable introduised is the same
@@ -51,7 +59,25 @@ predicate isSkip (p:protocol) =
        match p with
        | Skip -> true
        | _ -> false
-end
+       end
+
+predicate isBroadcast (p: protocol) =
+	match p with
+	| Broadcast _ _ _ -> true
+	| _ -> false
+	end
+
+predicate isGather (p: protocol) =
+	  match p with
+	  | Gather _ _ _ -> true
+	  | _ -> false
+	  end
+
+predicate isScatter (p: protocol) =
+	  match p with
+	  | Scatter _ _ _ -> true
+	  | _ -> false
+	  end
 
 predicate isMessageforSend (p:protocol) (dest: int) (count: int) (tag: int) (datatype: mpi_datatype) =
        match p with
@@ -67,9 +93,21 @@ predicate isMessageforRecv (p:protocol) (source: int) (count: int) (tag: int) (d
          | _ -> false
        end
 
-predicate isBroadcast (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
+predicate isforBroadcast (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
 	match p with
 	  | Broadcast r size mt -> root = r /\  size = count /\ datatype = mt
+	  | _ -> false
+        end
+
+predicate isforGather (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
+	match p with
+	  | Gather r size mt -> root = r /\  size = count /\ datatype = mt
+	  | _ -> false
+        end
+
+predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
+	match p with
+	  | Scatter r size mt -> root = r /\  size = count /\ datatype = mt
 	  | _ -> false
         end
 
