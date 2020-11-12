@@ -32,7 +32,7 @@ let generate_function_type t =
   let ret = Cil.intType in
   let ps =
     [
-      ("buf" , Mpi_utils.const_of(Mpi_utils.ptr_of t), []) ;
+      ("buf" , Mpi_utils.ptr_of t, []) ;
       ("count", Cil.intType, []);
       ("datatype", Mpi_utils.mpi_datatype (), []);
       ("root", Cil.intType, []);
