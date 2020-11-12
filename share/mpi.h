@@ -18,7 +18,6 @@
 /*  for more details (enclosed in the file LICENSE).                      */
 /**************************************************************************/
 
-/* ompi/include/mpi.h.  Generated from mpi.h.in by configure.  */
 /*
  * Copyright (c) 2004-2005 The Trustees of Indiana University and Indiana
  *                         University Research and Technology
@@ -777,9 +776,9 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
 /*@ requires priority == 1;
   @ requires comm == MPI_COMM_WORLD; //limitation l1
   @ requires positive_sendcount: 0 <= sendcount;
-  @ requires sendtype == MPI_CHAR || sendtype == MPI_INT;
+  @ requires datatype: sendtype == MPI_CHAR || sendtype == MPI_INT;
   @ requires positive_recvcount: 0 <= recvcount;
-  @ requires recvtype == MPI_CHAR || recvtype == MPI_INT;
+  @ requires datatype: recvtype == MPI_CHAR || recvtype == MPI_INT;
   @ requires 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
   @ assigns \result;

@@ -41,8 +41,8 @@ predicate "isScatter" (logic_protocol) ="isScatter";
 predicate "isMessageforSend" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforSend";
 predicate "isMessageforRecv" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforRecv";
 predicate "isforBroadcast" (logic_protocol,integer,integer,mpi_datatype) = "isforBroadcast";
-predicate "isforGather" (logic_protocol,integer,integer,mpi_datatype) = "isGather";
-predicate "isforScatter" (logic_protocol,integer,integer,mpi_datatype) = "isScatter";
+predicate "isforGather" (logic_protocol,integer,integer,mpi_datatype) = "isforGather";
+predicate "isforScatter" (logic_protocol,integer,integer,mpi_datatype) = "isforScatter";
 
 logic logic_protocol "simpl" (logic_protocol) = "simpl";
 logic logic_protocol "split" (logic_protocol,integer) = "split";

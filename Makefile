@@ -38,6 +38,7 @@ PLUGIN_CMO := MPI_V_options \
 	mpi_recv \
 	mpi_ssend \
 	mpi_broadcast \
+	mpi_gather \
 	MPI_V_register
 PLUGIN_TESTS_DIRS := test
 
@@ -60,6 +61,7 @@ MPI_V_DISTRIBUTED_FILES=MPI_V_options.ml MPI_V_options.mli \
 	mpi_recv.ml mpi_recv.mli \
 	mpi_ssend.ml mpi_ssend.mli  \
 	mpi_broadcast.ml mpi_broadcast.mli \
+	mpi_gather.ml mpi_gather.mli \
 	MPI_V_register.ml MPI_V_register.mli\
 	Makefile \
 	MPI_V.mli \

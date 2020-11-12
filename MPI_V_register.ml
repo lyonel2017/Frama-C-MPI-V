@@ -70,3 +70,5 @@ let () =
   Instantiate.Transform.register (module Mpi_ssend.M:Instantiate.Instantiator_builder.Generator_sig);
   Instantiate.Transform.register
     (module Mpi_broadcast.M:Instantiate.Instantiator_builder.Generator_sig);
+  Instantiate.Transform.register
+    (module Mpi_gather.M:Instantiate.Instantiator_builder.Generator_sig)
