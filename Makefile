@@ -49,6 +49,7 @@ install::
 	$(MKDIR) $(FRAMAC_DATADIR)/mpi-v
 	$(CP) $(MPI_V_DIR)/share/mpi.h $(FRAMAC_DATADIR)/mpi-v
 	$(CP) $(MPI_V_DIR)/share/protocol.why $(FRAMAC_DATADIR)/mpi-v
+	$(CP) $(MPI_V_DIR)/share/mpi.driver $(FRAMAC_DATADIR)/mpi-v
 
 uninstall::
 	$(PRINT_RM) MPI-V share files
