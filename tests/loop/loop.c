@@ -1,7 +1,7 @@
-/*
-  "Hello World" MPI Test Program
-*/
 #include "mpi.h"
+
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver loop.c
+
 
 int main(int argc, char **argv)
 {

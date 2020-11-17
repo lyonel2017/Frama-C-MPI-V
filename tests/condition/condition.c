@@ -1,5 +1,7 @@
 #include "mpi.h"
 
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver condition.c
+
 int main(int argc, char **argv){
   int data = 0;
   int my_rank = 0, num_procs = 0;
