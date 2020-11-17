@@ -101,33 +101,38 @@ predicate isScatter (p: protocol) =
 
 predicate isMessageforSend (p:protocol) (dest: int) (count: int) (tag: int) (datatype: mpi_datatype) =
        match p with
-         | Message src dst size t mt ->
-	           src = rank /\ dest = dst /\ size = count /\ tag = t /\ datatype = mt
+         | Message src dst data_size t mt ->
+	           src = rank /\ dest = dst /\ data_size = count /\ tag = t /\ datatype = mt
+		   /\ 0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src
          | _ -> false
        end
 
 predicate isMessageforRecv (p:protocol) (source: int) (count: int) (tag: int) (datatype: mpi_datatype) =
        match p with
-         | Message src dst size t mt ->
-	           src = source /\ dst = rank /\ size <= count /\ tag = t /\ datatype = mt
+         | Message src dst data_size t mt ->
+	           src = source /\ dst = rank /\ data_size <= count /\ tag = t /\ datatype = mt
+		   /\ 0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src
          | _ -> false
        end
 
 predicate isforBroadcast (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
 	match p with
-	  | Broadcast r size mt -> root = r /\  size = count /\ datatype = mt
+	  | Broadcast r data_size mt -> root = r /\  data_size = count /\ datatype = mt
+	    	      /\ 0 <= r /\ r < size
 	  | _ -> false
         end
 
 predicate isforGather (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
 	match p with
-	  | Gather r size mt -> root = r /\  size = count /\ datatype = mt
+	  | Gather r data_size mt -> root = r /\  data_size = count /\ datatype = mt
+	    	     /\ 0 <= r /\ r < size
 	  | _ -> false
         end
 
 predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
 	match p with
-	  | Scatter r size mt -> root = r /\  size = count /\ datatype = mt
+	  | Scatter r data_size mt -> root = r /\  data_size = count /\ datatype = mt
+	    	    /\ 0 <= r /\ r < size
 	  | _ -> false
         end
 
@@ -136,7 +141,8 @@ function simpl (p: protocol) : protocol =
 	 | Seq Skip q -> q
 	 | Seq h Skip -> h
          | Message source dest _ _ _ ->
-            if rank <> source /\ rank <> dest
+            if rank <> source /\ rank <> dest /\
+	       0 <= source /\ source < size /\ 0 <= dest /\ dest < size /\ dest <> source
             then Skip
             else p
 	 | Foreach low high body ->
