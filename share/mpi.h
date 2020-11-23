@@ -550,6 +550,12 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ logic logic_protocol getNext(logic_protocol p);
 }*/
 
+/*@ axiomatic MPI_datatype {
+  @ logic mpi_datatype c_to_why_mpi_datatype (MPI_Datatype datatype);
+  @ axiom mpi_int : c_to_why_mpi_datatype(MPI_INT) == get_mpi_int;
+  @ axiom mpi_char : c_to_why_mpi_datatype(MPI_CHAR) == get_mpi_char;
+}*/
+
 //@ ghost struct c_protocol;
 
 /*@ axiomatic Protocol_getter_setter{
@@ -560,7 +566,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
 
 //@ ghost int priority = 0;
 
-//@ ghost struct c_protocol protocol;
+//@ ghost extern struct c_protocol protocol;
 
 /*@ ghost
      /@ assigns protocol;
@@ -655,26 +661,21 @@ int MPI_Finalize(void);
   @ requires 0 <= count;
   @ requires 0 <= tag;
   @ requires datatype: datatype == MPI_CHAR || datatype == MPI_INT; // limitation l2
-  @ assigns \result;
+  @ requires isMessageforSend(getFirst(get_type(protocol)),dest,count,tag,c_to_why_mpi_datatype(datatype));
+  @ ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @ assigns \result,protocol;
+  @
   @ behavior type_int :
   @   assumes datatype == MPI_INT;
   @   requires valid_buf: valid_read_or_empty_int((int *)buf, count);
   @   requires initialization_buf: \initialized((int *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
   @
-  @   requires isMessageforSend(getFirst(get_type(protocol)),dest,count,tag,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @ behavior type_char :
   @   assumes datatype == MPI_CHAR;
   @   requires valid_buf: valid_read_or_empty_char((char *)buf, count);
   @   requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
-  @
-  @   requires isMessageforSend(getFirst(get_type(protocol)),dest,count,tag,get_mpi_char);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
 */
 int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 
@@ -693,26 +694,18 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @ requires positive_count: 0 <= count;
   @ requires datatype: datatype == MPI_CHAR || datatype == MPI_INT; //limitation l2
   @ requires status == MPI_STATUS_IGNORE;
-  @ assigns \result;
+  @ requires isMessageforRecv(getFirst(get_type(protocol)),source,count,tag,c_to_why_mpi_datatype(datatype));
+  @ ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @ assigns \result,protocol;
   @ behavior type_int :
   @   assumes datatype == MPI_INT;
   @   requires valid_buf: valid_or_empty_int((int *)buf, count);
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
-  @
-  @   requires isMessageforRecv(getFirst(get_type(protocol)),source,count,tag,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((int *)buf)[0..count-1];
   @ behavior type_char :
   @   assumes datatype == MPI_CHAR;
   @   requires valid_buf: valid_or_empty_char((char *)buf, count);
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
-  @
-  @   requires isMessageforRecv(getFirst(get_type(protocol)),source,count,tag,get_mpi_char);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((char *)buf)[0..count-1];
 */
 int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
@@ -726,48 +719,30 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
   @ requires positive_count: 0 <= count;
   @ requires 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires datatype: datatype == MPI_CHAR || datatype == MPI_INT; // limitation l2
-  @ assigns \result;
+  @ requires isforBroadcast(getFirst(get_type(protocol)),root,count,c_to_why_mpi_datatype(datatype));
+  @ ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @ assigns \result,protocol;
   @ behavior type_int_root :
   @   assumes datatype == MPI_INT && MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: valid_or_empty_int((int *)buf, count);
   @   requires initialization_buf: \initialized((int *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
-  @
-  @   requires isforBroadcast(getFirst(get_type(protocol)),root,count,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((int *)buf)[0..count-1];
   @ behavior type_int_not_root :
   @   assumes datatype == MPI_INT && MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: valid_or_empty_int((int *)buf, count);
   @   requires danglingness_buf: non_escaping_int((int *)buf, count);
-  @
-  @   requires isforBroadcast(getFirst(get_type(protocol)),root,count,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((int *)buf)[0..count-1];
   @ behavior type_char_root :
   @   assumes datatype == MPI_CHAR && MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: valid_or_empty_char((char *)buf, count);
   @   requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
-  @
-  @   requires isforBroadcast(getFirst(get_type(protocol)),root,count,get_mpi_char);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((char *)buf)[0..count-1];
   @ behavior type_char_not_root :
   @   assumes datatype == MPI_CHAR && MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: valid_or_empty_char((char *)buf, count);
   @   requires danglingness_buf: non_escaping_char((char *)buf, count);
-  @
-  @   requires isforBroadcast(getFirst(get_type(protocol)),root,count,get_mpi_char);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((char *)buf)[0..count-1];
 */
 int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
@@ -781,7 +756,9 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
   @ requires datatype: recvtype == MPI_CHAR || recvtype == MPI_INT;
   @ requires 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
-  @ assigns \result;
+  @ requires isforGather(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
+  @ ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @ assigns \result,protocol;
   @ behavior type_int_root :
   @   assumes sendtype == MPI_INT && MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: valid_or_empty_int((int *)sendbuf, sendcount);
@@ -789,22 +766,12 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
   @   requires danglingness_buf: non_escaping_int((int *)sendbuf, sendcount);
   @   requires valid_buf: valid_or_empty_int((int *)recvbuf, recvcount*MPI_COMM_WORLD_size_ACSL);
   @   requires danglingness_buf: non_escaping_int((int *)recvbuf, recvcount*MPI_COMM_WORLD_size_ACSL);
-  @
-  @   requires isforGather(getFirst(get_type(protocol)),root,sendcount,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((int *)recvbuf)[0..recvcount*MPI_COMM_WORLD_size_ACSL-1];
   @ behavior type_int_not_root :
   @   assumes sendtype == MPI_INT && MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: valid_or_empty_int((int *)sendbuf, sendcount);
   @   requires initialization_buf: \initialized((int *)sendbuf + (0 .. sendcount - 1));
   @   requires danglingness_buf: non_escaping_int((int *)sendbuf, sendcount);
-  @
-  @   requires isforGather(getFirst(get_type(protocol)),root,sendcount,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @ behavior type_char_root :
   @   assumes sendtype == MPI_CHAR && MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: valid_or_empty_char((char *)sendbuf, sendcount);
@@ -812,22 +779,12 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
   @   requires danglingness_buf: non_escaping_char((char *)sendbuf, sendcount);
   @   requires valid_buf: valid_or_empty_char((char *)recvbuf, recvcount*MPI_COMM_WORLD_size_ACSL);
   @   requires danglingness_buf: non_escaping_char((char *)recvbuf, recvcount*MPI_COMM_WORLD_size_ACSL);
-  @
-  @   requires isforGather(getFirst(get_type(protocol)),root,sendcount,get_mpi_char);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((char *)recvbuf)[0..recvcount*MPI_COMM_WORLD_size_ACSL-1];
   @ behavior type_char_not_root :
   @   assumes sendtype == MPI_CHAR && MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: valid_or_empty_char((char *)sendbuf, sendcount);
   @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. sendcount - 1));
   @   requires danglingness_buf: non_escaping_char((char *)sendbuf, sendcount);
-  @
-  @   requires isforGather(getFirst(get_type(protocol)),root,sendcount,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-
 */
 int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	       void *recvbuf, int recvcount, MPI_Datatype recvtype,
@@ -841,7 +798,9 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @ requires recvtype == MPI_CHAR || recvtype == MPI_INT;
   @ requires 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
-  @ assigns \result;
+  @ requires isforScatter(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
+  @ ensures set_type(protocol,getNext(\old(get_type(protocol))));
+  @ assigns \result,protocol;
   @ behavior type_int_root :
   @   assumes sendtype == MPI_INT && MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: valid_or_empty_int((int *)recvbuf, recvcount);
@@ -849,20 +808,10 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @   requires valid_buf: valid_or_empty_int((int *)sendbuf, sendcount*MPI_COMM_WORLD_size_ACSL);
   @   requires initialization_buf: \initialized((int *)sendbuf + (0 .. sendcount*MPI_COMM_WORLD_size_ACSL - 1));
   @   requires danglingness_buf: non_escaping_int((int *)sendbuf, sendcount*MPI_COMM_WORLD_size_ACSL);
-  @
-  @   requires isforScatter(getFirst(get_type(protocol)),root,sendcount,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @ behavior type_int_not_root :
   @   assumes sendtype == MPI_INT && MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: valid_or_empty_int((int *)recvbuf, recvcount);
   @   requires danglingness_buf: non_escaping_int((int *)recvbuf, recvcount);
-  @
-  @   requires isforScatter(getFirst(get_type(protocol)),root,sendcount,get_mpi_int);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((int *)recvbuf)[0..recvcount-1];
   @ behavior type_char_root :
   @   assumes sendtype == MPI_CHAR && MPI_COMM_WORLD_rank_ACSL == root;
@@ -871,24 +820,17 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @   requires valid_buf: valid_or_empty_char((char *)sendbuf, sendcount*MPI_COMM_WORLD_size_ACSL);
   @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. sendcount*MPI_COMM_WORLD_size_ACSL - 1));
   @   requires danglingness_buf: non_escaping_char((char *)sendbuf, sendcount*MPI_COMM_WORLD_size_ACSL);
-  @
-  @   requires isforScatter(getFirst(get_type(protocol)),root,sendcount,get_mpi_char);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @ behavior type_char_not_root :
   @   assumes sendtype == MPI_CHAR && MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: valid_or_empty_char((char *)recvbuf, recvcount);
   @   requires danglingness_buf: non_escaping_char((char *)recvbuf, recvcount);
-  @
-  @   requires isforScatter(getFirst(get_type(protocol)),root,sendcount,get_mpi_char);
-  @   assigns protocol;
-  @   ensures set_type(protocol,getNext(\old(get_type(protocol))));
-  @
   @   assigns ((char *)recvbuf)[0..recvcount-1];
 */
 int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		void *recvbuf, int recvcount, MPI_Datatype recvtype,
 		int root, MPI_Comm comm);
+
+
+//MPI_reduce
 
 #endif /* __FC_MPI */
