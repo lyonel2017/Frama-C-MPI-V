@@ -64,7 +64,8 @@ frama-c-*.tar.gz
 *.tmp
 *.output
 *.check_mli_exists
-
+/share/protocol
+/share/protocol_example
 
 ##############
 # particular #
