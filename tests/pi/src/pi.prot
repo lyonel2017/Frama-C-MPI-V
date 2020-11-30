@@ -1,0 +1,17 @@
+/**
+ * An example protocol for a program that calculates an approximation of pi
+ * through numerical integration.
+ *
+ * Adapted from:
+ *   William Gropp, Ewing Lusk, and Anthony Skjellum. Using MPI (2nd Ed.): 
+ *   Portable Parallel Programming with the Message-passing Interface. MIT Press,1999
+ *   http://www.mcs.anl.gov/research/projects/mpi/usingmpi/examples-usingmpi/simplempi/cpi_c.html
+ *
+ * Authors: César Santos and Eduardo Marques
+ * Version: $Id: pi.prot 4505 2015-05-10 10:03:56Z edrdo $
+ * ParTypes - http://gloss.di.fc.ul.pt/ParTypes
+ */
+protocol pi {
+	broadcast 0 integer
+	reduce 0 sum float
+}
