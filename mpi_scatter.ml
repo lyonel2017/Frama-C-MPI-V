@@ -18,13 +18,31 @@
 (*  for more details (enclosed in the file LICENSE).                      *)
 (**************************************************************************)
 
+open Cil_types
 
-val generate_function_type : Cil_types.typ -> Cil_types.typ
+let function_name = "MPI_Scatter"
 
-val well_typed_call : 'a -> 'b -> Cil_types.exp list -> bool
+let generate_prototype t =
+  let ftype = Mpi_gather.generate_function_type t in
+  let name = function_name ^ "_" ^ (Mpi_utils.string_of_typ t) in
+  name, ftype
 
-val key_from_call : 'a -> 'b -> Cil_types.exp list -> Cil_types.typ
+let generate_spec t f _ : Cil_types.funspec =
+  let kf = Globals.Functions.find_by_name function_name in
+  let spec = Annotations.funspec kf in
+  let spec = Visitor.visitFramacFunspec (new Mpi_utils.visitor_beh t f.sformals) spec in
+  spec
 
-val retype_args : 'a -> Cil_types.exp list -> Cil_types.exp list
+module M =
+struct
+  module Hashtbl = Cil_datatype.Typ.Hashtbl
+  type override_key = typ
 
-module M : Instantiate.Instantiator_builder.Generator_sig
+  let function_name = function_name
+  let well_typed_call = Mpi_gather.well_typed_call
+  let key_from_call = Mpi_gather.key_from_call
+  let retype_args = Mpi_gather.retype_args
+  let generate_prototype = generate_prototype
+  let generate_spec = generate_spec
+  let args_for_original _ = Extlib.id
+end

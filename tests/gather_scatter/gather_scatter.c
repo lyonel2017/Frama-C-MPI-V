@@ -14,7 +14,6 @@ int main(int argc, char **argv){
   /* Find out how many total processes are active */
   MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 
-
   /* Until this point, all programs have been doing exactly the same.
      Here, we check the rank to distinguish the roles of the programs */
   if (my_rank == 0) {
@@ -23,11 +22,24 @@ int main(int argc, char **argv){
     int senddata = my_rank;
     /* Gather messages for all processes*/
     MPI_Gather(&senddata, 1, MPI_INT,recvdata, 1, MPI_INT,0, MPI_COMM_WORLD);
+
+    /*@ assert \false;*/
+
+    int senddata2[100];
+    int recvdata2 = my_rank;
+    /* Gather messages for all processes*/
+    MPI_Scatter(senddata2, 1, MPI_INT,&recvdata2, 1, MPI_INT,0, MPI_COMM_WORLD);
+
+
   } else{
     int senddata = my_rank;
     int* a = 0;
     /* Receive message from process 0 */
     MPI_Gather(&senddata, 1, MPI_INT,a, 1, MPI_INT,0, MPI_COMM_WORLD);
+    int* b = 0;
+    int recvdata;
+    /* Gather messages for all processes*/
+     MPI_Scatter(b, 1, MPI_INT,&recvdata, 1, MPI_INT,0, MPI_COMM_WORLD);
   }
 
   /* Tear down the communication infrastructure */
