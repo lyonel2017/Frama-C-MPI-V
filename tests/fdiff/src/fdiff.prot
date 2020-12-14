@@ -1,0 +1,35 @@
+/** 
+ * A protocol for the one dimensional finite differences problem.
+ * Takes a vector X0 and calculates Xn iteratively.
+ * 
+ * Original algorithm and MPI program:
+ * I. Foster. Designing and building Parallel programs. Addison-Wesley, 1995
+ *   http://www.mcs.anl.gov/~itf/dbpp/text/node10.html#SECTION02240000000000000000
+ *   http://www.mcs.anl.gov/~itf/dbpp/text/node97.html#figmpreduce
+ *
+ * Authors: César Santos and Eduardo Marques
+ * Version: $Id: fdiff.prot 4644 2015-06-09 14:55:33Z edrdo $
+ * ParTypes - http://gloss.di.fc.ul.pt/ParTypes
+ */
+protocol fdiff (size > 2) {
+	// The problem size must be a multiple of size, the number of processes
+	val numIterations: positive
+	// Process rank 0 broadcasts the maximum number of iterations
+	broadcast 0 n: {x: positive | x % size = 0}
+	// Process rank 0 divides the array among all processes
+	scatter 0 float[n]
+	foreach iteration: 1 .. numIterations {
+		foreach i: 0 .. size-1 {
+			// send left a floating point number
+			message i (i=0 ? size-1 : i-1) float
+			// send right a floating point number
+			message i (i=size-1 ? 0 : i+1) float
+		}
+	}
+	// Each process proposes a floating point number;
+	// process rank 0 collects the sum of these
+	reduce 0 max float
+	// Each process proposes its part of the solution,
+	// process rank 0 gathers these to form Xn, an array of length n
+	gather 0 float[n/size]
+}
