@@ -18,22 +18,13 @@
 (*  for more details (enclosed in the file LICENSE).                      *)
 (**************************************************************************)
 
-val string_of_typ : Cil_types.typ -> string
 
-class visitor_beh: Cil_types.typ -> Cil_types.varinfo list -> Visitor.generic_frama_c_visitor
+val generate_function_type : Cil_types.typ -> Cil_types.typ
 
-val mpi_comm: unit -> Cil_types.typ
+val well_typed_call : 'a -> 'b -> Cil_types.exp list -> bool
 
-val mpi_status: unit -> Cil_types.typ
+val key_from_call : 'a -> 'b -> Cil_types.exp list -> Cil_types.typ
 
-val mpi_datatype: unit -> Cil_types.typ
+val retype_args : 'a -> Cil_types.exp list -> Cil_types.exp list
 
-val mpi_op: unit -> Cil_types.typ 
-
-val ptr_of: Cil_types.typ -> Cil_types.typ
-
-val const_of: Cil_types.typ -> Cil_types.typ
-
-val mpi_to_cil_typ: Cil_types.exp -> Cil_types.typ
-
-val exp_type_of_pointed: Cil_types.exp -> Cil_types.typ option
+module M : Instantiate.Instantiator_builder.Generator_sig

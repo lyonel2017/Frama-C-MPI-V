@@ -31,6 +31,11 @@ type mpi_datatype =
 let constant get_mpi_char : mpi_datatype = MPI_char
 let constant get_mpi_int : mpi_datatype = MPI_int
 
+type mpi_op = 
+| MPI_sum
+
+let constant get_mpi_sum : mpi_op = MPI_sum
+
 val constant rank : int
 val constant size : int
 
@@ -43,6 +48,8 @@ type protocol =
   | Broadcast int int mpi_datatype
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
+  | Reduce int int mpi_datatype mpi_op
+
 
 (* | choice (int list) int int int mpi_datatype)
     A nondet recev require a complete choice (all posibilitiase are in the choice)
@@ -99,6 +106,12 @@ predicate isScatter (p: protocol) =
 	  | _ -> false
 	  end
 
+predicate isReduce (p: protocol) = 
+  match p with 
+    | Reduce _ _ _ _ -> true
+    | _ -> false 
+  end
+
 predicate isMessageforSend (p:protocol) (dest: int) (count: int) (tag: int) (datatype: mpi_datatype) =
        match p with
          | Message src dst data_size t mt ->
@@ -135,6 +148,13 @@ predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_dat
 	    	    /\ 0 <= r /\ r < size
 	  | _ -> false
         end
+
+predicate isforReduce (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) (operation: mpi_op)= 
+  match p with 
+    | Reduce r data_size mt op -> root = r /\ data_size = count /\ datatype = mt 
+                               /\ 0 <= r /\ r < size /\ operation = op 
+    | _ -> false 
+  end 
 
 function simpl (p: protocol) : protocol =
 	 match p with

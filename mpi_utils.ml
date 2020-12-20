@@ -63,6 +63,9 @@ let mpi_status () =
 let mpi_datatype () =
   Globals.Types.find_type Logic_typing.Typedef "MPI_Datatype"
 
+let mpi_op () = 
+  Globals.Types.find_type Logic_typing.Typedef "MPI_Op"
+
 let ptr_of t = TPtr(t, [])
 let const_of t = Cil.typeAddAttributes [Attr("const", [])] t
 
