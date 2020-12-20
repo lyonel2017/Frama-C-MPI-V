@@ -44,6 +44,8 @@ let mpi_to_cil_typ datatype =
   match datatype.enode with
   | AddrOf (Var v ,_) when String.equal v.vname "mpi_mpi_int" ->
     Cil.intType
+  | AddrOf (Var v ,_) when String.equal v.vname "mpi_mpi_float" ->
+    Cil.floatType 
   | AddrOf (Var v ,_) when String.equal v.vname "mpi_mpi_char" ->
     Cil.charType
   | _ ->  MPI_V_options.Self.abort "Unsupported MPI datatype %a" Cil_printer.pp_exp datatype
@@ -51,6 +53,7 @@ let mpi_to_cil_typ datatype =
 let cil_typ_to_mpi_string t =
   match t with
   | TInt(IInt,[]) -> "mpi_mpi_int"
+  | TFloat(FFloat,[]) -> "mpi_mpi_float"
   | TInt(IChar,[]) -> "mpi_mpi_char"
   | _ -> MPI_V_options.Self.abort "Unsupported type %a" Cil_printer.pp_typ t
 

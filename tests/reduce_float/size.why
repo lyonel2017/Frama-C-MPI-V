@@ -1,0 +1,5 @@
+module MPI_size
+
+predicate size_constrain (int size) = size > 0
+
+end
