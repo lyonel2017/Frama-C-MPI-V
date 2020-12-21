@@ -11,13 +11,13 @@ int main(int argc, char **argv){
   MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 
   int max_length = 1000; 
-  int length = (int)(max_length / num_procs); 
-  int offset = length / num_procs; 
+  int offset = (int)(max_length / num_procs); 
+  int length = num_procs * offset; 
 
   if (my_rank == 0) {
 
     // initialize array, size is fixed to 1000 elements 
-    // only consider first (int)(#processes / 1000) elements 
+    // only consider first num_procs * int(max_length / num_procs) elements 
     int data[max_length]; 
     
     // fill array with some numbers  
