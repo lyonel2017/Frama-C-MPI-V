@@ -44,6 +44,7 @@ type protocol =
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
   | Reduce int int mpi_datatype mpi_op
+  | Allgather int mpi_datatype
   | Foreach int int (int -> protocol)
   | While int protocol
 
@@ -89,7 +90,6 @@ let constant get_mpi_sum : mpi_op = MPI_sum
 
 function seq (p1: protocol) (p2: protocol): protocol = Seq p1 p2
 
-
 (* -------------------------------------------------------------------- *)
 (* --- isMessageforIntSend                                          --- *)
 (* -------------------------------------------------------------------- *)
@@ -134,6 +134,15 @@ predicate isReduce (p: protocol)
 
 axiom IsReduce: forall r data_size: int, mt: mpi_datatype, op: mpi_op.
       isReduce(Reduce r data_size mt op)
+
+(* -------------------------------------------------------------------- *)
+(* --- isAllgather                                                  --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isAllgather (p: protocol)
+
+axiom IsAllgather: forall data_size: int, mt: mpi_datatype.
+      isAllgather(Allgather data_size mt)
 
 (* -------------------------------------------------------------------- *)
 (* --- isForeach                                                    --- *)
@@ -284,7 +293,7 @@ axiom isScatter: forall root r count data_size : int, datatype mt : mpi_datatype
       isforScatter (Scatter r data_size mt) root count datatype
 
 (* -------------------------------------------------------------------- *)
-(* --- isforReduce                                                 --- *)
+(* --- isforReduce                                                  --- *)
 (* -------------------------------------------------------------------- *)
 
 predicate isforReduce (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) (opera: mpi_op)
@@ -295,6 +304,17 @@ axiom isReduce: forall root r count data_size: int, datatype mt : mpi_datatype, 
       (*Typecheck Scatter*)
       root = r /\ data_size = count /\ datatype = mt /\ opera = op ->
       isforReduce (Reduce r data_size mt op) root count datatype opera
+
+(* -------------------------------------------------------------------- *)
+(* --- isforAllgather                                                  --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforAllgather (p: protocol) (count: int) (datatype: mpi_datatype)
+
+axiom isAllgather: forall data_size count: int, datatype mt: mpi_datatype.
+      (*Typecheck Scatter*)
+      data_size = count /\ datatype = mt ->
+      isforAllgather (Allgather data_size mt) count datatype
 
 (* -------------------------------------------------------------------- *)
 (* --- simpl                                                        --- *)

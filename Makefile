@@ -39,6 +39,7 @@ PLUGIN_CMO := MPI_V_options \
 	mpi_ssend \
 	mpi_broadcast \
 	mpi_gather \
+	mpi_allgather \
 	mpi_scatter \
 	mpi_reduce \
 	MPI_V_register
@@ -64,6 +65,7 @@ MPI_V_DISTRIBUTED_FILES=MPI_V_options.ml MPI_V_options.mli \
 	mpi_ssend.ml mpi_ssend.mli  \
 	mpi_broadcast.ml mpi_broadcast.mli \
 	mpi_gather.ml mpi_gather.mli \
+	mpi_allgather.ml mpi_allgather.mli \
 	mpi_scatter.ml mpi_scatter.mli \
 	mpi_reduce.ml mpi_reduce.mli \
 	MPI_V_register.ml MPI_V_register.mli\
