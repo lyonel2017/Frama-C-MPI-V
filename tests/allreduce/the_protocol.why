@@ -1,0 +1,7 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+
+let constant the_protocol : protocol = Allreduce 2 MPI_int MPI_sum  
+
+end

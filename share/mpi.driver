@@ -63,6 +63,7 @@ predicate "isGather" (logic_protocol) = "isGather";
 predicate "isAllgather" (logic_protocol) = "isAllgather";
 predicate "isScatter" (logic_protocol) ="isScatter";
 predicate "isReduce" (logic_protocol) = "isReduce";
+predicate "isAllreduce" (logic_protocol) = "isAllreduce";
 
 predicate "isMessageforIntSend" (logic_protocol,integer,integer,integer,list) = "isMessageforIntSend";
 predicate "isMessageforIntRecv" (logic_protocol,integer,integer,integer) = "isMessageforIntRecv";
@@ -73,6 +74,7 @@ predicate "isforGather" (logic_protocol,integer,integer,mpi_datatype) = "isforGa
 predicate "isforAllgather" (logic_protocol,integer,mpi_datatype) = "isforAllgather";
 predicate "isforScatter" (logic_protocol,integer,integer,mpi_datatype) = "isforScatter";
 predicate "isforReduce" (logic_protocol,integer,integer,mpi_datatype,mpi_op) = "isforReduce";
+predicate "isforAllreduce" (logic_protocol,integer,mpi_datatype,mpi_op) = "isforAllreduce";
 
 logic logic_protocol "simpl" (logic_protocol) = "simpl";
 logic logic_protocol "split" (logic_protocol,integer) = "split";

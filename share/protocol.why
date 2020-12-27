@@ -58,6 +58,7 @@ type protocol =
   | Scatter int int mpi_datatype
   | Reduce int int mpi_datatype mpi_op
   | Allgather int mpi_datatype
+  | Allreduce int mpi_datatype mpi_op
   | Foreach int int (int -> protocol)
   | While int protocol
 
@@ -170,6 +171,15 @@ predicate isAllgather (p: protocol)
 
 axiom IsAllgather: forall data_size: int, mt: mpi_datatype.
       isAllgather(Allgather data_size mt)
+
+(* -------------------------------------------------------------------- *)
+(* --- isAllreduce                                                  --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isAllreduce (p: protocol)
+
+axiom IsAllreduce: forall data_size: int, mt: mpi_datatype, op: mpi_op.
+      isAllreduce(Allreduce data_size mt op)
 
 (* -------------------------------------------------------------------- *)
 (* --- isForeach                                                    --- *)
@@ -342,6 +352,17 @@ axiom isAllgather: forall data_size count: int, datatype mt: mpi_datatype.
       (*Typecheck Scatter*)
       data_size = count /\ datatype = mt ->
       isforAllgather (Allgather data_size mt) count datatype
+
+(* -------------------------------------------------------------------- *)
+(* --- isforAllreduce                                               --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforAllreduce (p: protocol) (count: int) (datatype: mpi_datatype) (opera: mpi_op)
+
+axiom isAllreduce: forall data_size count: int, datatype mt: mpi_datatype, op opera: mpi_op.
+      (*Typecheck Allreduce*)
+      data_size = count /\ datatype = mt  /\ opera = op ->
+      isforAllreduce (Allreduce data_size mt op) count datatype opera
 
 (* -------------------------------------------------------------------- *)
 (* --- simpl                                                        --- *)
