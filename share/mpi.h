@@ -522,7 +522,20 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @
   @ type mpi_op;
   @
+  @ logic mpi_op get_mpi_max;
+  @ logic mpi_op get_mpi_min;
   @ logic mpi_op get_mpi_sum;
+  @ logic mpi_op get_mpi_prod;
+  @ logic mpi_op get_mpi_land;
+  @ logic mpi_op get_mpi_band;
+  @ logic mpi_op get_mpi_lor;
+  @ logic mpi_op get_mpi_bor;
+  @ logic mpi_op get_mpi_lxor;
+  @ logic mpi_op get_mpi_bxor;
+  @ logic mpi_op get_mpi_maxloc;
+  @ logic mpi_op get_mpi_minloc;
+  @ logic mpi_op get_mpi_replace;
+  @ logic mpi_op get_mpi_no_op;
   @
   @ logic integer MPI_COMM_WORLD_size_ACSL;
   @ logic integer MPI_COMM_WORLD_rank_ACSL;
@@ -574,7 +587,20 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
 
 /*@ axiomatic MPI_op {
   @ logic mpi_op c_to_why_mpi_op (MPI_Op op);
+  @ axiom mpi_max: c_to_why_mpi_op(MPI_MAX) == get_mpi_max;
+  @ axiom mpi_min: c_to_why_mpi_op(MPI_MIN) == get_mpi_min;
   @ axiom mpi_sum: c_to_why_mpi_op(MPI_SUM) == get_mpi_sum;
+  @ axiom mpi_prod: c_to_why_mpi_op(MPI_PROD) == get_mpi_prod;
+  @ axiom mpi_land: c_to_why_mpi_op(MPI_LAND) == get_mpi_land;
+  @ axiom mpi_band: c_to_why_mpi_op(MPI_BAND) == get_mpi_band;
+  @ axiom mpi_lor: c_to_why_mpi_op(MPI_LOR) == get_mpi_lor;
+  @ axiom mpi_bor: c_to_why_mpi_op(MPI_BOR) == get_mpi_bor;
+  @ axiom mpi_lxor: c_to_why_mpi_op(MPI_LXOR) == get_mpi_lxor;
+  @ axiom mpi_bxor: c_to_why_mpi_op(MPI_BXOR) == get_mpi_bxor;
+  @ axiom mpi_maxloc: c_to_why_mpi_op(MPI_MAXLOC) == get_mpi_maxloc;
+  @ axiom mpi_minloc: c_to_why_mpi_op(MPI_MINLOC) == get_mpi_minloc;
+  @ axiom mpi_replace: c_to_why_mpi_op(MPI_REPLACE) == get_mpi_replace;
+  @ axiom mpi_no_op: c_to_why_mpi_op(MPI_NO_OP) == get_mpi_no_op;
 }*/
 
 /*

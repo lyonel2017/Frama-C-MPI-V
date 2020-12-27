@@ -36,7 +36,20 @@ logic mpi_datatype "get_mpi_char" = "get_mpi_char";
 logic mpi_datatype "get_mpi_int" =  "get_mpi_int";
 logic mpi_datatype "get_mpi_float" = "get_mpi_float";
 
+logic mpi_op "get_mpi_max" = "get_mpi_max";
+logic mpi_op "get_mpi_min" = "get_mpi_min";
 logic mpi_op "get_mpi_sum" = "get_mpi_sum";
+logic mpi_op "get_mpi_prod" = "get_mpi_prod";
+logic mpi_op "get_mpi_land" = "get_mpi_land";
+logic mpi_op "get_mpi_band" = "get_mpi_band";
+logic mpi_op "get_mpi_lor" = "get_mpi_lor";
+logic mpi_op "get_mpi_bor" = "get_mpi_bor";
+logic mpi_op "get_mpi_lxor" = "get_mpi_lxor";
+logic mpi_op "get_mpi_bxor" = "get_mpi_bxor";
+logic mpi_op "get_mpi_maxloc" = "get_mpi_maxloc";
+logic mpi_op "get_mpi_minloc" = "get_mpi_minloc";
+logic mpi_op "get_mpi_replace" = "get_mpi_replace";
+logic mpi_op "get_mpi_no_op" = "get_mpi_no_op";
 
 logic integer "MPI_COMM_WORLD_rank_ACSL" = "rank";
 
