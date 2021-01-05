@@ -26,7 +26,7 @@ val recv (source:int) (count: int) (tag: int) (datatype: mpi_datatype) (s:mpi_pr
 val broadcast (root: int) (count: int) (datatype: mpi_datatype) (s: mpi_protocol): unit
     writes { s.p }
     requires { 0 <= root /\ root < size }
-    requires { isBroadcast (getFirst s.p) root count datatype}
+    requires { isforBroadcast (getFirst s.p) root count datatype}
     ensures { s.p = getNext (old s).p }
 
 val simpl (s:mpi_protocol): unit
@@ -54,6 +54,7 @@ end
 module MPI_example
 
 use protocol.MPI_Protocol
+use protocol.MPI_prop
 use MPI_Function
 use int.Int
 
@@ -96,6 +97,24 @@ requires {size >= 2}
       toskip p;
       simpl p;
       simpl p;
+    );
+   finalize p
+
+let test13 () : unit
+requires {size >= 2}
+=
+    init p (Seq (Message 0 1 1 1 MPI_int)(Message 0 1 1 1 MPI_int));
+    if rank = 0 then (
+       ssend 1 1 1 MPI_int p;
+       ssend 1 1 1 MPI_int p
+    )
+    else if (rank = 1) then (
+       recv 0 1 1 MPI_int p;
+       recv 0 1 1 MPI_int p
+    )
+    else (
+      toskip p;
+      toskip p;
     );
    finalize p
 
