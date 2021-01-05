@@ -57,7 +57,6 @@ uninstall::
 	$(PRINT_RM) MPI-V share files
 	$(RM) -r $(FRAMAC_DATADIR)/mpi-v
 
-
 MPI_V_DISTRIBUTED_FILES=MPI_V_options.ml MPI_V_options.mli \
 	MPI_V_core.ml MPI_V_core.mli \
 	mpi_utils.ml mpi_utils.mli \

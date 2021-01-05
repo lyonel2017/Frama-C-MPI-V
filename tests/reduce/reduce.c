@@ -9,14 +9,14 @@ int main(argc,argv) int argc; char *argv[];
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int local = 1; 
-    int global = 0; 
+    int local = 1;
+    int global = 0;
 
 
     MPI_Reduce(&local, &global, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        // printf("sum: %i\n", global); 
-    } 
+        // printf("sum: %i\n", global);
+    }
     MPI_Finalize();
 }

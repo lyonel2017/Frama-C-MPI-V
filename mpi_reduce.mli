@@ -18,13 +18,4 @@
 (*  for more details (enclosed in the file LICENSE).                      *)
 (**************************************************************************)
 
-
-val generate_function_type : Cil_types.typ -> Cil_types.typ
-
-val well_typed_call : 'a -> 'b -> Cil_types.exp list -> bool
-
-val key_from_call : 'a -> 'b -> Cil_types.exp list -> Cil_types.typ
-
-val retype_args : 'a -> Cil_types.exp list -> Cil_types.exp list
-
 module M : Instantiate.Instantiator_builder.Generator_sig

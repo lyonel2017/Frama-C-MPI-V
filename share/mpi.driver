@@ -41,7 +41,7 @@ predicate "isSkip" (logic_protocol) = "isSkip";
 predicate "isBroadcast" (logic_protocol) = "isBroadcast";
 predicate "isGather" (logic_protocol) = "isGather";
 predicate "isScatter" (logic_protocol) ="isScatter";
-predicate "isReduce" (logic_protocol) = "isReduce"; 
+predicate "isReduce" (logic_protocol) = "isReduce";
 
 predicate "isMessageforSend" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforSend";
 predicate "isMessageforRecv" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforRecv";

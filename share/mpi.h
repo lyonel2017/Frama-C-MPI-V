@@ -781,25 +781,25 @@ int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		void *recvbuf, int recvcount, MPI_Datatype recvtype,
 		int root, MPI_Comm comm);
 
-/*@ requires in_mpi_section: priority == 1; 
+/*@ requires in_mpi_section: priority == 1;
   @ requires is_comm_world: comm == MPI_COMM_WORLD; //limitation l1
-  @ requires count_not_neg : 0 <= count; 
+  @ requires count_not_neg : 0 <= count;
   @ requires datatype: datatype == MPI_CHAR;
   @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires protocol_for_reduce: isforReduce(getFirst(get_type(protocol)),root,count,c_to_why_mpi_datatype(datatype),c_to_why_mpi_op(op));
   @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
-  @ assigns \result, protocol; 
-  @ behavior type_root: 
-  @   assumes MPI_COMM_WORLD_rank_ACSL == root; 
+  @ assigns \result, protocol;
+  @ behavior type_root:
+  @   assumes MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: ((\block_length((char*)sendbuf) == 0 && \offset((char*)sendbuf) == 0) && count == 0) ||
                           \valid_read(((char*)sendbuf)+(0..count-1));
   @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. count - 1));
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)sendbuf + i);
   @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && count == 0) ||
                           \valid(((char*)recvbuf)+(0..count-1));
-  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)recvbuf + i);
-  @   assigns ((char *)recvbuf)[0..count*MPI_COMM_WORLD_size_ACSL-1];
-  @ behavior type_not_root: 
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)recvbuf + i);
+  @   assigns ((char *)recvbuf)[0..count-1];
+  @ behavior type_not_root:
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: ((\block_length((char*)sendbuf) == 0 && \offset((char*)sendbuf) == 0) && count == 0) ||
                           \valid_read(((char*)sendbuf)+(0..count-1));

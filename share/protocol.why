@@ -106,10 +106,10 @@ predicate isScatter (p: protocol) =
 	  | _ -> false
 	  end
 
-predicate isReduce (p: protocol) = 
-  match p with 
+predicate isReduce (p: protocol) =
+  match p with
     | Reduce _ _ _ _ -> true
-    | _ -> false 
+    | _ -> false
   end
 
 predicate isMessageforSend (p:protocol) (dest: int) (count: int) (tag: int) (datatype: mpi_datatype) =
@@ -149,12 +149,12 @@ predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_dat
 	  | _ -> false
         end
 
-predicate isforReduce (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) (operation: mpi_op)= 
-  match p with 
-    | Reduce r data_size mt op -> root = r /\ data_size = count /\ datatype = mt 
-                               /\ 0 <= r /\ r < size /\ operation = op 
-    | _ -> false 
-  end 
+predicate isforReduce (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) (operation: mpi_op)=
+  match p with
+    | Reduce r data_size mt op -> root = r /\ data_size = count /\ datatype = mt /\ operation = op
+	    	    /\ 0 <= r /\ r < size
+    | _ -> false
+  end
 
 function simpl (p: protocol) : protocol =
 	 match p with
