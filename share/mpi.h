@@ -608,6 +608,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
  */
 
 /*@ requires not_mpi_section: priority == 0;
+  @ requires size_constrain(MPI_COMM_WORLD_size_ACSL) ==> MPI_COMM_WORLD_size_ACSL > 0;
   @ ensures 0 <= MPI_COMM_WORLD_rank_ACSL < MPI_COMM_WORLD_size_ACSL;
   @ ensures size_constrain(MPI_COMM_WORLD_size_ACSL);
   @ ensures set_protocol: set_type(protocol,the_protocol);
