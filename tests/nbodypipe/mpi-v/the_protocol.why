@@ -1,0 +1,13 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.EuclideanDivision
+
+
+let constant the_protocol : protocol = 
+    (Seq (Message 0 1 ((div 1000000 size)*4) 0 MPI_float)
+    (Seq (Foreach 1 (size-2) (fun i -> Message i (i+1) ((div 1000000 size)*4) 0 MPI_float))
+    (Message (size-1) 0 ((div 1000000 size)*4) 0 MPI_float)))
+end
+ 
