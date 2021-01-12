@@ -668,7 +668,6 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   @ requires datatype: datatype == MPI_CHAR; //limitation l2
   @ requires status == MPI_STATUS_IGNORE;
   @ requires protocol_for_recv: isMessageforRecv(getFirst(get_type(protocol)),source,count,tag,c_to_why_mpi_datatype(datatype));
-  @ requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
   @ requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)buf + i);
   @ requires valid_buf: ((\block_length((char*)buf) == 0 && \offset((char*)buf) == 0) && count == 0) || \valid(((char*)buf)+(0..count-1));
   @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
