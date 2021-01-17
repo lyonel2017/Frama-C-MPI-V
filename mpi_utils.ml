@@ -45,7 +45,7 @@ let mpi_to_cil_typ datatype =
   | AddrOf (Var v ,_) when String.equal v.vname "mpi_mpi_int" ->
     Cil.intType
   | AddrOf (Var v ,_) when String.equal v.vname "mpi_mpi_float" ->
-    Cil.floatType 
+    Cil.floatType
   | AddrOf (Var v ,_) when String.equal v.vname "mpi_mpi_char" ->
     Cil.charType
   | _ ->  MPI_V_options.Self.abort "Unsupported MPI datatype %a" Cil_printer.pp_exp datatype
