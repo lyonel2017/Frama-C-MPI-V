@@ -14,10 +14,7 @@
 #define MAXLEN 1000000
 
 
-/*@
-  @ ensures \forall integer i; 0 <= i < len ==> \initialized(v + (0 .. i));
-  @ ensures \initialized(v + (0 .. 1000000-1));
-  @*/
+//@ ensures \valid(v + (0..(len-1)));
 void Scan_vector(float* v, int len);
 
 
@@ -44,20 +41,6 @@ int main(int argc, char** argv)
   float  local_y[MAXLEN];
   float  temp[MAXLEN];
 
-
-  // initialize local_x, local_y s.t. they are valid
-  /*@
-    @ loop invariant 0 <= i <= 1000000;
-    @ loop assigns i, local_x[0..1000000-1], local_y[0..1000000-1];
-    @ loop variant 1000000 - i;
-    @*/
-  for (i = 0; i < MAXLEN; i++) {
-    local_x[i] = 0;
-    local_y[i] = 0;
-  }
-  //@ assert \valid(&local_x[0..1000000-1]);
-
-
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &procs);
@@ -82,7 +65,6 @@ int main(int argc, char** argv)
       //@ ghost unroll();
       //@ ghost assoc();
       Scan_vector(temp, 1000000);
-      //@ assert \initialized((float *)((float *)temp) + (0 .. (int)1000000 - 1));
       MPI_Ssend(temp, 1000000, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
@@ -109,7 +91,6 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
-    //@ assert \valid(local_x + (0 .. 1000000-1));
     MPI_Recv(local_x, 1000000, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost
       j++;
@@ -145,7 +126,6 @@ int main(int argc, char** argv)
         //@ ghost unroll();
         //@ ghost assoc();
         Scan_vector (temp, 1000000);
-        //@ assert \initialized((float *)((float *)temp) + (0 .. (int)1000000 - 1));
         MPI_Ssend(temp, 1000000, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
@@ -171,7 +151,6 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
-    //@ assert \valid(local_y + (0 .. 1000000-1));
     MPI_Recv(local_y, 1000000, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost
       j++;

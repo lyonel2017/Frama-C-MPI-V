@@ -5,8 +5,8 @@ use int.Int
 use int.EuclideanDivision
 
 
-let constant the_protocol : protocol = 
-  (Seq (Broadcast 0 1 MPI_int) 
+let constant the_protocol : protocol =
+  (Seq (Broadcast 0 1 MPI_int)
   (Seq (Foreach 1 (size-1) (fun i -> Message 0 i 1000000 0 MPI_float))
   (Seq (Foreach 1 (size-1) (fun i -> Message 0 i 1000000 0 MPI_float))
   (Seq (Allreduce 1 MPI_float MPI_sum)
