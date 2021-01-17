@@ -518,7 +518,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @
   @ logic mpi_datatype get_mpi_char;
   @ logic mpi_datatype get_mpi_int;
-  @ logic mpi_datatype get_mpi_float; 
+  @ logic mpi_datatype get_mpi_float;
   @
   @ type mpi_op;
   @
@@ -567,7 +567,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ logic mpi_datatype c_to_why_mpi_datatype (MPI_Datatype datatype);
   @ axiom mpi_int : c_to_why_mpi_datatype(MPI_INT) == get_mpi_int;
   @ axiom mpi_char : c_to_why_mpi_datatype(MPI_CHAR) == get_mpi_char;
-  @ axiom mpi_float: c_to_why_mpi_datatype(MPI_FLOAT) == get_mpi_float; 
+  @ axiom mpi_float: c_to_why_mpi_datatype(MPI_FLOAT) == get_mpi_float;
 }*/
 
 /*@ axiomatic MPI_op {

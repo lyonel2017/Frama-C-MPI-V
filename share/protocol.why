@@ -26,7 +26,7 @@ use frama_c_wp.vlist.Vlist
 type mpi_datatype =
 | MPI_char
 | MPI_int
-| MPI_float 
+| MPI_float
 
 type mpi_op =
 | MPI_sum
