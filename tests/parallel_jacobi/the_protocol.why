@@ -5,8 +5,8 @@ use int.Int
 use int.EuclideanDivision
 
 
-let constant the_protocol : protocol = 
-  (Seq (Scatter 0 (div (10000*10000) size) MPI_float)
+let constant the_protocol : protocol =
+  (Seq (Scatter 0 ((div 10000 size) * 10000) MPI_float)
   (Seq (Scatter 0 (div 10000 size) MPI_float)
   (Seq (Allgather (div 10000 size) MPI_float)
   (Seq (While (1000000) (Allgather (div 10000 size) MPI_float))
