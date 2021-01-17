@@ -849,8 +849,8 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
   @ assigns \result,protocol;
   // no root specific behavior
-  // compared to gather all processes are root 
-  @ behavior all_process: 
+  // compared to gather all processes are root
+  @ behavior all_process:
   @   requires valid_buf: ((\block_length((char*)sendbuf) == 0 && \offset((char*)sendbuf) == 0) && sendcount == 0) ||
                           \valid_read(((char*)sendbuf)+(0..sendcount-1));
   @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. sendcount - 1));
@@ -860,8 +860,8 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < recvcount*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)recvbuf + i);
   @   assigns ((char *)recvbuf)[0..recvcount*MPI_COMM_WORLD_size_ACSL-1];
 */
-int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                  void * recvbuf, int recvcount, MPI_Datatype recvtype, 
+int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void * recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm);
 
 /*@ requires in_mpi_section: priority == 1;

@@ -57,7 +57,7 @@ predicate "isforIntBroadcast" (logic_protocol,integer,integer,list) = "isforIntB
 predicate "isforIntGhostBroadcast" (logic_protocol,integer,integer,list) = "isforIntGhostBroadcast";
 
 predicate "isforGather" (logic_protocol,integer,integer,mpi_datatype) = "isforGather";
-predicate "isforAllgather" (logic_protocol,integer,mpi_datatype) = "isforAllgather"; 
+predicate "isforAllgather" (logic_protocol,integer,mpi_datatype) = "isforAllgather";
 predicate "isforScatter" (logic_protocol,integer,integer,mpi_datatype) = "isforScatter";
 predicate "isforReduce" (logic_protocol,integer,integer,mpi_datatype,mpi_op) = "isforReduce";
 
