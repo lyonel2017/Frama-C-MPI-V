@@ -94,7 +94,7 @@ val constant rank : int
 
 let constant get_mpi_char : mpi_datatype = MPI_char
 let constant get_mpi_int : mpi_datatype = MPI_int
-let constant get_mpi_float: mpi_datatype = MPI_float 
+let constant get_mpi_float: mpi_datatype = MPI_float
 
 let constant get_mpi_max : mpi_op = MPI_max
 let constant get_mpi_min : mpi_op = MPI_min

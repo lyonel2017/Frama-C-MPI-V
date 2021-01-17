@@ -80,7 +80,7 @@ let key_from_call _ret _fct args =
 let retype_args _ args =
   match args with
   | [ sendbuf ; recvbuf ; count ; datatype ; op ; comm ] ->
-    [ Cil.stripCasts sendbuf ; Cil.stripCasts recvbuf; count ; 
+    [ Cil.stripCasts sendbuf ; Cil.stripCasts recvbuf; count ;
       datatype ; op ; comm ]
   | _ -> assert false
 
