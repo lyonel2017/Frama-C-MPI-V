@@ -4,7 +4,7 @@
 
 #define MAX_LENGTH 1000
 
-// without fixed amount of procs needs about 100 seconds to be proven 
+// without fixed amount of procs needs about 100 seconds to be proven
 int main(int argc, char **argv){
   int my_rank = 0, num_procs = 0;
   int data[MAX_LENGTH];
@@ -13,9 +13,9 @@ int main(int argc, char **argv){
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 
-  int offset = MAX_LENGTH / num_procs; 
+  int offset = MAX_LENGTH / num_procs;
   int length = num_procs * offset;
-  
+
   if (my_rank == 0) {
     // initialize array, size is fixed to 1000 elements
     // printf("array: ");
@@ -36,7 +36,7 @@ int main(int argc, char **argv){
       @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),i));
       @ loop invariant getNext(get_type(protocol)) ==
       @   getNext(\at(get_type(protocol),LoopEntry));
-      @ // loop invariant \forall integer j; 0 <= j < i ==> MAX_LENGTH >= (j + 1) * offset - 1; 
+      @ // loop invariant \forall integer j; 0 <= j < i ==> MAX_LENGTH >= (j + 1) * offset - 1;
       @ loop assigns protocol, i;
       @ loop variant num_procs - i;
       @ */
@@ -48,7 +48,7 @@ int main(int argc, char **argv){
       MPI_Ssend(&data[i*offset], offset, MPI_INT, i, 1, MPI_COMM_WORLD);
       i++;
     }
-    //@ ghost toskip(); 
+    //@ ghost toskip();
 
     // sum up the part of array belonging to process 0
     int sum = 0;
@@ -93,12 +93,12 @@ int main(int argc, char **argv){
     l1:;
     int j = 1;
     /@ loop invariant 1 <= j <= my_rank;
-     @ loop invariant getFirst(get_type(protocol)) == 
+     @ loop invariant getFirst(get_type(protocol)) ==
      @   getNext(split(getFirst(\at(get_type(protocol),l1)),j));
-     @ loop invariant getNext(get_type(protocol)) == 
+     @ loop invariant getNext(get_type(protocol)) ==
      @   getNext(\at(get_type(protocol),l1));
-     @ loop assigns protocol, j; 
-     @ loop variant my_rank - j; 
+     @ loop assigns protocol, j;
+     @ loop variant my_rank - j;
      @/
     while (j < my_rank) {
       unroll();
@@ -106,19 +106,19 @@ int main(int argc, char **argv){
       toskip();
       j++;
     }
-    unroll(); 
+    unroll();
     assoc();
     */
     MPI_Recv(data, offset, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    /*@ ghost 
-      j++; 
+    /*@ ghost
+      j++;
       /@ loop invariant my_rank+1 <= j <= num_procs;
-       @ loop invariant getFirst(get_type(protocol)) == 
+       @ loop invariant getFirst(get_type(protocol)) ==
        @   getNext(split(getFirst(\at(get_type(protocol),l1)),j));
-       @ loop invariant getNext(get_type(protocol)) == 
+       @ loop invariant getNext(get_type(protocol)) ==
        @   getNext(\at(get_type(protocol),l1));
-       @ loop assigns protocol, j; 
-       @ loop variant num_procs - j; 
+       @ loop assigns protocol, j;
+       @ loop variant num_procs - j;
        @/
       while (j < num_procs) {
         unroll();
@@ -126,7 +126,7 @@ int main(int argc, char **argv){
         toskip();
         j++;
       }
-      toskip(); 
+      toskip();
     */
 
     /*@
@@ -142,12 +142,12 @@ int main(int argc, char **argv){
     l2:;
     j = 1;
     /@ loop invariant 1 <= j <= my_rank;
-     @ loop invariant getFirst(get_type(protocol)) == 
+     @ loop invariant getFirst(get_type(protocol)) ==
      @   getNext(split(getFirst(\at(get_type(protocol),l2)),j));
-     @ loop invariant getNext(get_type(protocol)) == 
+     @ loop invariant getNext(get_type(protocol)) ==
      @   getNext(\at(get_type(protocol),l2));
-     @ loop assigns protocol, j; 
-     @ loop variant my_rank - j; 
+     @ loop assigns protocol, j;
+     @ loop variant my_rank - j;
      @/
     while (j < my_rank) {
       unroll();
@@ -155,22 +155,22 @@ int main(int argc, char **argv){
       toskip();
       j++;
     }
-    unroll(); 
+    unroll();
     assoc();
     */
 
     // send total sum of received elements back to process 0 by mpi_send
     MPI_Ssend(&sum, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
 
-    /*@ ghost 
-      j++; 
+    /*@ ghost
+      j++;
       /@ loop invariant my_rank+1 <= j <= num_procs;
-       @ loop invariant getFirst(get_type(protocol)) == 
+       @ loop invariant getFirst(get_type(protocol)) ==
        @   getNext(split(getFirst(\at(get_type(protocol),l2)),j));
-       @ loop invariant getNext(get_type(protocol)) == 
+       @ loop invariant getNext(get_type(protocol)) ==
        @   getNext(\at(get_type(protocol),l2));
-       @ loop assigns protocol, j; 
-       @ loop variant num_procs - j; 
+       @ loop assigns protocol, j;
+       @ loop variant num_procs - j;
        @/
       while (j < num_procs) {
         unroll();
@@ -178,10 +178,10 @@ int main(int argc, char **argv){
         toskip();
         j++;
       }
-      toskip(); 
+      toskip();
     */
   }
-  
+
   MPI_Finalize();
   //@ assert \false;
   return 0;

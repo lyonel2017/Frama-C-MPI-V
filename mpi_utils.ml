@@ -161,7 +161,7 @@ class visitor_beh t formals = object(self)
       | [] -> true
       | h :: [] ->
         let b1 = String.equal h "danglingness_buf" in
-        let b2 = String.equal h "initialization_buf" in 
+        let b2 = String.equal h "initialization_buf" in
         not (b1 or b2)
       | _ -> true
     in
