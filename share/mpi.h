@@ -522,8 +522,11 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @
   @ type mpi_op;
   @
+<<<<<<< HEAD
   @ logic mpi_op get_mpi_max;
   @ logic mpi_op get_mpi_min;
+=======
+>>>>>>> Removes trailing whitespaces
   @ logic mpi_op get_mpi_sum;
   @ logic mpi_op get_mpi_prod;
   @ logic mpi_op get_mpi_land;
