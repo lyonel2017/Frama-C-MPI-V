@@ -8,7 +8,8 @@ let constant the_protocol : protocol =
     (Seq (Broadcast 0 1 MPI_int)
     (Seq (Broadcast 0 1 MPI_int)
     (Seq (Broadcast 0 1 MPI_int)
-         (Foreach 1 (size-1) (fun i -> Message 0 i (div 10000 size) 0 MPI_float)))))
+    (Seq (Foreach 1 (size-1) (fun i -> Message 0 i (div 10000 size) 0 MPI_float))
+         (Foreach 1 (size-1) (fun i -> Message i (i-1) 1 0 MPI_float))))))
 
 
 
