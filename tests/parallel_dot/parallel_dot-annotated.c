@@ -13,19 +13,19 @@
 
 #define MAXLEN 1000000
 
-
-//@ ensures \valid(v + (0..(len-1)));
+/*@ ensures \valid(v + (0..(len-1)));
+  @ ensures protocol == \old(protocol);
+  @*/
 void Scan_vector(float* v, int len);
 
+/*@ ensures protocol == \old(protocol);
+  @*/
+float Serial_dot(float *x, float *y, int n);
 
-float  Serial_dot(float *x, float *y, int n);
-
-/*@
-  @ ensures \result == MAXLEN && \result % procs == 0;
+/*@ ensures \result == MAXLEN && \result % procs == 0;
+  @ ensures protocol == \old(protocol);
   @*/
 int getProblemSize(int procs);
-
-
 
 /**
  * CHANGES:
@@ -62,9 +62,9 @@ int main(int argc, char** argv)
       @ loop variant procs - i;
       @*/
     for (i = 1; i < procs; i++) {
+      Scan_vector(temp, 1000000);
       //@ ghost unroll();
       //@ ghost assoc();
-      Scan_vector(temp, 1000000);
       MPI_Ssend(temp, 1000000, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
@@ -123,9 +123,9 @@ int main(int argc, char** argv)
       @ loop variant procs - i;
       @*/
     for(i = 1; i < procs; i++) {
+        Scan_vector (temp, 1000000);
         //@ ghost unroll();
         //@ ghost assoc();
-        Scan_vector (temp, 1000000);
         MPI_Ssend(temp, 1000000, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
@@ -246,10 +246,3 @@ int main(int argc, char** argv)
   //@ assert \false;
   return 0;
 }
-
-
-
-
-
-
-
