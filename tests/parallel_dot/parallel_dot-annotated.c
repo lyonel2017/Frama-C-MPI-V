@@ -13,19 +13,29 @@
 
 #define MAXLEN 1000000
 
-/*@ ensures \valid(v + (0..(len-1)));
-  @ ensures protocol == \old(protocol);
+/*@ requires len > 0;
+  @ requires \valid(v + (0..(len-1)));
+  @ assigns v[0 .. len-1];
   @*/
 void Scan_vector(float* v, int len);
 
-/*@ ensures protocol == \old(protocol);
-  @*/
+/*@ requires \valid(x + (0..(n-1)));
+  @ requires \valid(y + (0..(n-1)));
+  @ assigns \result;
+*/
 float Serial_dot(float *x, float *y, int n);
 
 /*@ ensures \result == MAXLEN && \result % procs == 0;
   @ ensures protocol == \old(protocol);
   @*/
 int getProblemSize(int procs);
+
+/*@ axiomatic MPI_aux_driver{
+  @ logic logic_protocol protocol_1;
+  @ logic logic_protocol protocol_2;
+  @ logic logic_protocol protocol_3;
+  @ logic logic_protocol protocol_4;
+}*/
 
 /**
  * CHANGES:
@@ -51,6 +61,9 @@ int main(int argc, char** argv)
 
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+  /*@ requires get_type(protocol) == protocol_1;
+    @ assigns protocol, temp[0.. MAXLEN - 1], local_x[0.. MAXLEN - 1],i;
+    @ ensures get_type(protocol) == protocol_2;*/
   if (rank == 0) {
     Scan_vector (local_x, n);
     /*@ loop invariant 1 <= i <= procs;
@@ -62,10 +75,10 @@ int main(int argc, char** argv)
       @ loop variant procs - i;
       @*/
     for (i = 1; i < procs; i++) {
-      Scan_vector(temp, 1000000);
+      Scan_vector(temp, MAXLEN);
       //@ ghost unroll();
       //@ ghost assoc();
-      MPI_Ssend(temp, 1000000, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+      MPI_Ssend(temp, MAXLEN, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
   }
@@ -91,7 +104,7 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
-    MPI_Recv(local_x, 1000000, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(local_x, MAXLEN, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost
       j++;
       /@ loop invariant rank + 1 <= j <= procs;
@@ -112,6 +125,9 @@ int main(int argc, char** argv)
       @*/
   }
 
+  /*@ requires get_type(protocol) == protocol_2;
+    @ assigns protocol, temp[0.. MAXLEN - 1], local_y[0.. MAXLEN - 1],i;
+    @ ensures get_type(protocol) == protocol_3;*/
   if (rank == 0) {
     Scan_vector (local_y, n);
     /*@ loop invariant 1 <= i <= procs;
@@ -181,6 +197,10 @@ int main(int argc, char** argv)
   // printf("Result: %f\n", dot);
 
   // Print local at each process
+
+  /*@ requires get_type(protocol) == protocol_4;
+    @ assigns remote_dot,i,protocol;
+    @ ensures isSkip(get_type(protocol));*/
   if (rank == 0) {
     /*@ loop invariant 1 <= i <= procs;
       @ loop invariant getFirst(get_type(protocol)) ==
@@ -221,6 +241,7 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
+
     MPI_Ssend(&local_dot, 1, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
     /*@ ghost
       j++;
@@ -243,6 +264,5 @@ int main(int argc, char** argv)
   }
 
   MPI_Finalize();
-  //@ assert \false;
   return 0;
 }
