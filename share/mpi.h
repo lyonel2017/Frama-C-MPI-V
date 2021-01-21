@@ -686,21 +686,21 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype,
   @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires datatype: datatype == MPI_CHAR;
   @ requires protocol_for_bcast: isforBroadcast(getFirst(get_type(protocol)),root,count,c_to_why_mpi_datatype(datatype));
-  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
-  @ assigns \result,protocol;
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: ((\block_length((char*)buf) == 0 && \offset((char*)buf) == 0) && count == 0) ||
                           \valid(((char*)buf)+(0..count-1));
   @   requires initialization_buf: \initialized((char *)buf + (0 .. count - 1));
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)buf + i);
-  @   assigns ((char *)buf)[0..count-1];
+  @   assigns ((char *)buf)[0..count-1],\result,protocol;
+  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
   @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: ((\block_length((char*)buf) == 0 && \offset((char*)buf) == 0) && count == 0) ||
                            \valid_read(((char*)buf)+(0..count-1));
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)buf + i);
-  @   assigns ((char *)buf)[0..count-1];
+  @   assigns ((char *)buf)[0..count-1],\result,protocol;
+  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
 */
 int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
                              int root, MPI_Comm comm);
@@ -714,8 +714,6 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
   @ requires root_in_worlf: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
   @ requires protocol_for_gather: isforGather(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
-  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
-  @ assigns \result,protocol;
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: ((\block_length((char*)sendbuf) == 0 && \offset((char*)sendbuf) == 0) && sendcount == 0) ||
@@ -725,13 +723,16 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
   @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && recvcount == 0) ||
                           \valid(((char*)recvbuf)+(0..recvcount*MPI_COMM_WORLD_size_ACSL-1));
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < recvcount*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)recvbuf + i);
-  @   assigns ((char *)recvbuf)[0..recvcount*MPI_COMM_WORLD_size_ACSL-1];
+  @   assigns ((char *)recvbuf)[0..recvcount*MPI_COMM_WORLD_size_ACSL-1],\result,protocol;
+  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
   @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: ((\block_length((char*)sendbuf) == 0 && \offset((char*)sendbuf) == 0) && sendcount == 0) ||
                           \valid_read(((char*)sendbuf)+(0..sendcount-1));
   @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. sendcount - 1));
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < sendcount ⇒ ¬\dangling((char*)sendbuf + i);
+  @   assigns \result,protocol;
+  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
 */
 int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	       void *recvbuf, int recvcount, MPI_Datatype recvtype,
@@ -746,8 +747,6 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @ requires root_in_worlf: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
   @ requires protoocl_for_scatter: isforScatter(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
-  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
-  @ assigns \result,protocol;
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && recvcount == 0) ||
@@ -757,13 +756,15 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                           \valid_read(((char*)sendbuf)+(0..sendcount*MPI_COMM_WORLD_size_ACSL-1));
   @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. sendcount*MPI_COMM_WORLD_size_ACSL - 1));
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < sendcount*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)sendbuf + i);
-  @   assigns ((char *)recvbuf)[0..recvcount-1];
+  @   assigns ((char *)recvbuf)[0..recvcount-1],\result,protocol;
+  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
  @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && recvcount == 0) ||
                           \valid(((char*)recvbuf)+(0..recvcount-1));
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < recvcount ⇒ ¬\dangling((char*)recvbuf + i);
-  @   assigns ((char *)recvbuf)[0..recvcount-1];
+  @   assigns ((char *)recvbuf)[0..recvcount-1],\result,protocol;
+  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
 */
 int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		void *recvbuf, int recvcount, MPI_Datatype recvtype,

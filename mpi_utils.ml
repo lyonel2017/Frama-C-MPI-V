@@ -86,7 +86,7 @@ class visitor_pre t = object(_)
 
   method! vterm_node _ =
     let aux node =
-    match node with
+      match node with
       | TAddrOf((TVar _, TNoOffset)) ->
         let v = Globals.Vars.find_from_astinfo (cil_typ_to_mpi_string t) VGlobal in
         let lv = Cil.cvar_to_lvar v in
@@ -99,29 +99,60 @@ end
 class visitor_convert t = object(_)
   inherit Visitor.frama_c_copy (Project.current())
 
-  method! vterm_node _ =
-    let aux node =
-    match node with
-      | TCastE (TPtr(typ,[]),terl) when Cil.isCharType typ -> TCastE(ptr_of t,terl)
-      | _ -> node
+  method! vterm _ =
+    let f term =
+      match term.term_node with
+      | TCastE (TPtr(typ,[]),terl) when Cil.isCharType typ ->
+        {term with term_type = (Ctype (ptr_of t));term_node = TCastE(ptr_of t,terl)}
+
+      | TBinOp (PlusPI, term1, term2) ->
+        begin
+          match term1.term_node, term2.term_node, term.term_type with
+          | TCastE (TPtr(_,[]), _) , Trange _, Ltype(info,_) ->
+            {term with term_type = Ltype(info,[term1.term_type])}
+          | _ -> term
+        end
+
+      | _ ->  term
+
     in
-    Cil.DoChildrenPost aux
+    Cil.DoChildrenPost f
 end
+
+class visitor_convert_ass t = object(_)
+  inherit Visitor.frama_c_copy (Project.current())
+
+  method! vterm _ =
+    let f term =
+      match term.term_node with
+      | TCastE (TPtr(typ,[]),terl) when Cil.isCharType typ ->
+        {term with term_type = (Ctype (ptr_of t));term_node = TCastE(ptr_of t,terl)}
+
+      | TBinOp (IndexPI, term1, term2) ->
+        begin
+          match term1.term_node, term2.term_node, term.term_type with
+          | TCastE (TPtr(_,[]), _) , Trange _, Ltype(info,_) ->
+            {term with term_type = Ltype(info,[term1.term_type])}
+          | _ -> term
+        end
+
+      | TLval (TMem term1,_) ->
+        begin
+        match term1.term_node, term.term_type, term1.term_type with
+          | TBinOp _ , Ltype(info,_), Ltype(_,[Ctype(TPtr(t, []))])->
+            {term with term_type = Ltype(info,[Ctype t])}
+          | _ -> term
+      end
+      | _ -> term
+    in
+    Cil.DoChildrenPost f
+end
+
 
 class visitor_beh t formals = object(self)
   inherit Visitor.frama_c_refresh (Project.current ())
 
   val type_name = string_of_typ t
-
-  method! vterm _ =
-    let f term =
-      match term.term_node with
-      | TLval(TVar lv, _) when
-          not(Cil_datatype.Logic_type.equal lv.lv_type term.term_type) ->
-        {term with term_type = lv.lv_type}
-      | _ -> term
-    in
-    Cil.DoChildrenPost f
 
   method private filter_requires (lr: identified_predicate list) =
     let aux r =
@@ -137,17 +168,17 @@ class visitor_beh t formals = object(self)
 
   method private review_requires r =
     let name = r.ip_content.tp_statement.pred_name in
-      match name with
-      | [] -> r
-      | h :: [] when String.equal h "danglingness_buf" ->
-        Visitor.visitFramacIdPredicate (new visitor_convert t) r
-      | h :: [] when String.equal h "initialization_buf" ->
-        Visitor.visitFramacIdPredicate (new visitor_convert t) r
-      | h :: [] when String.equal h "valid_buf" ->
-        Visitor.visitFramacIdPredicate (new visitor_convert t) r
-      | h :: [] when String.equal h "datatype" ->
-        Visitor.visitFramacIdPredicate (new visitor_pre t) r
-      | _ -> r
+    match name with
+    | [] -> r
+    | h :: [] when String.equal h "danglingness_buf" ->
+      Visitor.visitFramacIdPredicate (new visitor_convert t) r
+    | h :: [] when String.equal h "initialization_buf" ->
+      Visitor.visitFramacIdPredicate (new visitor_convert t) r
+    | h :: [] when String.equal h "valid_buf" ->
+      Visitor.visitFramacIdPredicate (new visitor_convert t) r
+    | h :: [] when String.equal h "datatype" ->
+      Visitor.visitFramacIdPredicate (new visitor_pre t) r
+    | _ -> r
 
   method private require_processing (l: identified_predicate list) =
     let l = List.map self#review_requires l in
@@ -157,18 +188,34 @@ class visitor_beh t formals = object(self)
   method private assigns_processing a =
     let aux f =
       let term,deps = f in
-      let term = Visitor.visitFramacIdTerm (new visitor_convert t) term in
+      let term = Visitor.visitFramacIdTerm (new visitor_convert_ass t) term in
       (term,deps)
     in
     match a with
     | WritesAny -> a
     | Writes l -> Writes(List.map aux l)
 
+  method! vterm _ =
+    let f term =
+      match term.term_node with
+      | TLval(TVar lv, offset)  ->
+        begin
+          let f vi = String.equal lv.lv_name vi.vname in
+          match List.find f formals with
+          | vv ->
+            let lv = Cil.cvar_to_lvar vv in
+            {term with term_type = lv.lv_type; term_node = TLval(TVar lv, offset)}
+          | exception _ -> term
+        end
+      | _ -> term
+    in
+    Cil.DoChildrenPost f
+
   method! vspec _ =
     let aux b =
       let b_requires = self#require_processing b.b_requires in
       let b_assigns = self#assigns_processing b.b_assigns in
-        {b with  b_requires; b_assigns}
+      {b with  b_requires; b_assigns}
     in
     let f fspec =
       let spec_behavior = List.map aux fspec.spec_behavior in
@@ -176,11 +223,4 @@ class visitor_beh t formals = object(self)
     in
     Cil.DoChildrenPost f
 
-  method! vlogic_var_use l =
-    let f vi = String.equal l.lv_name vi.vname in
-    match List.find f formals with
-    | vv ->
-      let l = Cil.cvar_to_lvar vv in
-      Cil.ChangeTo l
-    | exception _ -> Cil.JustCopy
 end
