@@ -4,7 +4,23 @@ use protocol.MPI_Protocol
 use int.Int
 use int.EuclideanDivision
 
+val constant protocol_4 : protocol
+val constant protocol_3 : protocol
+val constant protocol_2 : protocol
+val constant protocol_1 : protocol
 
+
+axiom p_4 : protocol_4 = (Gather 0 (div 10000 size) MPI_float)
+axiom p_3 : protocol_3 = (Seq (While (1000000) (Allgather (div 10000 size) MPI_float)) protocol_4)
+axiom p_2 : protocol_2 = (Seq (Allgather (div 10000 size) MPI_float) protocol_3)
+axiom p_1 : protocol_1 = (Seq (Scatter 0 (div 10000 size) MPI_float) protocol_2)
+let constant the_protocol : protocol = (Seq (Scatter 0 ((div 10000 size) * 10000) MPI_float) protocol_1)
+
+end
+
+
+
+(*
 let constant the_protocol : protocol =
   (Seq (Scatter 0 ((div 10000 size) * 10000) MPI_float)
   (Seq (Scatter 0 (div 10000 size) MPI_float)
@@ -12,4 +28,4 @@ let constant the_protocol : protocol =
   (Seq (While (1000000) (Allgather (div 10000 size) MPI_float))
   (* (Seq (Allgather (div 10000 size) MPI_float) *)
        (Gather 0 (div 10000 size) MPI_float)))))
-end
+end *)

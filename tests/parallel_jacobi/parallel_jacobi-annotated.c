@@ -36,6 +36,15 @@ void printVector(float* vector, int dim);
   @*/
 void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_old, int n, int p);
 
+
+/*@ axiomatic MPI_aux_driver{
+  @ logic logic_protocol protocol_1;
+  @ logic logic_protocol protocol_2;
+  @ logic logic_protocol protocol_3;
+  @ logic logic_protocol protocol_4;
+}*/
+
+
 /**
  * requires timeout = 15
  * tested with wp-fix
@@ -74,7 +83,15 @@ int main( int argc, char** argv){
     }
 
     MPI_Scatter(A_initial, n_by_p * n, MPI_FLOAT, A_local, n_by_p * n , MPI_FLOAT, 0, MPI_COMM_WORLD);
+    /*@ requires get_type(protocol) == protocol_1;
+      @ assigns protocol, b_initial[0..n_by_p-1];
+      @ ensures get_type(protocol) == protocol_2;
+      @*/
     MPI_Scatter(b_initial, n_by_p, MPI_FLOAT, x_local, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    /*@ requires get_type(protocol) == protocol_2;
+      @ assigns protocol, b_local[0..n_by_p*p-1];
+      @ ensures get_type(protocol) == protocol_3;
+      @*/
     MPI_Allgather(b_local, n_by_p, MPI_FLOAT, x_temp1, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
 
     x_new = x_temp1;
@@ -110,6 +127,11 @@ int main( int argc, char** argv){
       x_new = tmp;
     }
     //@ ghost toskip();
+
+    /*@ requires get_type(protocol) == protocol_4;
+      @ assigns protocol;
+      @ ensures isSkip(get_type(protocol));
+      @*/
     MPI_Gather(x_new, n_by_p, MPI_FLOAT, x_final, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // REMOVED: no I/O
@@ -118,5 +140,6 @@ int main( int argc, char** argv){
     // }
 
     MPI_Finalize();
-    //@ assert \false;
+    // uncomment for sanity check
+    // // @ assert \false;
 }
