@@ -46,7 +46,7 @@ int getProblemSize(int procs);
  **/
 int main(int argc, char** argv)
 {
-  int    procs = 0, rank = 0, n = 0, i = 0;
+  int    procs = 0, rank = 0, i = 0;
   float  dot = 0, local_dot = 0, remote_dot = 0;
   float  local_x[MAXLEN];
   float  local_y[MAXLEN];
@@ -56,30 +56,25 @@ int main(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &procs);
 
-  if (rank == 0) {
-    n = getProblemSize(procs);
-  }
-
-  MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
   /*@ requires get_type(protocol) == protocol_1;
     @ assigns protocol, temp[0.. MAXLEN - 1], local_x[0.. MAXLEN - 1],i;
     @ ensures get_type(protocol) == protocol_2;*/
   if (rank == 0) {
-    Scan_vector (local_x, n);
+    Scan_vector (local_x, MAXLEN);
     /*@ loop invariant 1 <= i <= procs;
-      @ loop invariant getFirst(get_type(protocol)) ==
+      @ loop invariant procs > 1 ==> getFirst(get_type(protocol)) ==
       @   getNext(split(getFirst(\at(get_type(protocol),LoopEntry)),i));
+      @ loop invariant procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
       @ loop invariant getNext(get_type(protocol)) ==
       @   getNext(\at(get_type(protocol),LoopEntry));
       @ loop assigns protocol, i, temp[0..1000000-1];
       @ loop variant procs - i;
       @*/
     for (i = 1; i < procs; i++) {
-      Scan_vector(temp, n);
+      Scan_vector(temp, MAXLEN);
       //@ ghost unroll();
       //@ ghost assoc();
-      MPI_Ssend(temp, n, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+      MPI_Ssend(temp, MAXLEN, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
   }
@@ -105,7 +100,7 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
-    MPI_Recv(local_x, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(local_x, MAXLEN, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost
       j++;
       /@ loop invariant rank + 1 <= j <= procs;
@@ -130,20 +125,21 @@ int main(int argc, char** argv)
     @ assigns protocol, temp[0.. MAXLEN - 1], local_y[0.. MAXLEN - 1],i;
     @ ensures get_type(protocol) == protocol_3;*/
   if (rank == 0) {
-    Scan_vector (local_y, n);
+    Scan_vector (local_y, MAXLEN);
     /*@ loop invariant 1 <= i <= procs;
-      @ loop invariant getFirst(get_type(protocol)) ==
+      @ loop invariant procs > 1 ==> getFirst(get_type(protocol)) ==
       @   getNext(split(getFirst(\at(get_type(protocol),LoopEntry)),i));
+      @ loop invariant procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
       @ loop invariant getNext(get_type(protocol)) ==
       @   getNext(\at(get_type(protocol),LoopEntry));
       @ loop assigns protocol, i, temp[0..1000000-1];
       @ loop variant procs - i;
       @*/
     for(i = 1; i < procs; i++) {
-        Scan_vector (temp, n);
+        Scan_vector (temp, MAXLEN);
         //@ ghost unroll();
         //@ ghost assoc();
-        MPI_Ssend(temp, n, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+        MPI_Ssend(temp, MAXLEN, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
   }
@@ -168,7 +164,7 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
-    MPI_Recv(local_y, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(local_y, MAXLEN, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost
       j++;
       /@ loop invariant rank + 1 <= j <= procs;
@@ -190,7 +186,7 @@ int main(int argc, char** argv)
   }
 
   // Local computation followed by reduction
-  local_dot = Serial_dot(local_x, local_y, n);
+  local_dot = Serial_dot(local_x, local_y, MAXLEN);
   MPI_Allreduce(&local_dot, &dot, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 
   // REMOVED: no I/O
@@ -204,8 +200,9 @@ int main(int argc, char** argv)
     @ ensures isSkip(get_type(protocol));*/
   if (rank == 0) {
     /*@ loop invariant 1 <= i <= procs;
-      @ loop invariant getFirst(get_type(protocol)) ==
+      @ loop invariant procs > 1 ==> getFirst(get_type(protocol)) ==
       @   getNext(split(getFirst(\at(get_type(protocol),LoopEntry)),i));
+      @ loop invariant procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
       @ loop invariant getNext(get_type(protocol)) ==
       @   getNext(\at(get_type(protocol),LoopEntry));
       @ loop assigns protocol, i, remote_dot;

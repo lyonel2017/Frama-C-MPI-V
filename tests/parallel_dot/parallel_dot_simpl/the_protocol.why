@@ -1,0 +1,22 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.EuclideanDivision
+
+val constant protocol_4 : protocol
+val constant protocol_3 : protocol
+val constant protocol_2 : protocol
+val constant protocol_1 : protocol
+
+axiom p_4 : protocol_4 =  Foreach 1 (size-1) (fun i -> Message i 0 1 0 MPI_float)
+
+axiom p_3 : protocol_3 = Seq (Allreduce 1 MPI_float MPI_sum) protocol_4
+
+axiom p_2 : protocol_2 = Seq (Foreach 1 (size-1) (fun i -> Message 0 i 1000000 0 MPI_float)) protocol_3
+
+axiom p_1 : protocol_1 = Seq (Foreach 1 (size-1) (fun i -> Message 0 i 1000000 0 MPI_float)) protocol_2
+
+let constant the_protocol = protocol_1
+
+end
