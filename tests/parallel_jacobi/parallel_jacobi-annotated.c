@@ -21,19 +21,20 @@
 
 // External functions
 
-//@ ensures \initialized(matrix + (0..dim*dim-1));
+/*@ ensures \valid(matrix + (0..dim-1));
+  @ assigns matrix[0..dim-1];*/
 void readMatrix(float* matrix, int dim);
 
-/*@ ensures \initialized(vector + (0..dim-1));
-  @ ensures \valid(vector + (0..dim-1));
-  @*/
+/*@ ensures \valid(vector + (0..dim-1));
+  @ assigns vector[0..dim-1];*/
 void readVector(float* vector, int dim);
+
+/*@ requires \valid(vector + (0..dim-1));
+  @ assigns \nothing;*/
 void printVector(float* vector, int dim);
 
-/*@ assigns x_local[0..n/p-1];
-  @ ensures \initialized(x_local + (0..n/p-1));
-  @ ensures \valid(x_local + (0..n/p-1));
-  @*/
+/*@ ensures \valid(x_local + (0..n/p-1));
+  @ assigns x_local[0..n/p-1];*/
 void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_old, int n, int p);
 
 
@@ -45,10 +46,6 @@ void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_o
 }*/
 
 
-/**
- * requires timeout = 15
- * tested with wp-fix
- **/
 int main( int argc, char** argv){
     // CHANGED: MAX_DIM s.t. MAX_DIM * MAX_DIM can be int
     int        p;
@@ -81,17 +78,19 @@ int main( int argc, char** argv){
       readMatrix(A_initial, n);
       readVector(b_initial, n);
     }
-
+    /*@ requires get_type(protocol) == the_protocol;
+      @ assigns protocol, A_local[0..n_by_p*n-1];
+      @ ensures get_type(protocol) == protocol_1;*/
     MPI_Scatter(A_initial, n_by_p * n, MPI_FLOAT, A_local, n_by_p * n , MPI_FLOAT, 0, MPI_COMM_WORLD);
+
     /*@ requires get_type(protocol) == protocol_1;
-      @ assigns protocol, b_initial[0..n_by_p-1];
-      @ ensures get_type(protocol) == protocol_2;
-      @*/
+      @ assigns protocol, x_local[0..n_by_p-1];
+      @ ensures get_type(protocol) == protocol_2;*/
     MPI_Scatter(b_initial, n_by_p, MPI_FLOAT, x_local, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
     /*@ requires get_type(protocol) == protocol_2;
-      @ assigns protocol, b_local[0..n_by_p*p-1];
-      @ ensures get_type(protocol) == protocol_3;
-      @*/
+      @ assigns protocol, x_temp1[0..n_by_p*p-1];
+      @ ensures get_type(protocol) == protocol_3;*/
     MPI_Allgather(b_local, n_by_p, MPI_FLOAT, x_temp1, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
 
     x_new = x_temp1;
@@ -99,7 +98,12 @@ int main( int argc, char** argv){
 
     // ADDED: necessary for loop invariant
     tmp = x_temp1;
-
+    /*@ requires get_type(protocol) == protocol_3;
+      @ requires getNext(get_type(protocol)) == protocol_4;
+      @ assigns protocol, iter, tmp, x_old, x_new, x_local[0..n_by_p-1];
+      @ ensures \valid(x_new + (0..n_by_p*p-1));
+      @ ensures isSkip(simpl(getFirst(get_type(protocol))));
+      @ ensures getNext(get_type(protocol)) == protocol_4;*/
     /*@ loop invariant 0 <= iter <= NUM_ITER;
       @ loop invariant getFirst(get_type(protocol)) ==
       @  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),iter));
@@ -110,12 +114,10 @@ int main( int argc, char** argv){
       @ loop invariant \valid(tmp + (0..n_by_p*p-1));
       @ loop invariant \valid(x_local + (0..n_by_p-1));
       @ loop assigns protocol, iter,tmp, x_old, x_new, x_local[0..n_by_p-1];
-      @ loop variant NUM_ITER - iter;
-      @*/
+      @ loop variant NUM_ITER - iter;*/
     // CHANGED: starts at 0 instead of 1, end changed respectively
     //          necessary s.t. while can be used in protocol
     for (iter = 0; iter < NUM_ITER; iter++){
-
       Jacobi_iteration(A_local, x_local, b_local, x_old, n, p);
 
       //@ ghost unroll();
@@ -126,12 +128,18 @@ int main( int argc, char** argv){
       x_old = x_new;
       x_new = tmp;
     }
+    /*@ requires isSkip(simpl(getFirst(get_type(protocol))));
+      @ requires getNext(get_type(protocol)) == protocol_4;
+      @ assigns protocol;
+      @ ensures get_type(protocol) == protocol_4;*/
     //@ ghost toskip();
 
+    //@ assert n_by_p*p-1 >= n_by_p-1;
+    //@ assert \valid(x_new + (0..n_by_p*p-1));
+
     /*@ requires get_type(protocol) == protocol_4;
-      @ assigns protocol;
       @ ensures isSkip(get_type(protocol));
-      @*/
+      @ assigns protocol;*/
     MPI_Gather(x_new, n_by_p, MPI_FLOAT, x_final, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // REMOVED: no I/O
