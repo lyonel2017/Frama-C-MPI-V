@@ -128,18 +128,18 @@ int main( int argc, char** argv){
       x_old = x_new;
       x_new = tmp;
     }
-    /*@ requires isSkip(simpl(getFirst(get_type(protocol))));
-      @ requires getNext(get_type(protocol)) == protocol_4;
-      @ assigns protocol;
-      @ ensures get_type(protocol) == protocol_4;*/
-    //@ ghost toskip();
+    /*@ ghost
+      /@ requires isSkip(simpl(getFirst(get_type(protocol))));
+       @ requires getNext(get_type(protocol)) == protocol_4;
+       @ assigns protocol;
+       @ ensures get_type(protocol) == protocol_4;
+       @/
+      toskip();@*/
 
-    //@ assert n_by_p*p-1 >= n_by_p-1;
-    //@ assert \valid(x_new + (0..n_by_p*p-1));
-
+    /** ISSUE: cannot prove is_protocol_for_gather **/
     /*@ requires get_type(protocol) == protocol_4;
       @ ensures isSkip(get_type(protocol));
-      @ assigns protocol;*/
+      @ assigns protocol, x_final[0..n_by_p * p - 1];*/
     MPI_Gather(x_new, n_by_p, MPI_FLOAT, x_final, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // REMOVED: no I/O
