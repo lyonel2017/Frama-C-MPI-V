@@ -323,7 +323,6 @@ int main(int argc, char** argv) {
         @   getNext(\at(get_type(protocol),l4));
         @*/
       MPI_Recv(&u[local_n+1], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      /** FAULTY: START (maybe it just takes very long) **/
       //@ ghost j++;
       //@ ghost unroll();
       //@ ghost assoc();
@@ -335,7 +334,6 @@ int main(int argc, char** argv) {
         @   getNext(\at(get_type(protocol),l4));
         @*/
       MPI_Ssend(&u[1], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD);
-      /** FAULTY: END (maybe it just takes very long) **/
       /*@ ghost
         j = procs - rank + 1;
         /@ loop invariant procs - rank + 1 <= j <= procs;
@@ -480,7 +478,6 @@ int main(int argc, char** argv) {
         @   getNext(\at(get_type(protocol),l7));
         @*/
       MPI_Recv(&u[0], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      /** FAULTY: START (maybe it just takes very long) **/
       //@ ghost j++;
       //@ ghost unroll();
       //@ ghost assoc();
@@ -493,7 +490,6 @@ int main(int argc, char** argv) {
         @   getNext(\at(get_type(protocol),l7));
         @*/
       MPI_Ssend(&u[local_n], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
-      /** FAULTY: END (maybe it just takes very long) **/
       //ERROR End Missing send
       /*@ ghost
         j = rank + 1;
