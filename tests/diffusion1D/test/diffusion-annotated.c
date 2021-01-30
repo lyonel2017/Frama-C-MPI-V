@@ -187,11 +187,10 @@ int main(int argc, char** argv) {
   stop  = rank == procs - 1 ? n - 1 : n;
   left  = rank - 1;
   right = rank + 1;
-  /** ISSUE: isSkip(..) cannot get verified **/
   //@ ghost l11:;
   /*@ requires get_type(protocol) == protocol_6;
     @ assigns protocol, u[0], u[local_n+1], iter;
-    @ ensures isSkip(getFirst(get_type(protocol)));
+    @ ensures isSkip(simpl(getFirst(get_type(protocol))));
     @*/
   /*@ loop invariant 0 <= iter <= NUMITER;
     @ loop invariant getFirst(get_type(protocol)) ==
@@ -366,7 +365,7 @@ int main(int argc, char** argv) {
 
     /*@ requires getFirst(get_type(protocol)) == protocol_5;
       @ assigns u[0], protocol;
-      @ ensures isSkip(getFirst(get_type(protocol)));
+      @ ensures isSkip(simpl(getFirst(get_type(protocol))));
       @*/
     if (rank == 0) {
       /*@ ghost
