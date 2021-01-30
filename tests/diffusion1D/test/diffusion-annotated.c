@@ -34,6 +34,7 @@ int compute(float* u, float* u_new, int len, int wstep);
   @ logic logic_protocol protocol_5;
   @ logic logic_protocol protocol_foo1(integer i);
   @ logic logic_protocol protocol_foo2(integer i);
+  @ logic logic_protocol protocol_foo3(integer i);
 }*/
 
 // n fixed to MAXLEN
@@ -194,7 +195,7 @@ int main(int argc, char** argv) {
   // for (iter = 0; iter < numIter; iter++) {
   /*@ requires get_type(protocol) == protocol_4;
     @ assigns u[local_n+1], protocol;
-    @ ensures isSkip(get_type(protocol));
+    @ ensures get_type(protocol) == protocol_5;
     @*/
   if (rank == 0) {
     /*@ ghost
@@ -351,114 +352,165 @@ int main(int argc, char** argv) {
       @*/
   }
 
-
-  // /*@ requires get_type(protocol) == protocol_5;
-  //   @ behavior root:
-  //   @   assumes rank == 0;
-  //   @   assigns protocol;
-  //   @   ensures isSkip(get_type(protocol));
-  //   @ behavior non_root:
-  //   @   assumes 0 < rank < procs;
-  //   @   assigns u[0], protocol;
-  //   @   ensures isSkip(get_type(protocol));
-  //   @*/
-  // if (rank == 0) {
-  //   /*@ ghost
-  //     @ l5:;
-  //     @ unroll();
-  //     @ assoc();
-  //   @*/
-  //   MPI_Ssend(&u[local_n], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
-  //   /*@ ghost
-  //     int j = rank + 1;
-  //     /@ loop invariant rank + 1 <= j <= procs - 1;
-  //      @ loop invariant getFirst(get_type(protocol)) ==
-  //      @  getNext(split(getFirst(\at(get_type(protocol),l5)),j));
-  //      @ loop invariant getNext(get_type(protocol)) ==
-  //      @  getNext(\at(get_type(protocol),l5));
-  //      @ loop assigns protocol, j;
-  //      @ loop variant procs - 1 - j;
-  //      @/
-  //     while (j < procs - 1) {
-  //       unroll();
-  //       assoc();
-  //       toskip();
-  //       j++;
-  //     }
-  //     toskip();
-  //     @*/
-  // } else if (rank == procs - 1) {
-  //     /*@ ghost
-  //     l6:;
-  //     int j = 0;
-  //     /@ loop invariant 0 <= j <= procs - 2;
-  //      @ loop invariant getFirst(get_type(protocol)) ==
-  //      @  getNext(split(getFirst(\at(get_type(protocol),l6)),j));
-  //      @ loop invariant getNext(get_type(protocol)) ==
-  //      @  getNext(\at(get_type(protocol),l6));
-  //      @ loop assigns protocol, j;
-  //      @ loop variant procs - 2 - j;
-  //      @/
-  //     while (j < procs - 2) {
-  //       unroll();
-  //       assoc();
-  //       toskip();
-  //       j++;
-  //     }
-  //     unroll();
-  //     assoc();
-  //     @*/
-  //   MPI_Recv(&u[0], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  //   //@ ghost toskip();
-  // } else {
-  //   /*@ ghost
-  //     l7:;
-  //     int j = 0;
-  //     /@ loop invariant 0 <= j <= rank - 1;
-  //      @ loop invariant getFirst(get_type(protocol)) ==
-  //      @  getNext(split(getFirst(\at(get_type(protocol),l7)),j));
-  //      @ loop invariant getNext(get_type(protocol)) ==
-  //      @  getNext(\at(get_type(protocol),l7));
-  //      @ loop assigns protocol, j;
-  //      @ loop variant rank - 1 - j;
-  //      @/
-  //     while (j < rank - 1) {
-  //       unroll();
-  //       assoc();
-  //       toskip();
-  //       j++;
-  //     }
-  //     unroll();
-  //     assoc();
-  //     @*/
-  //   MPI_Recv(&u[0], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  //   /** FAULTY: START (maybe it just takes very long) **/
-  //   //@ ghost unroll();
-  //   //@ ghost assoc();
-  //   //ERROR Start Missing send
-  //   MPI_Ssend(&u[local_n], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
-  //   /** FAULTY: END (maybe it just takes very long) **/
-  //   //ERROR End Missing send
-  //   /*@ ghost
-  //     j = rank + 1;
-  //     /@ loop invariant rank + 1 <= j <= procs - 1;
-  //      @ loop invariant getFirst(get_type(protocol)) ==
-  //      @  getNext(split(getFirst(\at(get_type(protocol),l7)),j));
-  //      @ loop invariant getNext(get_type(protocol)) ==
-  //      @  getNext(\at(get_type(protocol),l7));
-  //      @ loop assigns protocol, j;
-  //      @ loop variant procs - 1 - j;
-  //      @/
-  //     while (j < procs - 1) {
-  //       unroll();
-  //       assoc();
-  //       toskip();
-  //       j++;
-  //     }
-  //     toskip();
-  //     @*/
-  // }
-  //   compute(u, u_new, local_n, wstep);
+  /*@ requires get_type(protocol) == protocol_5;
+    @ assigns u[0], protocol;
+    @ ensures isSkip(get_type(protocol));
+    @*/
+  if (rank == 0) {
+    /*@ ghost
+      @ l5:;
+      @ int j = 0;
+      @ unroll();
+      @ assoc();
+      @*/
+    /*@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+      @ assigns protocol;
+      @ ensures getFirst(get_type(protocol)) ==
+      @   getNext(split(getFirst(\at(get_type(protocol),l5)),j+1));
+      @ ensures getNext(get_type(protocol)) ==
+      @   getNext(\at(get_type(protocol),l5));
+      @*/
+    MPI_Ssend(&u[local_n], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
+    /*@ ghost
+      j = 1;
+      /@ loop invariant 1 <= j <= procs - 1;
+       @ loop invariant getFirst(get_type(protocol)) ==
+       @  getNext(split(getFirst(\at(get_type(protocol),l5)),j));
+       @ loop invariant getNext(get_type(protocol)) ==
+       @  getNext(\at(get_type(protocol),l5));
+       @ loop assigns protocol, j;
+       @ loop variant procs - 1 - j;
+       @/
+      while (j < procs - 1) {
+        unroll();
+        assoc();
+        /@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+         @ assigns protocol;
+         @ ensures getFirst(get_type(protocol)) ==
+         @   getNext(split(getFirst(\at(get_type(protocol),l5)),j+1));
+         @ ensures getNext(get_type(protocol)) ==
+         @   getNext(\at(get_type(protocol),l5));
+         @/
+        toskip();
+        j++;
+      }
+      toskip();
+      @*/
+  } else if (rank == procs - 1) {
+      /*@ ghost
+      l6:;
+      int j = 0;
+      /@ loop invariant 0 <= j <= procs - 2;
+       @ loop invariant getFirst(get_type(protocol)) ==
+       @  getNext(split(getFirst(\at(get_type(protocol),l6)),j));
+       @ loop invariant getNext(get_type(protocol)) ==
+       @  getNext(\at(get_type(protocol),l6));
+       @ loop assigns protocol, j;
+       @ loop variant procs - 2 - j;
+       @/
+      while (j < procs - 2) {
+        unroll();
+        assoc();
+        /@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+         @ assigns protocol;
+         @ ensures getFirst(get_type(protocol)) ==
+         @   getNext(split(getFirst(\at(get_type(protocol),l6)),j+1));
+         @ ensures getNext(get_type(protocol)) ==
+         @   getNext(\at(get_type(protocol),l6));
+         @/
+        toskip();
+        j++;
+      }
+      unroll();
+      assoc();
+      @*/
+    /*@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+      @ assigns protocol, u[0];
+      @ ensures getFirst(get_type(protocol)) ==
+      @   getNext(split(getFirst(\at(get_type(protocol),l6)),j+1));
+      @ ensures getNext(get_type(protocol)) ==
+      @   getNext(\at(get_type(protocol),l6));
+      @*/
+    MPI_Recv(&u[0], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    //@ ghost toskip();
+  } else {
+    /*@ ghost
+      l7:;
+      int j = 0;
+      /@ loop invariant 0 <= j <= rank - 1;
+       @ loop invariant getFirst(get_type(protocol)) ==
+       @  getNext(split(getFirst(\at(get_type(protocol),l7)),j));
+       @ loop invariant getNext(get_type(protocol)) ==
+       @  getNext(\at(get_type(protocol),l7));
+       @ loop assigns protocol, j;
+       @ loop variant rank - 1 - j;
+       @/
+      while (j < rank - 1) {
+        unroll();
+        assoc();
+        /@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+         @ assigns protocol;
+         @ ensures getFirst(get_type(protocol)) ==
+         @   getNext(split(getFirst(\at(get_type(protocol),l7)),j+1));
+         @ ensures getNext(get_type(protocol)) ==
+         @   getNext(\at(get_type(protocol),l7));
+         @/
+        toskip();
+        j++;
+      }
+      unroll();
+      assoc();
+      @*/
+    /*@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+      @ assigns protocol, u[0];
+      @ ensures getFirst(get_type(protocol)) ==
+      @   getNext(split(getFirst(\at(get_type(protocol),l7)),j+1));
+      @ ensures getNext(get_type(protocol)) ==
+      @   getNext(\at(get_type(protocol),l7));
+      @*/
+    MPI_Recv(&u[0], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    /** FAULTY: START (maybe it just takes very long) **/
+    //@ ghost j++;
+    //@ ghost unroll();
+    //@ ghost assoc();
+    //ERROR Start Missing send
+    /*@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+      @ assigns protocol;
+      @ ensures getFirst(get_type(protocol)) ==
+      @   getNext(split(getFirst(\at(get_type(protocol),l7)),j+1));
+      @ ensures getNext(get_type(protocol)) ==
+      @   getNext(\at(get_type(protocol),l7));
+      @*/
+    MPI_Ssend(&u[local_n], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
+    /** FAULTY: END (maybe it just takes very long) **/
+    //ERROR End Missing send
+    /*@ ghost
+      j = rank + 1;
+      /@ loop invariant rank + 1 <= j <= procs - 1;
+       @ loop invariant getFirst(get_type(protocol)) ==
+       @  getNext(split(getFirst(\at(get_type(protocol),l7)),j));
+       @ loop invariant getNext(get_type(protocol)) ==
+       @  getNext(\at(get_type(protocol),l7));
+       @ loop assigns protocol, j;
+       @ loop variant procs - 1 - j;
+       @/
+      while (j < procs - 1) {
+        unroll();
+        assoc();
+        /@ requires getFirst(get_type(protocol)) == protocol_foo3(j);
+         @ assigns protocol;
+         @ ensures getFirst(get_type(protocol)) ==
+         @   getNext(split(getFirst(\at(get_type(protocol),l7)),j+1));
+         @ ensures getNext(get_type(protocol)) ==
+         @   getNext(\at(get_type(protocol),l7));
+         @/
+         toskip();
+        j++;
+      }
+      toskip();
+      @*/
+  }
+    compute(u, u_new, local_n, wstep);
   // }
   MPI_Finalize();
   // //@ assert \false;

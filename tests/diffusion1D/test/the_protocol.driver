@@ -9,4 +9,5 @@ logic logic_protocol "protocol_5" = "protocol_5";
 logic logic_protocol "the_protocol" = "the_protocol";
 logic logic_protocol "protocol_foo1" (integer) = "protocol_foo1";
 logic logic_protocol "protocol_foo2" (integer) = "protocol_foo2";
+logic logic_protocol "protocol_foo3" (integer) = "protocol_foo3";
 why3.file += "the_protocol.why:MPI_the_protocol";
