@@ -23,11 +23,11 @@ float ComputeNewPos( float* part, float* pv, int npart, float );
 /*@ axiomatic MPI_aux_driver {
   @ logic logic_protocol protocol_foo(integer i);
   @ logic logic_protocol protocol_foo0(integer i);
-  @ logic logic_protocol protocol_foo01(integer i);
+  @ logic logic_protocol protocol_foo1(integer i);
   @ }
   @*/
 
-
+/** REQUIRES: 120 TIMEOUT **/
 int main(int argc,char** argv) {
   int        rank = 0, procs = 0, npart = 0, left = 0, right = 0, iter, pipe, i;
   float      sim_t, dt, dt_local, max_f, max_f_seg;
@@ -59,9 +59,9 @@ int main(int argc,char** argv) {
     @ loop invariant getNext(get_type(protocol)) ==
     @   getNext(\at(get_type(protocol),l01));
     @ loop assigns pipe, iter, protocol, recvbuf[0..npart*4-1];
-    @ loop variant NUM_ITER-iter;
+    @ loop variant NUM_ITER - 1 - iter;
     @*/
-  for (iter = 0; iter <= NUM_ITER-1; iter++) {
+  for (iter = 0; iter < NUM_ITER; iter++) {
     /*@ ghost
       @ unroll();
       @ assoc();
@@ -69,6 +69,14 @@ int main(int argc,char** argv) {
     // shortened by 1 s.t. it starts at 0
     //@ ghost l0:;
     /** ISSUE: 2nd INVARIANT CANNOT BE VERIFIED **/
+    /*@ requires getFirst(get_type(protocol)) == protocol_foo1(iter);
+      @ assigns protocol, pipe, recvbuf[0..npart*4-1];
+      @ ensures isSkip(simpl(getFirst(get_type(protocol))));
+      @ ensures getFirst(getNext(get_type(protocol))) ==
+      @   getNext(split(getFirst(\at(get_type(protocol),l01)),iter+1));
+      @ ensures getNext(getNext(get_type(protocol))) ==
+      @   getNext(\at(get_type(protocol),l01));
+      @*/
     /*@ loop invariant 0 <= pipe <= procs - 1;
       @ loop invariant getFirst(get_type(protocol)) ==
       @   getNext(split(getFirst(\at(get_type(protocol),l0)),pipe));
@@ -223,7 +231,20 @@ int main(int argc,char** argv) {
           @*/
       }
     }
-    //@ ghost toskip();
+    /*@ ghost
+      /@ requires isSkip(simpl(getFirst(get_type(protocol))));
+       @ requires getFirst(getNext(get_type(protocol))) ==
+       @   getNext(split(getFirst(\at(get_type(protocol),l01)),iter+1));
+       @ requires getNext(getNext(get_type(protocol))) ==
+       @   getNext(\at(get_type(protocol),l01));
+       @ assigns protocol;
+       @ ensures getFirst(get_type(protocol)) ==
+       @   getNext(split(getFirst(\at(get_type(protocol),l01)),iter+1));
+       @ ensures getNext(get_type(protocol)) ==
+       @   getNext(\at(get_type(protocol),l01));
+       @/
+      toskip();
+      @*/
   }
   //@ ghost toskip();
   MPI_Finalize();

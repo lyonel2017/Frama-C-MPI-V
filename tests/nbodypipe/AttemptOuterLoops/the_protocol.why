@@ -12,31 +12,13 @@ let function protocol_foo (i: int) : protocol =
               else 0)
               ((div 1000000 size)*4) 0 MPI_float)
 
-(* axiom p_1 : protocol_1 = (Foreach 0 (size-1) (fun i -> (protocol_foo i))) *)
-
 let function protocol_foo0 (j: int) : protocol =
   (Foreach 0 (size-1) (fun i -> (protocol_foo i)))
 
-(* let function the_protocol : protocol = (While (size-2) protocol_1) *)
-(* let function protocol_foo01 (k: int) : protocol =
+let function protocol_foo1 (k: int) : protocol =
   (Foreach 0 (size-2) (fun j -> (protocol_foo0 j)))
 
 let constant the_protocol : protocol =
-  (Foreach 0 999999 (fun k -> (protocol_foo01 k))) *)
+  (Foreach 0 999999 (fun k -> (protocol_foo1 k)))
 
-let constant the_protocol : protocol =
-  (While 999999 (Foreach 0 (size-2) (fun j -> (protocol_foo0 j))))
-
-(* let constant the_protocol : protocol =
-  (Foreach 0 999999 (fun k -> (protocol_foo01 k))) *)
-
-
-
-(* let constant the_protocol : protocol =
-  (Foreach 0 (size-1) (fun i ->
-    (Message i
-             (if (i+1) <= (size-1)
-              then (i+1)
-              else 0)
-              ((div 1000000 size)*4) 0 MPI_float))) *)
 end
