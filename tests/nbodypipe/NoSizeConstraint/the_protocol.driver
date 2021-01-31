@@ -1,0 +1,8 @@
+library the_protocol:
+
+logic logic_protocol "the_protocol" = "the_protocol";
+logic logic_protocol "protocol_foo1" (integer) = "protocol_foo1";
+logic logic_protocol "protocol_foo0" (integer) = "protocol_foo0";
+logic logic_protocol "protocol_foo" (integer) = "protocol_foo";
+
+why3.file += "the_protocol.why:MPI_the_protocol";
