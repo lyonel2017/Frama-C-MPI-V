@@ -1,0 +1,40 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.EuclideanDivision
+
+val constant protocol_1 : protocol
+val constant protocol_2 : protocol
+val constant protocol_3 : protocol
+val constant protocol_4 : protocol
+val constant protocol_5 : protocol
+val constant protocol_6 : protocol
+
+let function protocol_foo1 (i: int): protocol = (Message 0 i (div 10000 size) 0 MPI_float)
+let function protocol_foo2 (i: int): protocol = (Message (size-i) (size-i-1) 1 0 MPI_float)
+let function protocol_foo3 (i: int): protocol = (Message i (i+1) 1 0 MPI_float)
+
+let function protocol_foo4 (i: int): protocol = (Seq (Foreach 1 (size-1) (fun i -> (protocol_foo2 i))) protocol_5)
+
+
+let constant the_protocol : protocol = (Seq (Broadcast 0 1 MPI_int) protocol_1)
+axiom p_1 : protocol_1 = (Seq (Broadcast 0 1 MPI_int) protocol_2)
+axiom p_2 : protocol_2 = (Seq (Broadcast 0 1 MPI_int) protocol_3)
+axiom p_3 : protocol_3 = (Seq (Foreach 1 (size-1) (fun i -> (protocol_foo1 i))) protocol_6)
+axiom p_4 : protocol_4 = (Foreach 1 (size-1) (fun i -> (protocol_foo2 i)))
+axiom p_5 : protocol_5 = (Foreach 0 (size-2) (fun i -> (protocol_foo3 i)))
+(* axiom p_6 : protocol_6 = (Foreach 0 10000 (fun i -> (protocol_foo4 i))) *)
+axiom p_6 : protocol_6 = (Seq protocol_4 protocol_5)
+
+
+(* let constant the_protocol : protocol =
+    (Seq (Broadcast 0 1 MPI_int)
+    (Seq (Broadcast 0 1 MPI_int)
+    (Seq (Broadcast 0 1 MPI_int)
+    (Seq (Foreach 1 (size-1) (fun i -> Message 0 i (div 10000 size) 0 MPI_float))
+         (Foreach 1 (size-1) (fun i -> Message i (i-1) 1 0 MPI_float)))))) *)
+
+
+
+end
