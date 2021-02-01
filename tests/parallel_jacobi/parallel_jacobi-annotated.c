@@ -45,7 +45,7 @@ void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_o
   @ logic logic_protocol protocol_4;
 }*/
 
-
+/** CAN BE VERIFIED IN 120s **/
 int main( int argc, char** argv){
     // CHANGED: MAX_DIM s.t. MAX_DIM * MAX_DIM can be int
     int        p;
@@ -136,7 +136,6 @@ int main( int argc, char** argv){
        @/
       toskip();@*/
 
-    /** ISSUE: cannot prove is_protocol_for_gather **/
     /*@ requires get_type(protocol) == protocol_4;
       @ ensures isSkip(get_type(protocol));
       @ assigns protocol, x_final[0..n_by_p * p - 1];*/
