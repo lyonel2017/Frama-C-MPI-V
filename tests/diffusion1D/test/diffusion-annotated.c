@@ -519,8 +519,8 @@ int main(int argc, char** argv) {
     }
     compute(u, u_new, local_n, wstep);
   }
-  /** ISSUE: toskip and finalize cannot be verified **/
   //@  ghost toskip();
+  /** ISSUE: finalize cannot be verified **/
   MPI_Finalize();
   // //@ assert \false;
   return 0;
