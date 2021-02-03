@@ -1,6 +1,7 @@
 module MPI_Function
 
 use protocol.MPI_Protocol
+use protocol.MPI_Protocol_Handler
 use int.Int
 (* use ref.Ref *)
 
@@ -54,6 +55,7 @@ end
 module MPI_example
 
 use protocol.MPI_Protocol
+use protocol.MPI_Protocol_Handler
 use protocol.MPI_prop
 use MPI_Function
 use int.Int

@@ -20,18 +20,10 @@
 
 module MPI_Protocol
 
-use int.Int
-use option.Option
-use array.Array
-
 type mpi_datatype =
 | MPI_char
 | MPI_int
 
-let constant get_mpi_char : mpi_datatype = MPI_char
-let constant get_mpi_int : mpi_datatype = MPI_int
-
-val constant rank : int
 val constant size : int
 
 type protocol =
@@ -43,6 +35,9 @@ type protocol =
   | Broadcast int int mpi_datatype
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
+
+(* if bool protocol protocol*)
+
 
 (* | choice (int list) int int int mpi_datatype)
     A nondet recev require a complete choice (all posibilitiase are in the choice)
@@ -60,6 +55,20 @@ type protocol =
 
     Maybe use a ghost broadcast
 *)
+
+end
+
+module MPI_Protocol_Handler
+
+use int.Int
+use option.Option
+use array.Array
+use MPI_Protocol
+
+val constant rank : int
+
+let constant get_mpi_char : mpi_datatype = MPI_char
+let constant get_mpi_int : mpi_datatype = MPI_int
 
 function seq (p1: protocol) (p2: protocol): protocol = Seq p1 p2
 
@@ -209,6 +218,7 @@ end
 module MPI_prop
 
 use MPI_Protocol
+use MPI_Protocol_Handler
 
 predicate isLineare (p : protocol) =
         match p with
