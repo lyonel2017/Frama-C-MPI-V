@@ -76,16 +76,13 @@ int main( int argc, char** argv){
       readMatrix(A_initial, n);
       readVector(b_initial, n);
     }
-
     MPI_Scatter(A_initial, n_by_p * n, MPI_FLOAT, A_local, n_by_p * n , MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatter(b_initial, n_by_p, MPI_FLOAT, x_local, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Allgather(b_local, n_by_p, MPI_FLOAT, x_temp1, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
-
-    //@ assert get_type(protocol) == protocol_3;
-
     x_new = x_temp1;
     x_old = x_temp1;
 
+    //@ assert get_type(protocol) == protocol_3;
     /*@ requires get_type(protocol) == protocol_3;
       @ requires getNext(get_type(protocol)) == protocol_4;
       @ assigns protocol, iter, tmp, x_old, x_new, x_local[0..n_by_p-1];
@@ -108,10 +105,10 @@ int main( int argc, char** argv){
       //@ ghost unroll();
       //@ ghost assoc();
       MPI_Allgather(x_local, n_by_p, MPI_FLOAT, x_new, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
-
       tmp = x_old;
       x_old = x_new;
       x_new = tmp;
+
       /*@ ghost
       if (iter == NUM_ITER) {
         /@ requires isSkip(simpl(getFirst(get_type(protocol))));
