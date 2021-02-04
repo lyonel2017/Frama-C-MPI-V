@@ -45,7 +45,7 @@ void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_o
   @ logic logic_protocol protocol_4;
 }*/
 
-/** CAN BE VERIFIED IN 120s **/
+/** CAN BE VERIFIED IN 20s **/
 int main( int argc, char** argv){
     // CHANGED: MAX_DIM s.t. MAX_DIM * MAX_DIM can be int
     int        p;
@@ -78,46 +78,35 @@ int main( int argc, char** argv){
       readMatrix(A_initial, n);
       readVector(b_initial, n);
     }
-    /*@ requires get_type(protocol) == the_protocol;
-      @ assigns protocol, A_local[0..n_by_p*n-1];
-      @ ensures get_type(protocol) == protocol_1;*/
+
     MPI_Scatter(A_initial, n_by_p * n, MPI_FLOAT, A_local, n_by_p * n , MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-    /*@ requires get_type(protocol) == protocol_1;
-      @ assigns protocol, x_local[0..n_by_p-1];
-      @ ensures get_type(protocol) == protocol_2;*/
     MPI_Scatter(b_initial, n_by_p, MPI_FLOAT, x_local, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-    /*@ requires get_type(protocol) == protocol_2;
-      @ assigns protocol, x_temp1[0..n_by_p*p-1];
-      @ ensures get_type(protocol) == protocol_3;*/
     MPI_Allgather(b_local, n_by_p, MPI_FLOAT, x_temp1, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
+
+    //@ assert get_type(protocol) == protocol_3;
 
     x_new = x_temp1;
     x_old = x_temp1;
 
-    // ADDED: necessary for loop invariant
-    tmp = x_temp1;
     /*@ requires get_type(protocol) == protocol_3;
       @ requires getNext(get_type(protocol)) == protocol_4;
       @ assigns protocol, iter, tmp, x_old, x_new, x_local[0..n_by_p-1];
       @ ensures \valid(x_new + (0..n_by_p*p-1));
       @ ensures isSkip(simpl(getFirst(get_type(protocol))));
       @ ensures getNext(get_type(protocol)) == protocol_4;*/
-    /*@ loop invariant 0 <= iter <= NUM_ITER;
+    /*@ loop invariant 1 <= iter <= NUM_ITER+1;
       @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),iter));
+      @  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),iter-1));
       @ loop invariant getNext(get_type(protocol)) ==
       @  getNext(\at(get_type(protocol),LoopEntry));
       @ loop invariant \valid(x_old + (0..n_by_p*p-1));
       @ loop invariant \valid(x_new + (0..n_by_p*p-1));
-      @ loop invariant \valid(tmp + (0..n_by_p*p-1));
       @ loop invariant \valid(x_local + (0..n_by_p-1));
       @ loop assigns protocol, iter,tmp, x_old, x_new, x_local[0..n_by_p-1];
       @ loop variant NUM_ITER - iter;*/
     // CHANGED: starts at 0 instead of 1, end changed respectively
     //          necessary s.t. while can be used in protocol
-    for (iter = 0; iter < NUM_ITER; iter++){
+    for (iter = 1; iter <= NUM_ITER; iter++){
       Jacobi_iteration(A_local, x_local, b_local, x_old, n, p);
 
       //@ ghost unroll();
@@ -136,9 +125,6 @@ int main( int argc, char** argv){
        @/
       toskip();@*/
 
-    /*@ requires get_type(protocol) == protocol_4;
-      @ ensures isSkip(get_type(protocol));
-      @ assigns protocol, x_final[0..n_by_p * p - 1];*/
     MPI_Gather(x_new, n_by_p, MPI_FLOAT, x_final, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // REMOVED: no I/O
@@ -148,5 +134,5 @@ int main( int argc, char** argv){
 
     MPI_Finalize();
     // uncomment for sanity check
-    // // @ assert \false;
+    // //@ assert \false;
 }
