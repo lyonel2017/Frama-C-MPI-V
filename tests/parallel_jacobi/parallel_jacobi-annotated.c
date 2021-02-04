@@ -29,8 +29,6 @@ void readMatrix(float* matrix, int dim);
   @ assigns vector[0..dim-1];*/
 void readVector(float* vector, int dim);
 
-/*@ requires \valid(vector + (0..dim-1));
-  @ assigns \nothing;*/
 void printVector(float* vector, int dim);
 
 /*@ ensures \valid(x_local + (0..n/p-1));
@@ -45,7 +43,7 @@ void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_o
   @ logic logic_protocol protocol_4;
 }*/
 
-/** CAN BE VERIFIED IN 20s **/
+/** CAN BE VERIFIED IN 10s **/
 int main( int argc, char** argv){
     // CHANGED: MAX_DIM s.t. MAX_DIM * MAX_DIM can be int
     int        p;
@@ -92,20 +90,18 @@ int main( int argc, char** argv){
       @ requires getNext(get_type(protocol)) == protocol_4;
       @ assigns protocol, iter, tmp, x_old, x_new, x_local[0..n_by_p-1];
       @ ensures \valid(x_new + (0..n_by_p*p-1));
-      @ ensures isSkip(simpl(getFirst(get_type(protocol))));
-      @ ensures getNext(get_type(protocol)) == protocol_4;*/
+      @ ensures get_type(protocol) == protocol_4;*/
     /*@ loop invariant 1 <= iter <= NUM_ITER+1;
-      @ loop invariant getFirst(get_type(protocol)) ==
+      @ loop invariant iter <= NUM_ITER ==> getFirst(get_type(protocol)) ==
       @  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),iter-1));
-      @ loop invariant getNext(get_type(protocol)) ==
+      @ loop invariant iter <= NUM_ITER ==> getNext(get_type(protocol)) ==
       @  getNext(\at(get_type(protocol),LoopEntry));
+      @ loop invariant iter == NUM_ITER+1 ==> get_type(protocol) == protocol_4;
       @ loop invariant \valid(x_old + (0..n_by_p*p-1));
       @ loop invariant \valid(x_new + (0..n_by_p*p-1));
       @ loop invariant \valid(x_local + (0..n_by_p-1));
       @ loop assigns protocol, iter,tmp, x_old, x_new, x_local[0..n_by_p-1];
       @ loop variant NUM_ITER - iter;*/
-    // CHANGED: starts at 0 instead of 1, end changed respectively
-    //          necessary s.t. while can be used in protocol
     for (iter = 1; iter <= NUM_ITER; iter++){
       Jacobi_iteration(A_local, x_local, b_local, x_old, n, p);
 
@@ -116,14 +112,17 @@ int main( int argc, char** argv){
       tmp = x_old;
       x_old = x_new;
       x_new = tmp;
+      /*@ ghost
+      if (iter == NUM_ITER) {
+        /@ requires isSkip(simpl(getFirst(get_type(protocol))));
+        @ requires getNext(get_type(protocol)) == protocol_4;
+        @ assigns protocol;
+        @ ensures get_type(protocol) == protocol_4;
+        @/
+        toskip();
+      }@*/
+
     }
-    /*@ ghost
-      /@ requires isSkip(simpl(getFirst(get_type(protocol))));
-       @ requires getNext(get_type(protocol)) == protocol_4;
-       @ assigns protocol;
-       @ ensures get_type(protocol) == protocol_4;
-       @/
-      toskip();@*/
 
     MPI_Gather(x_new, n_by_p, MPI_FLOAT, x_final, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
