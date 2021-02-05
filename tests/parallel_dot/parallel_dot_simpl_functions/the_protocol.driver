@@ -5,6 +5,7 @@ logic logic_protocol "protocol_2" = "protocol_2";
 logic logic_protocol "protocol_3" = "protocol_3";
 logic logic_protocol "protocol_4" = "protocol_4";
 logic logic_protocol "the_protocol" = "the_protocol";
-
 logic logic_protocol "protocol_foo_0" (integer) = "protocol_foo_0";
+logic logic_protocol "protocol_foo_1" (integer) = "protocol_foo_1";
+
 why3.file += "the_protocol.why:MPI_the_protocol";
