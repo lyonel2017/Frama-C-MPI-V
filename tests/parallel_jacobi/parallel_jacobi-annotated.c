@@ -41,6 +41,7 @@ void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_o
   @ logic logic_protocol protocol_2;
   @ logic logic_protocol protocol_3;
   @ logic logic_protocol protocol_4;
+  @ logic logic_protocol protocol_while_0;
 }*/
 
 /** CAN BE VERIFIED IN 10s **/
@@ -82,18 +83,18 @@ int main( int argc, char** argv){
     x_new = x_temp1;
     x_old = x_temp1;
 
-    //@ assert get_type(protocol) == protocol_3;
     /*@ requires get_type(protocol) == protocol_3;
-      @ requires getNext(get_type(protocol)) == protocol_4;
       @ assigns protocol, iter, tmp, x_old, x_new, x_local[0..n_by_p-1];
       @ ensures \valid(x_new + (0..n_by_p*p-1));
       @ ensures get_type(protocol) == protocol_4;*/
+    /** BOTTLENECK: 'NUM_ITER'-invariants **/
     /*@ loop invariant 1 <= iter <= NUM_ITER+1;
-      @ loop invariant iter <= NUM_ITER ==> getFirst(get_type(protocol)) ==
+      @ loop invariant iter < NUM_ITER+1 ==> getFirst(get_type(protocol)) ==
       @  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),iter-1));
-      @ loop invariant iter <= NUM_ITER ==> getNext(get_type(protocol)) ==
+      @ loop invariant iter < NUM_ITER+1 ==> getNext(get_type(protocol)) ==
       @  getNext(\at(get_type(protocol),LoopEntry));
-      @ loop invariant iter == NUM_ITER+1 ==> get_type(protocol) == protocol_4;
+      @ loop invariant iter == NUM_ITER+1 ==> get_type(protocol) ==
+      @   getNext(\at(get_type(protocol),LoopEntry));
       @ loop invariant \valid(x_old + (0..n_by_p*p-1));
       @ loop invariant \valid(x_new + (0..n_by_p*p-1));
       @ loop invariant \valid(x_local + (0..n_by_p-1));
@@ -104,6 +105,7 @@ int main( int argc, char** argv){
 
       //@ ghost unroll();
       //@ ghost assoc();
+      //@ assert getFirst(get_type(protocol)) == protocol_while_0;
       MPI_Allgather(x_local, n_by_p, MPI_FLOAT, x_new, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
       tmp = x_old;
       x_old = x_new;
@@ -111,11 +113,9 @@ int main( int argc, char** argv){
 
       /*@ ghost
       if (iter == NUM_ITER) {
-        /@ requires isSkip(simpl(getFirst(get_type(protocol))));
-        @ requires getNext(get_type(protocol)) == protocol_4;
-        @ assigns protocol;
-        @ ensures get_type(protocol) == protocol_4;
-        @/
+        /@ assert getFirst(get_type(protocol)) ==
+         @   getNext(split(getFirst(\at(get_type(protocol),LoopEntry)),iter));
+         @/
         toskip();
       }@*/
 
