@@ -467,4 +467,16 @@ let function getNext (p: protocol): protocol =
         | Some p -> p
         end
 
+let function getLeft (p: protocol) : protocol =
+  match p with
+  | Seq h _ -> h
+  | _ -> p
+  end
+
+let function getRight (p: protocol): protocol =
+  match p with
+  | Seq _ q -> q
+  | _ -> p
+  end
+
 end

@@ -580,6 +580,8 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ logic logic_protocol getFirst(logic_protocol p);
   @ logic logic_protocol getNext(logic_protocol p);
   @ logic logic_protocol fsimpl(logic_protocol p);
+  @ logic logic_protocol getLeft(logic_protocol p);
+  @ logic logic_protocol getRight(logic_protocol p);
 }*/
 
 /*@ axiomatic MPI_datatype {
@@ -984,8 +986,8 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count,
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)sendbuf + i);
   @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && count == 0) ||
                           \valid(((char*)recvbuf)+(0..count-1));
-  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)recvbuf + i);
-  @   assigns ((char *)recvbuf)[0..count*MPI_COMM_WORLD_size_ACSL-1];
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)recvbuf + i);
+  @   assigns ((char *)recvbuf)[0..count-1];
 */
 int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
                   MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
