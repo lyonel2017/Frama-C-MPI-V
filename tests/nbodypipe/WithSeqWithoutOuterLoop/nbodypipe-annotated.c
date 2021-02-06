@@ -17,6 +17,7 @@
 #define NUM_ITER      1000000
 
 void InitParticles( float* part, float* vel, int npart);
+//@ assigns \result;
 float ComputeForces( float* part,  float* other_part, float* vel, int npart);
 float ComputeNewPos( float* part, float* pv, int npart, float );
 
@@ -50,7 +51,7 @@ int main(int argc,char** argv) {
   //@ ghost l01:;
   /*@ requires getFirst(get_type(protocol)) == protocol_0;
     @ requires getNext(get_type(protocol)) == protocol_2;
-    @ assigns pipe,protocol,recvbuf[0..npart*4-1];
+    @ assigns pipe,protocol,recvbuf[0..npart*4-1],max_f_seg,max_f;
     @ ensures get_type(protocol) == protocol_2;
     @*/
   /*@ loop invariant 1 <= pipe <= procs;
@@ -60,7 +61,7 @@ int main(int argc,char** argv) {
     @   getNext(\at(get_type(protocol),l01));
     @ loop invariant pipe == procs ==> get_type(protocol) ==
     @   getNext(\at(get_type(protocol),l01));
-    @ loop assigns pipe,protocol,recvbuf[0..npart*4-1];
+    @ loop assigns pipe,protocol,recvbuf[0..npart*4-1],max_f_seg,max_f;
     @ loop variant procs-pipe;
     @*/
 	for (pipe=1; pipe < procs; pipe++) {
@@ -75,7 +76,7 @@ int main(int argc,char** argv) {
       // @*/
     // //@ assert getFirst(get_type(protocol)) == protocol_1;
     /*@ requires getFirst(get_type(protocol)) == protocol_1;
-      @ assigns protocol, recvbuf[0..npart*4-1];
+      @ assigns protocol,recvbuf[0..npart*4-1],max_f_seg,max_f;
       @ ensures getFirst(get_type(protocol)) ==
       @   getNext(split(getFirst(\at(get_type(protocol),l01)),pipe));
       @ ensures getNext(get_type(protocol)) ==
@@ -228,6 +229,8 @@ int main(int argc,char** argv) {
           }
         @*/
     }
+    max_f_seg = ComputeForces( particles, recvbuf, pv, npart );
+    if (max_f_seg > max_f) max_f = max_f_seg;
     /*@ ghost
       if (pipe == procs-1) {
         /@ assert getFirst(get_type(protocol)) ==
