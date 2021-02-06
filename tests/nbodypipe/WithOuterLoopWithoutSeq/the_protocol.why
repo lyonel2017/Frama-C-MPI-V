@@ -1,0 +1,32 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.EuclideanDivision
+
+val constant protocol_1 : protocol
+val constant protocol_2 : protocol
+val constant protocol_0 : protocol
+val constant protocol_01 : protocol
+
+let function protocol_foo_1 (i: int) : protocol =
+  (Message i (if (i+1) <= (size-1)
+              then (i+1)
+              else 0)
+              ((div 1000000 size)*4) 0 MPI_float)
+
+axiom p_2 : protocol_2 =
+  Allreduce 1 MPI_float MPI_min
+
+axiom p_1 : protocol_1 =
+  Foreach 0 (size-1) (fun i -> (protocol_foo_1 i))
+
+axiom p_0 : protocol_0 =
+  While (size-1) protocol_1
+
+axiom p_01 : protocol_01 =
+  (Seq protocol_0 protocol_2)
+
+let constant the_protocol : protocol =
+  While 1000000 protocol_0
+end
