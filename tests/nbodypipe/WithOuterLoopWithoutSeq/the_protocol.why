@@ -15,17 +15,11 @@ let function protocol_foo_1 (i: int) : protocol =
               else 0)
               ((div 1000000 size)*4) 0 MPI_float)
 
-axiom p_2 : protocol_2 =
-  Allreduce 1 MPI_float MPI_min
-
 axiom p_1 : protocol_1 =
   Foreach 0 (size-1) (fun i -> (protocol_foo_1 i))
 
 axiom p_0 : protocol_0 =
   While (size-1) protocol_1
-
-axiom p_01 : protocol_01 =
-  (Seq protocol_0 protocol_2)
 
 let constant the_protocol : protocol =
   While 1000000 protocol_0

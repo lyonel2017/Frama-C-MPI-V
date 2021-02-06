@@ -26,9 +26,7 @@ float ComputeNewPos( float* part, float* pv, int npart, float );
 
 /*@ axiomatic MPI_aux_driver {
   @ logic logic_protocol protocol_0;
-  @ logic logic_protocol protocol_01;
   @ logic logic_protocol protocol_1;
-  @ logic logic_protocol protocol_2;
   @ logic logic_protocol protocol_foo_1(integer i);
   @ }
   @*/
@@ -76,7 +74,6 @@ int main(int argc,char** argv) {
     @*/
   /*@ requires getFirst(get_type(protocol)) == protocol_0;
     @ assigns pipe,protocol,recvbuf[0..npart*4-1],max_f_seg,max_f;
-    // @ ensures getFirst(get_type(protocol)) == protocol_2;
     @ ensures getFirst(get_type(protocol)) ==
     @   getNext(split(getFirst(\at(get_type(protocol),l02)),iter));
     @ ensures getNext(get_type(protocol)) ==
@@ -104,8 +101,6 @@ int main(int argc,char** argv) {
       @   getNext(split(getFirst(\at(get_type(protocol),l01)),pipe));
       @ ensures getNext(get_type(protocol)) ==
       @   getNext(\at(get_type(protocol),l01));
-      // @ ensures get_type(protocol) ==
-      // @   getNext(\at(get_type(protocol),l01));
       @*/
     if (rank == 0) {
       /*@ ghost
@@ -169,8 +164,6 @@ int main(int argc,char** argv) {
          @   getNext(split(getFirst(\at(get_type(protocol),l01)),pipe));
          @ ensures getNext(get_type(protocol)) ==
          @   getNext(\at(get_type(protocol),l01));
-        //  @ ensures get_type(protocol) ==
-        //  @   getNext(\at(get_type(protocol),l01));
          @/
          toskip();
          @*/
@@ -229,8 +222,6 @@ int main(int argc,char** argv) {
           @   getNext(split(getFirst(\at(get_type(protocol),l01)),pipe));
           @ ensures getNext(get_type(protocol)) ==
           @   getNext(\at(get_type(protocol),l01));
-          // @ ensures get_type(protocol) ==
-          // @   getNext(\at(get_type(protocol),l01));
           @/
           {
             /@ loop invariant rank + 1 <= j <= procs;
@@ -264,14 +255,6 @@ int main(int argc,char** argv) {
       @*/
   }
   dt_local = ComputeNewPos( particles, pv, npart, max_f);
-  // // //@ assert getFirst(get_type(protocol)) == protocol_2;
-  // /*@ requires getFirst(get_type(protocol)) == protocol_2;
-  //   @ assigns dt_local, protocol;
-  //   @ ensures getFirst(get_type(protocol)) ==
-  //   @   getNext(split(getFirst(\at(get_type(protocol),l02)),iter));
-  //   @ ensures getNext(get_type(protocol)) ==
-  //   @   getNext(\at(get_type(protocol),l02));
-  //   @*/
   // MPI_Allreduce( &dt, &dt_local, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
   sim_t += dt;
 
@@ -284,7 +267,6 @@ int main(int argc,char** argv) {
       }
       @*/
   }
-
 
   //@ ghost toskip();
   MPI_Finalize();
