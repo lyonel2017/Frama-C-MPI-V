@@ -15,7 +15,7 @@
 
 int main(int argc, char **argv)
 {
-  int n = 0, myid, numprocs, i;
+  int n = 0, myid = 0, numprocs = 0, i = 0;
   float PI25DT = 3.141592653589793238462643f;
   float mypi, pi, h, sum, x;
   MPI_Init(&argc,&argv);
@@ -27,6 +27,8 @@ int main(int argc, char **argv)
       n = 10; // statically set intervals
   }
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  //inserted, not necessary if bcast implies this assignment
+  n = 10;
   h   = 1.0f / (float) n;
   sum = 0.0f;
   /*@
@@ -46,6 +48,6 @@ int main(int argc, char **argv)
     //  printf("pi is approximately %.16f, Error is %.16f\n", pi, fabs(pi - PI25DT));
   }
   MPI_Finalize();
-  //@ assert \false;
+  // //@ assert \false;
   return 0;
 }
