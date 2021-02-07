@@ -23,7 +23,6 @@ int getNumIterations();
 //@ ensures \result == MAXLEN && \result % procs == 0;
 int getProblemSize(int procs);
 int getWstep();
-
 //@  assigns data[(rank*len) .. ((rank+1)*len-1)];
 void getInitialData(int rank, float* data, int len);
 int compute(float* u, float* u_new, int len, int wstep);
@@ -55,6 +54,7 @@ int main(int argc, char** argv) {
   float u[MAXLEN+2]; // temperature function
   float u_new[MAXLEN+2];  // temp. used to update u
   float buf[MAXLEN+1]; // Local buffer used on rank 0
+
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &procs);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -71,6 +71,8 @@ int main(int argc, char** argv) {
   numIter = getNumIterations();
   MPI_Bcast(&wstep, 1, MPI_INT, 0, MPI_COMM_WORLD);
   local_n = n / procs;
+
+  //inserted, not necessary if ssend implies this assignment
   /*@ loop invariant 0 <= i <= MAXLEN + 2;
     @ loop assigns i, u[0..(MAXLEN+1)];
     @ loop variant MAXLEN + 2 - i;
@@ -518,6 +520,7 @@ int main(int argc, char** argv) {
       }
       @*/
   }
+  compute(u, u_new, local_n, wstep);
 
   MPI_Finalize();
   // //@ assert \false;
