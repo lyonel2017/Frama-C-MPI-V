@@ -27,23 +27,9 @@ axiom p_2 : protocol_2 =
 axiom p_3 : protocol_3 =
     Seq (Foreach 1 (size-1) (fun i -> (protocol_foo1 i))) protocol_4
 axiom p_4 : protocol_4 =
-    Foreach 1 (size-1) (fun i -> (protocol_foo2 i))
-
-(* axiom p_3 : protocol_3 =
-    (Seq (Foreach 1 (size-1) (fun i -> (protocol_foo1 i))) protocol_6)
-
+    Seq (Foreach 1 (size-1) (fun i -> (protocol_foo2 i))) protocol_5
 axiom p_5 : protocol_5 =
-    (Foreach 0 (size-2) (fun i -> (protocol_foo3 i)))
-axiom p_6 : protocol_6 =
-    (While 10000 protocol_4) *)
-
-(* let constant the_protocol : protocol =
-    (Seq (Broadcast 0 1 MPI_int)
-    (Seq (Broadcast 0 1 MPI_int)
-    (Seq (Broadcast 0 1 MPI_int)
-    (Seq (Foreach 1 (size-1) (fun i -> Message 0 i (div 10000 size) 0 MPI_float))
-         (Foreach 1 (size-1) (fun i -> Message i (i-1) 1 0 MPI_float)))))) *)
-
+    Foreach 0 (size-2) (fun i -> (protocol_foo3 i))
 
 
 end
