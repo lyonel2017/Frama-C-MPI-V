@@ -3,51 +3,85 @@ module MPI_Function
 use protocol.MPI_Protocol
 use protocol.MPI_Protocol_Handler
 use int.Int
-(* use ref.Ref *)
 
 type mpi_protocol = {mutable p:protocol}
 
-val init (s:mpi_protocol) (p:protocol) :unit
+val s : mpi_protocol
+
+val init (p:protocol) :unit
     writes {s.p}
     ensures{s.p=p}
     ensures{0 <= rank < size}
 
-val ssend (dest:int) (count: int) (tag: int) (datatype: mpi_datatype) (s:mpi_protocol): unit
+val ssend (dest:int) (count: int) (tag: int) (datatype: mpi_datatype) : unit
     writes { s.p }
     requires { 0 <= dest /\ dest < size }
     requires { isMessageforSend (getFirst s.p) dest count tag datatype}
     ensures { s.p = getNext (old s).p }
 
-val recv (source:int) (count: int) (tag: int) (datatype: mpi_datatype) (s:mpi_protocol): unit
+val recv (source:int) (count: int) (tag: int) (datatype: mpi_datatype): unit
     writes { s.p }
     requires { 0 <= source /\ source < size }
     requires { isMessageforRecv (getFirst s.p) source count tag datatype}
     ensures { s.p = getNext (old s).p }
 
-val broadcast (root: int) (count: int) (datatype: mpi_datatype) (s: mpi_protocol): unit
+val broadcast (root: int) (count: int) (datatype: mpi_datatype): unit
     writes { s.p }
     requires { 0 <= root /\ root < size }
     requires { isforBroadcast (getFirst s.p) root count datatype}
     ensures { s.p = getNext (old s).p }
 
-val simpl (s:mpi_protocol): unit
+(*---------------------------------------------------------------------------------------------------*)
+
+val intbroadcast (data: int) (root: int): int
+    writes { s.p }
+    requires { 0 <= root /\ root < size }
+    requires { isforIntBroadcast (getFirst s.p) root data}
+    ensures {match getFirst (old s).p with
+	       | IntBroadcast _ pred _ -> pred result
+	       | _ -> false
+	     end}
+    ensures {match getFirst (old s).p with
+	       | IntBroadcast _ _ prod -> s.p = Seq (prod data) (getNext (old s).p)
+	       | _ -> false
+	     end}
+
+val intssend (data: int) (dest:int) (tag: int): unit
+    writes { s.p }
+    requires { 0 <= dest /\ dest < size }
+    requires { isMessageforIntSend (getFirst s.p) dest tag data}
+    ensures { s.p = getNext (old s).p }
+
+val intrecv (data: int) (source:int) (tag: int): int
+    writes { s.p }
+    requires { 0 <= source /\ source < size }
+    requires { isMessageforIntRecv (getFirst s.p) source tag data}
+    ensures { s.p = getNext (old s).p }
+    ensures {match getFirst (old s).p with
+	       | IntMessage _ _ _ pred -> pred result
+	       | _ -> false
+	     end}
+
+(*---------------------------------------------------------------------------------------------------*)
+
+val simpl_pro (): unit
     writes {s.p}
     ensures{s.p= simpl (old s).p}
 
-val unroll (s:mpi_protocol): unit
+val unroll_pro (): unit
     writes { s.p }
     ensures { s.p = Seq (simpl (getFirst (old s).p)) (getNext (old s).p) }
 
-val assoc (s:mpi_protocol): unit
+val assoc_pro (): unit
     writes { s.p }
     ensures { s.p = assoc (old s).p}
 
-val toskip (s:mpi_protocol): unit
+val toskip_pro (): unit
     writes { s.p }
     requires { isSkip (simpl (getFirst s.p)) }
     ensures { s.p = getNext (old s).p }
 
-val finalize (s: mpi_protocol) : unit
+val finalize () : unit
     requires {isSkip (s.p)}
 
 end
@@ -60,67 +94,65 @@ use protocol.MPI_prop
 use MPI_Function
 use int.Int
 
-let p : mpi_protocol = {p = Skip}
-
 let test1 () : unit
 requires {size >= 2}
 =
-    init p (Message 0 1 1 1 MPI_int);
+    init (Message 0 1 1 1 MPI_int);
     if rank = 0 then (
-       ssend 1 1 1 MPI_int p;
+       ssend 1 1 1 MPI_int;
     )
     else if (rank = 1) then (
-       recv 0 1 1 MPI_int p;
+       recv 0 1 1 MPI_int;
        ()
     )
     else (
-      toskip p;
+      toskip_pro ();
     );
-   finalize p
+   finalize ()
 
 let test12 () : unit
 requires {size >= 2}
 =
-    init p (Foreach 0 0 (fun i -> Message i (i+1) 1 1 MPI_int));
+    init (Foreach 0 0 (fun i -> Message i (i+1) 1 1 MPI_int));
     if rank = 0 then (
-       simpl p;
-       ssend 1 1 1 MPI_int p;
-       simpl p;
-       simpl p;
+       simpl_pro ();
+       ssend 1 1 1 MPI_int;
+       simpl_pro ();
+       simpl_pro ();
    )
     else if (rank = 1) then (
-         simpl p;
-    	 recv 0 1 1 MPI_int p;
-	 simpl p;
-	 simpl p;
+         simpl_pro ();
+    	 recv 0 1 1 MPI_int;
+	 simpl_pro ();
+	 simpl_pro ();
     )
     else (
-      simpl p;
-      toskip p;
-      simpl p;
-      simpl p;
+      simpl_pro ();
+      toskip_pro ();
+      simpl_pro ();
+      simpl_pro ();
     );
-   finalize p
+   finalize ()
 
 let test13 () : unit
 requires {size >= 2}
 =
-    init p (Seq (Message 0 1 1 1 MPI_int)(Message 0 1 1 1 MPI_int));
+    init (Seq (Message 0 1 1 1 MPI_int)(Message 0 1 1 1 MPI_int));
     if rank = 0 then (
-       ssend 1 1 1 MPI_int p;
-       ssend 1 1 1 MPI_int p
+       ssend 1 1 1 MPI_int;
+       ssend 1 1 1 MPI_int
     )
     else if (rank = 1) then (
-       recv 0 1 1 MPI_int p;
-       recv 0 1 1 MPI_int p
+       recv 0 1 1 MPI_int;
+       recv 0 1 1 MPI_int
     )
     else (
-      toskip p;
-      toskip p;
+      toskip_pro ();
+      toskip_pro ();
     );
-   finalize p
+   finalize ()
 
-let test2 () : unit
+(*let test2 () : unit
 requires {size >= 20}
 =
     init p (Foreach 0 9 (fun i -> Message i (i+10) 1 1 MPI_int));
@@ -255,4 +287,46 @@ requires {size >= 10}
        toskip p;
     );
    finalize p
+
+
+(*let test4 () : unit
+requires {size >= 2}
+=
+    init p (Message 0 1 1 1 MPI_int);
+    if rank = 0 then (
+       intssend 1 1 1 p;
+    )
+    else if (rank = 1) then (
+       intrecv 0 1 1 MPI_int p;
+       ()
+    )
+    else (
+      toskip p;
+    );
+   finalize p
+
+let test42 () : unit
+requires {size >= 2}
+=
+    init p (Foreach 0 0 (fun i -> Message i (i+1) 1 1 MPI_int));
+    if rank = 0 then (
+       simpl p;
+       ssend 1 1 1 MPI_int p;
+       simpl p;
+       simpl p;
+   )
+    else if (rank = 1) then (
+         simpl p;
+    	 recv 0 1 1 MPI_int p;
+	 simpl p;
+	 simpl p;
+    )
+    else (
+      simpl p;
+      toskip p;
+      simpl p;
+      simpl p;
+    );
+   finalize p*)
+*)
 end

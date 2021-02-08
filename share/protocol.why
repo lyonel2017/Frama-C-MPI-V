@@ -35,8 +35,10 @@ type protocol =
   | Broadcast int int mpi_datatype
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
-
-(* if bool protocol protocol*)
+  (*---------------------------------------------------*)
+  | If bool protocol protocol
+  | IntBroadcast int (int -> bool) (int -> protocol)
+  | IntMessage int int int (int -> bool)
 
 
 (* | choice (int list) int int int mpi_datatype)
@@ -45,7 +47,6 @@ type protocol =
      the send not to the dest he simpl to skip the nondet and check the rest of the protocol
     The choice can be simpl like foreach
  *)
-
 
 
 (*  | IntVal (pred int) (cont int)
@@ -145,6 +146,32 @@ predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_dat
 	  | _ -> false
         end
 
+(*------------------------------------------------------------------------------------------------------*)
+
+predicate isforIntBroadcast (p: protocol) (root: int) (data: int)=
+	match p with
+	  | IntBroadcast r pred prod -> root = r /\ (rank = root -> pred data)
+	  | _ -> false
+        end
+
+predicate isMessageforIntSend (p:protocol) (dest: int) (tag: int) (data: int) =
+       match p with
+         | IntMessage src dst t pre ->
+	           src = rank /\ dest = dst /\ tag = t /\ pre data
+		   /\ 0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src
+         | _ -> false
+       end
+
+predicate isMessageforIntRecv (p:protocol) (source: int) (tag: int) (data: int) =
+       match p with
+         | IntMessage src dst t pre ->
+	           src = source /\ dst = rank /\ tag = t
+		   /\ 0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src
+         | _ -> false
+       end
+
+(*---------------------------------------------------------------------------------------------------*)
+
 function simpl (p: protocol) : protocol =
 	 match p with
 	 | Seq Skip q -> q
@@ -183,6 +210,8 @@ function split (p: protocol) (c : int): protocol  =
 	 else if c < 0 <= n
 	 then Seq (While c body) (While n body)
 	 else p
+       | If b p1 p2 ->
+         if b then p1 else p2
        | _ -> p
         end
 
