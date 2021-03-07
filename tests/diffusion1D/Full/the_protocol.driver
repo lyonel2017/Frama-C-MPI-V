@@ -1,0 +1,15 @@
+library the_protocol:
+
+
+logic logic_protocol "protocol_1" = "protocol_1";
+logic logic_protocol "protocol_2" = "protocol_2";
+logic logic_protocol "protocol_3" = "protocol_3";
+logic logic_protocol "protocol_4" = "protocol_4";
+logic logic_protocol "protocol_5" = "protocol_5";
+logic logic_protocol "protocol_6" = "protocol_6";
+logic logic_protocol "protocol_7" = "protocol_7";
+logic logic_protocol "the_protocol" = "the_protocol";
+logic logic_protocol "protocol_foo1" (integer) = "protocol_foo1";
+logic logic_protocol "protocol_foo2" (integer) = "protocol_foo2";
+logic logic_protocol "protocol_foo3" (integer) = "protocol_foo3";
+why3.file += "the_protocol.why:MPI_the_protocol";
