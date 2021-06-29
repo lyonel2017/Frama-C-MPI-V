@@ -20,6 +20,8 @@
 
 library mpi:
 
+type list = "\\list <int>";
+
 type "mpi_datatype" = "mpi_datatype";
 
 type "logic_protocol" = "protocol";
@@ -27,7 +29,6 @@ type "logic_protocol" = "protocol";
 logic integer "MPI_COMM_WORLD_size_ACSL" = "size";
 
 why3.file += "protocol.why:MPI_Protocol";
-
 
 logic mpi_datatype "get_mpi_char" = "get_mpi_char";
 logic mpi_datatype "get_mpi_int" =  "get_mpi_int";
@@ -43,9 +44,11 @@ predicate "isBroadcast" (logic_protocol) = "isBroadcast";
 predicate "isGather" (logic_protocol) = "isGather";
 predicate "isScatter" (logic_protocol) ="isScatter";
 
-predicate "isMessageforSend" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforSend";
-predicate "isMessageforRecv" (logic_protocol,integer,integer,integer,mpi_datatype) = "isMessageforRecv";
-predicate "isforBroadcast" (logic_protocol,integer,integer,mpi_datatype) = "isforBroadcast";
+predicate "isMessageforIntSend" (logic_protocol,integer,integer,integer,list) = "isMessageforIntSend";
+predicate "isMessageforIntRecv" (logic_protocol,integer,integer,integer) = "isMessageforIntRecv";
+predicate "isforIntBroadcast" (logic_protocol,integer,integer,list) = "isforIntBroadcast";
+predicate "isforIntGhostBroadcast" (logic_protocol,integer,integer,list) = "isforIntGhostBroadcast";
+
 predicate "isforGather" (logic_protocol,integer,integer,mpi_datatype) = "isforGather";
 predicate "isforScatter" (logic_protocol,integer,integer,mpi_datatype) = "isforScatter";
 
@@ -54,6 +57,10 @@ logic logic_protocol "split" (logic_protocol,integer) = "split";
 logic logic_protocol "assoc" (logic_protocol) = "assoc";
 logic logic_protocol "getFirst" (logic_protocol) = "getFirst";
 logic logic_protocol "getNext" (logic_protocol) = "getNext";
+
+predicate "predIntMessage" (logic_protocol,list) = "predIntMessage";
+predicate "predIntBroadcast" (logic_protocol,list) = "predIntBroadcast";
+predicate "countiIntBroadcast" (logic_protocol, logic_protocol,list) = "countiIntBroadcast";
 
 why3.file += "protocol.why:MPI_Protocol_Handler";
 why3.file += "protocol.why:MPI_prop";

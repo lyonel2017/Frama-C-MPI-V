@@ -20,7 +20,7 @@
 
 open Cil_types
 
-let rec string_of_typ_aux = function
+let string_of_typ_aux = function
   | TInt(IBool, _) -> "bool"
   | TInt(IChar, _) -> "char"
   | TInt(ISChar, _) -> "schar"
@@ -46,7 +46,7 @@ let mpi_to_cil_typ datatype =
     Cil.intType
   | AddrOf (Var v ,_) when String.equal v.vname "mpi_mpi_char" ->
     Cil.charType
-  | _ ->  MPI_V_options.Self.abort "Unknown MPI datatype %a" Cil_printer.pp_exp datatype
+  | _ ->  MPI_V_options.Self.abort "Unsupported MPI datatype %a" Cil_printer.pp_exp datatype
 
 let cil_typ_to_mpi_string t =
   match t with
@@ -54,14 +54,18 @@ let cil_typ_to_mpi_string t =
   | TInt(IChar,[]) -> "mpi_mpi_char"
   | _ -> MPI_V_options.Self.abort "Unsupported type %a" Cil_printer.pp_typ t
 
-let mpi_comm () =
-  Globals.Types.find_type Logic_typing.Typedef "MPI_Comm"
+let get_type s =
+    Globals.Types.find_type Logic_typing.Typedef s
 
-let mpi_status () =
-  Globals.Types.find_type Logic_typing.Typedef "MPI_Status"
+let get_var s =
+  match Globals.Syntactic_search.find_in_scope s Program  with
+  | None -> MPI_V_options.Self.fatal "Varinfo of %s not found" s
+  | Some v -> v
 
-let mpi_datatype () =
-  Globals.Types.find_type Logic_typing.Typedef "MPI_Datatype"
+let get_l_info s =
+  match Logic_env.find_all_logic_functions s with
+  | h :: _ -> h
+  | [] -> MPI_V_options.Self.fatal "Logic_info of %s not found" s
 
 let ptr_of t = TPtr(t, [])
 let const_of t = Cil.typeAddAttributes [Attr("const", [])] t
@@ -81,7 +85,7 @@ let exp_type_of_pointed buf =
     let typ = Cil.typeOf_pointed xt in
     Some typ
 
-class visitor_pre t = object(_)
+class visitor_datatype t = object(_)
   inherit Visitor.frama_c_copy (Project.current())
 
   method! vterm_node _ =
@@ -148,7 +152,6 @@ class visitor_convert_ass t = object(_)
     Cil.DoChildrenPost f
 end
 
-
 class visitor_beh t formals = object(self)
   inherit Visitor.frama_c_refresh (Project.current ())
 
@@ -170,14 +173,12 @@ class visitor_beh t formals = object(self)
     let name = r.ip_content.tp_statement.pred_name in
     match name with
     | [] -> r
-    | h :: [] when String.equal h "danglingness_buf" ->
-      Visitor.visitFramacIdPredicate (new visitor_convert t) r
-    | h :: [] when String.equal h "initialization_buf" ->
-      Visitor.visitFramacIdPredicate (new visitor_convert t) r
-    | h :: [] when String.equal h "valid_buf" ->
+    | h :: [] when String.equal h "danglingness_buf" ||
+                   String.equal h "initialization_buf" ||
+                   String.equal h "valid_buf" ->
       Visitor.visitFramacIdPredicate (new visitor_convert t) r
     | h :: [] when String.equal h "datatype" ->
-      Visitor.visitFramacIdPredicate (new visitor_pre t) r
+      Visitor.visitFramacIdPredicate (new visitor_datatype t) r
     | _ -> r
 
   method private require_processing (l: identified_predicate list) =
@@ -222,5 +223,57 @@ class visitor_beh t formals = object(self)
       {fspec with spec_behavior}
     in
     Cil.DoChildrenPost f
-
 end
+
+let return_type l_i =
+  match l_i.l_type with
+  | Some t -> t
+  | None ->
+    MPI_V_options.Self.fatal "No return type for Logic_info %a" Cil_printer.pp_logic_info l_i
+
+let tapp s p l =
+  let l_i = get_l_info s in
+  Logic_const.term (Tapp (l_i, l, p)) (return_type l_i)
+
+let papp s p l =
+  let l_i = get_l_info s in
+  Papp (l_i, l, p)
+
+let make_pred p name =
+  let pred =  {(Logic_const.unamed p) with pred_name = [name] } in
+  Logic_const.new_predicate pred
+
+let getFirst_get_type_protocol () =
+  let t1 = Logic_const.tvar (Cil.cvar_to_lvar (get_var "protocol")) in
+  let t4 = tapp "get_type" (t1 :: []) [] in
+  tapp "getFirst" (t4 :: []) []
+
+let to_list t1 t3 =
+  let t2 = Logic_const.tinteger 0 in
+  let t3 = Logic_const.tlogic_coerce t3 (Cil_types.Linteger) in
+  tapp "to_list" (t1 :: t2 :: t3 :: []) [BuiltinLabel Here]
+
+let integer_var v =
+  let t = Logic_const.tvar (Cil.cvar_to_lvar v) in
+  Logic_const.tlogic_coerce t (Cil_types.Linteger)
+
+let reduce_protocol () =
+  let t1 = Logic_const.tvar (Cil.cvar_to_lvar (get_var "protocol")) in
+  let t2 = tapp "get_type" (t1 :: []) [] in
+  let t2 = Logic_const.told t2 in
+  let t2 = tapp "getNext" (t2 :: []) [] in
+
+  let p = papp "set_type" (t1 :: t2 :: []) [] in
+  Normal, make_pred p "reduce_protocol"
+
+let update_spec spec name requires ensures =
+  let has_same_name b = b.b_name = name in
+  let aux b =
+    if has_same_name b then
+      let b_requires = b.b_requires @ requires in
+      let b_post_cond = ensures @ b.b_post_cond in
+      {b with b_requires; b_post_cond}
+    else b
+  in
+  let spec_behavior = List.map aux spec.spec_behavior in
+  {spec with spec_behavior}

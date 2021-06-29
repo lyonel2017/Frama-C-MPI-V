@@ -41,29 +41,9 @@ let () =
   in
   Cmdline.run_after_configuring_stage add_mpi_v_lib
 
-
-(* let run () =
- *   if MPI_V_options.Enabled.get() then
- *     begin
- *       let descr = "@MPI" in
- *       let configure () =
- *         let library = "mpi" in
- *         LogicBuiltins.add_library library [];
- * 
- *         let share = MPI_V_options.Self.Share.get_dir ~mode:`Must_exist "." in
- *         let driver_dir = Filepath.Normalized.to_pretty_string share in
- *         Printf.printf "test : %s\n" driver_dir;
- *         LogicBuiltins.add_option ~driver_dir "why3" "file" ~library "protocol.why:MPI_Protocol";
- * 
- * 
- *         let source = Cil_datatype.Position.unknown in
- *         let link = Lang.infoprover "isMessage" in
- *         LogicBuiltins.add_predicate ~source "isMessage" [LogicBuiltins.A] ~library ~link ()
- * 
- *       in
- *       LogicBuiltins.update_builtin_driver ~descr ~configure ()
- *     end
- *   else () *)
+let run () =
+  File.pretty_ast ();
+  Filecheck.check_ast "MPI-V"
 
 let () =
   Instantiate.Transform.register (module Mpi_recv.M:Instantiate.Instantiator_builder.Generator_sig);
@@ -73,4 +53,5 @@ let () =
   Instantiate.Transform.register
     (module Mpi_gather.M:Instantiate.Instantiator_builder.Generator_sig);
   Instantiate.Transform.register
-    (module Mpi_scatter.M:Instantiate.Instantiator_builder.Generator_sig)
+    (module Mpi_scatter.M:Instantiate.Instantiator_builder.Generator_sig);
+  Db.Main.extend run

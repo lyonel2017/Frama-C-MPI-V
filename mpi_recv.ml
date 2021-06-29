@@ -22,11 +22,40 @@ open Cil_types
 
 let function_name = "MPI_Recv"
 
+let protocol_for_intrecv f =
+  let t1 = Mpi_utils.getFirst_get_type_protocol () in
+  let t2 = Mpi_utils.integer_var (List.nth f.sformals 3) in
+  let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
+  let t4 = Mpi_utils.integer_var (List.nth f.sformals 4) in
+  let p =
+    Mpi_utils.papp "isMessageforIntRecv" (t1 :: t2 :: t3 :: t4:: []) []
+  in
+  Mpi_utils.make_pred p "protocol_for_recv"
+
+let pred_message f =
+  let t1 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "protocol")) in
+  let t1 = Mpi_utils.tapp "get_type" (t1 :: []) [] in
+  let t1 = Logic_const.told t1 in
+  let t1 = Mpi_utils.tapp "getFirst" (t1 :: []) [] in
+
+  let t2 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
+  let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
+  let t2 = Mpi_utils.to_list t2 t3 in
+
+  let p = Mpi_utils.papp "predIntMessage" (t1 :: t2 :: []) [] in
+  Normal, Mpi_utils.make_pred p "pred_message"
+
 let generate_spec t f _ : Cil_types.funspec =
   let kf = Globals.Functions.find_by_name function_name in
   let spec = Annotations.funspec kf in
   let spec = Visitor.visitFramacFunspec (new Mpi_utils.visitor_beh t f.sformals) spec in
-  spec
+
+  if String.equal (Mpi_utils.cil_typ_to_mpi_string t) "mpi_mpi_int" then
+    let requires = [protocol_for_intrecv f] in
+    let ensures =  [Mpi_utils.reduce_protocol ()] in
+    let ensures = pred_message f :: ensures in
+    Mpi_utils.update_spec spec Cil.default_behavior_name requires ensures
+  else spec
 
 let generate_function_type t =
   let ret = Cil.intType in
@@ -34,11 +63,11 @@ let generate_function_type t =
     [
       ("buf" , Mpi_utils.ptr_of t, []) ;
       ("count", Cil.intType, []);
-      ("datatype", Mpi_utils.mpi_datatype (), []);
+      ("datatype", Mpi_utils.get_type "MPI_Datatype", []);
       ("source", Cil.intType, []);
       ("tag", Cil.intType, []);
-      ("comm", Mpi_utils.mpi_comm (), []);
-      ("status", Mpi_utils.ptr_of (Mpi_utils.mpi_status ()), [])
+      ("comm", Mpi_utils.get_type "MPI_Comm", []);
+      ("status", Mpi_utils.ptr_of (Mpi_utils.get_type "MPI_Status"), [])
     ]
   in
   TFun(ret, Some ps, false, [])
@@ -54,9 +83,9 @@ let well_typed_call _ret _fct = function
       Cil.isIntegralType (Cil.typeOf count) &&
       Cil.isIntegralType (Cil.typeOf source) &&
       Cil.isIntegralType (Cil.typeOf tag) &&
-      Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.mpi_datatype ()) &&
-      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.mpi_comm ()) &&
-      Cil_datatype.Typ.equal (Cil.typeOf status) (Mpi_utils.ptr_of (Mpi_utils.mpi_status ()))
+      Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.get_type "MPI_Datatype") &&
+      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.get_type "MPI_Comm") &&
+      Cil_datatype.Typ.equal (Cil.typeOf status) (Mpi_utils.ptr_of (Mpi_utils.get_type "MPI_Status"))
     in
     begin
       match Mpi_utils.exp_type_of_pointed buf with
