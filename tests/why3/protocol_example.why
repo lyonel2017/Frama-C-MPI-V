@@ -3,66 +3,52 @@ module MPI_Function
 use protocol.MPI_Protocol
 use protocol.MPI_Protocol_Handler
 use int.Int
+use list.List
 
 type mpi_protocol = {mutable p:protocol}
 
 val s : mpi_protocol
+
+(*----------------------------- Modeling MPI function ----------------------*)
 
 val init (p:protocol) :unit
     writes {s.p}
     ensures{s.p=p}
     ensures{0 <= rank < size}
 
-val ssend (dest:int) (count: int) (tag: int) (datatype: mpi_datatype) : unit
+val intssend (dest:int) (tag: int) (count: int) (data: list int): unit
     writes { s.p }
     requires { 0 <= dest /\ dest < size }
-    requires { isMessageforSend (getFirst s.p) dest count tag datatype}
+    requires { isMessageforIntSend (getFirst s.p) dest count tag data}
     ensures { s.p = getNext (old s).p }
 
-val recv (source:int) (count: int) (tag: int) (datatype: mpi_datatype): unit
+val intrecv (source:int) (tag: int) (count: int): list int
     writes { s.p }
     requires { 0 <= source /\ source < size }
-    requires { isMessageforRecv (getFirst s.p) source count tag datatype}
+    requires { isMessageforIntRecv (getFirst s.p) source count tag }
     ensures { s.p = getNext (old s).p }
+    ensures { predIntMessage (getFirst (old s).p) result }
 
-val broadcast (root: int) (count: int) (datatype: mpi_datatype): unit
+val intbroadcast (data: list int) (root: int) (count: int): list int
     writes { s.p }
     requires { 0 <= root /\ root < size }
-    requires { isforBroadcast (getFirst s.p) root count datatype}
-    ensures { s.p = getNext (old s).p }
+    requires { isforIntBroadcast (getFirst s.p) root count data false }
+    ensures { predIntBroadcast (getFirst (old s).p) result }
+    ensures { root = rank -> data = result} (*pas térrible*)
+    ensures { countiIntBroadcast ((old s).p) (s.p) result }
 
-(*---------------------------------------------------------------------------------------------------*)
-
-val intbroadcast (data: int) (root: int): int
+val ghost_intbroadcast (data: list int) (root: int) (count: int): list int
     writes { s.p }
     requires { 0 <= root /\ root < size }
-    requires { isforIntBroadcast (getFirst s.p) root data}
-    ensures {match getFirst (old s).p with
-	       | IntBroadcast _ pred _ -> pred result
-	       | _ -> false
-	     end}
-    ensures {match getFirst (old s).p with
-	       | IntBroadcast _ _ prod -> s.p = Seq (prod data) (getNext (old s).p)
-	       | _ -> false
-	     end}
+    requires { isforIntBroadcast (getFirst s.p) root count data true}
+    ensures { predIntBroadcast (getFirst (old s).p) result }
+    ensures { root = rank -> data = result}
+    ensures { countiIntBroadcast ((old s).p) (s.p) result }
 
-val intssend (data: int) (dest:int) (tag: int): unit
-    writes { s.p }
-    requires { 0 <= dest /\ dest < size }
-    requires { isMessageforIntSend (getFirst s.p) dest tag data}
-    ensures { s.p = getNext (old s).p }
+val finalize () : unit
+    requires {isSkip (s.p)}
 
-val intrecv (data: int) (source:int) (tag: int): int
-    writes { s.p }
-    requires { 0 <= source /\ source < size }
-    requires { isMessageforIntRecv (getFirst s.p) source tag data}
-    ensures { s.p = getNext (old s).p }
-    ensures {match getFirst (old s).p with
-	       | IntMessage _ _ _ pred -> pred result
-	       | _ -> false
-	     end}
-
-(*---------------------------------------------------------------------------------------------------*)
+(*----------------------------- Protocol handler  ----------------------*)
 
 val simpl_pro (): unit
     writes {s.p}
@@ -80,11 +66,9 @@ val toskip_pro (): unit
     writes { s.p }
     requires { isSkip (simpl (getFirst s.p)) }
     ensures { s.p = getNext (old s).p }
-
-val finalize () : unit
-    requires {isSkip (s.p)}
-
 end
+
+(*----------------------------- Examples  ----------------------*)
 
 module MPI_example
 
@@ -93,16 +77,50 @@ use protocol.MPI_Protocol_Handler
 use protocol.MPI_prop
 use MPI_Function
 use int.Int
+use list.List
+
+let test () : unit
+requires {size >= 1}
+=
+    init (IntBroadcast 0 1 false
+                  (fun l -> match l with Cons n _ -> n = 3 | _ -> False end)
+                  (fun _ -> Skip)
+          );
+    let ref i = 0 in
+    if(rank = 0) then (i <- 3) else ();
+    let l =  intbroadcast (Cons i Nil) 0 1 in
+    assert {match l with Cons n _ -> n = 3 | _ -> False end};
+    toskip_pro ();
+    finalize ()
 
 let test1 () : unit
 requires {size >= 2}
 =
-    init (Message 0 1 1 1 MPI_int);
+    init (IntMessage 0 1 1 1 (fun _ -> True));
     if rank = 0 then (
-       ssend 1 1 1 MPI_int;
+       intssend 1 1 1 (Cons 3 Nil);
     )
     else if (rank = 1) then (
-       recv 0 1 1 MPI_int;
+       let _ = intrecv 0 1 1 in
+       ()
+    )
+    else (
+      toskip_pro ();
+    );
+   finalize ()
+
+let test11 () : unit
+requires {size >= 2}
+=
+    init (IntMessage 0 1 1 1
+               (fun l -> match l with Cons n _ -> n = 3 | _ -> false end)
+         );
+    if rank = 0 then (
+       intssend 1 1 1 (Cons 3 Nil);
+    )
+    else if (rank = 1) then (
+       let l = intrecv 0 1 1 in
+       assert {match l with Cons n _ -> n = 3 | _ -> false end};
        ()
     )
     else (
@@ -113,18 +131,18 @@ requires {size >= 2}
 let test12 () : unit
 requires {size >= 2}
 =
-    init (Foreach 0 0 (fun i -> Message i (i+1) 1 1 MPI_int));
+    init (Foreach 0 0 (fun i -> IntMessage i (i+1) 1 1 (fun _ -> true)));
     if rank = 0 then (
        simpl_pro ();
-       ssend 1 1 1 MPI_int;
+       intssend 1 1 1 (Cons 5 Nil);
        simpl_pro ();
        simpl_pro ();
    )
     else if (rank = 1) then (
          simpl_pro ();
-    	 recv 0 1 1 MPI_int;
-	 simpl_pro ();
-	 simpl_pro ();
+         let _ = intrecv 0 1 1 in
+         simpl_pro ();
+         simpl_pro ();
     )
     else (
       simpl_pro ();
@@ -133,18 +151,23 @@ requires {size >= 2}
       simpl_pro ();
     );
    finalize ()
+
+let function test_list (l: list int): bool = match l with Cons n Nil -> n = 5 | _ -> False end
 
 let test13 () : unit
 requires {size >= 2}
 =
-    init (Seq (Message 0 1 1 1 MPI_int)(Message 0 1 1 1 MPI_int));
+    init (Seq (IntMessage 0 1 1 1 test_list)
+              (IntMessage 1 0 1 1 test_list));
     if rank = 0 then (
-       ssend 1 1 1 MPI_int;
-       ssend 1 1 1 MPI_int
+       intssend 1 1 1 (Cons 5 Nil);
+       let l = intrecv 1 1 1 in
+       assert { test_list l};
+       ()
     )
     else if (rank = 1) then (
-       recv 0 1 1 MPI_int;
-       recv 0 1 1 MPI_int
+       let l =  intrecv 0 1 1 in
+       intssend 0 1 1 l
     )
     else (
       toskip_pro ();
@@ -152,181 +175,171 @@ requires {size >= 2}
     );
    finalize ()
 
+let function test_list2 (l: list int): bool =
+             match l with Cons n Nil -> n = 5 | _ -> False end
+
+let test14 () : unit
+requires {size >= 2}
+=
+    init (IntBroadcast 0 1 false
+                  (fun l -> match l with Cons n _ -> n = 3 | _ -> False end)
+                  (fun l1 -> Seq (IntMessage 0 1 1 1 test_list)
+                                 (IntMessage 1 0 1 1 test_list)));
+    let ref i = 0 in
+    if(rank = 0) then (i <- 3) else ();
+    let _ =  ghost_intbroadcast (Cons i Nil) 0 1 in
+    if rank = 0 then (
+       intssend 1 1 1 (Cons 5 Nil);
+       let l = intrecv 1 1 1 in
+       assert { test_list l };
+       ()
+    )
+    else if (rank = 1) then (
+       let l =  intrecv 0 1 1 in
+       intssend 0 1 1 l
+    )
+    else (
+      toskip_pro ();
+      toskip_pro ();
+    );
+    finalize ()
+
 (*let test2 () : unit
 requires {size >= 20}
 =
-    init p (Foreach 0 9 (fun i -> Message i (i+10) 1 1 MPI_int));
+    init (Foreach 0 9 (fun i -> IntMessage i (i+10) 1 1 (fun _ -> true)));
     if rank < 10 then (
        label L1 in
        let ref i = 0 in
        while i < rank do
-	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+	   invariant{ getNext s.p = getNext (s.p at L1) }
 	   invariant{ 0 <= i <= rank}
 	   variant {rank - i}
-       	   unroll p;
-	   assoc p;
-       	   toskip p;
+       	   unroll_pro ();
+	   assoc_pro ();
+       	   toskip_pro ();
 	   i <- i+1;
        done;
 
-       unroll p;
-       assoc p;
-       ssend (rank+10) 1 1 MPI_int p;
+       unroll_pro ();
+       assoc_pro ();
+       ssend (rank+10) 1 1 MPI_int;
 
        i <- i+1;
        while i <= 9 do
-      	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-	   invariant{ getNext p.p = getNext (p.p at L1) }
+      	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+	   invariant{ getNext s.p = getNext (s.p at L1) }
 	   invariant{ rank+1 <= i <= 10}
 	   variant {9 - i}
-       	   unroll p;
-	   assoc p;
-       	   toskip p;
+       	   unroll_pro ();
+	   assoc_pro ();
+       	   toskip_pro ();
 	   i <- i+1;
        done;
-       toskip p;
+       toskip_pro ();
     )
     else if (rank < 20) then (
        label L1 in
        let ref i = 0 in
        while i < (rank-10) do
-	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+	   invariant{ getNext s.p = getNext (s.p at L1) }
 	   invariant{ 0 <= i <= rank-10}
 	   variant { rank-10 - i}
-       	   unroll p;
-	   assoc p;
-       	   toskip p;
+       	   unroll_pro ();
+	   assoc_pro ();
+       	   toskip_pro ();
 	   i <- i+1;
        done;
 
-       unroll p;
-       assoc p;
-       recv (rank - 10) 1 1 MPI_int p;
+       unroll_pro ();
+       assoc_pro ();
+       recv (rank - 10) 1 1 MPI_int;
 
        i <- i+1;
        while i <= 9 do
-      	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-	   invariant{ getNext p.p = getNext (p.p at L1) }
+      	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+	   invariant{ getNext s.p = getNext (s.p at L1) }
 	   invariant{ rank+1 -10 <= i <= 10}
 	   variant {9 - i}
-       	   unroll p;
-	   assoc p;
-       	   toskip p;
+       	   unroll_pro ();
+	   assoc_pro ();
+       	   toskip_pro ();
 	   i <- i+1;
        done;
-       toskip p;
+       toskip_pro ();
     )
     else (
        label L1 in
        let ref i = 0 in
        while i <= 9 do
-	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+	   invariant{ getNext s.p = getNext (s.p at L1) }
 	   invariant{ 0 <= i <= 10}
 	   variant {9 - i}
-       	   unroll p;
-	   assoc p;
-       	   toskip p;
+       	   unroll_pro ();
+	   assoc_pro ();
+       	   toskip_pro ();
 	   i <- i+1;
        done;
-       toskip p;
+       toskip_pro ();
     );
-   finalize p
+   finalize ()
+*)
 
-let test3 () : unit
+(*let test3 () : unit
 requires {size >= 10}
 =
-    init p (While 10 (Message 0 1 1 1 MPI_int));
+    init (While 10 (Message 0 1 1 1 MPI_int));
     if rank = 0 then (
        label L1 in
        let ref i = 0 in
        while i <= 9 do
-	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-	   invariant{ getNext p.p = getNext (p.p at L1) }
+	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+	   invariant{ getNext s.p = getNext (s.p at L1) }
 	   invariant{ 0 <= i <= 10}
 	   variant {9 - i}
 
-	   unroll p;
-       	   assoc p;
-	   ssend 1 1 1 MPI_int p;
+	   unroll_pro ();
+       	   assoc_pro ();
+	   ssend 1 1 1 MPI_int;
 	   i <- i+1;
        done;
-       toskip p;
+       toskip_pro ();
     )
     else if rank = 1 then (
        label L1 in
        let ref i = 0 in
        while i <= 9 do
-       	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-       	   invariant{ getNext p.p = getNext (p.p at L1) }
+       	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+       	   invariant{ getNext s.p = getNext (s.p at L1) }
        	   invariant{ 0 <= i <= 10}
        	   variant {9 - i}
 
-       	   unroll p;
-       	   assoc p;
-           recv 0 1 1 MPI_int p;
+       	   unroll_pro ();
+       	   assoc_pro ();
+           recv 0 1 1 MPI_int;
        	   i <- i+1;
        	done;
-       	toskip p;
+       	toskip_pro ();
     )
     else (
        label L1 in
        let ref i = 0 in
        while i <= 9 do
-       	   invariant{ getFirst p.p = getNext (split (getFirst (p.p at L1)) i)}
-       	   invariant{ getNext p.p = getNext (p.p at L1) }
+       	   invariant{ getFirst s.p = getNext (split (getFirst (s.p at L1)) i)}
+       	   invariant{ getNext s.p = getNext (s.p at L1) }
        	   invariant{ 0 <= i <= 10}
        	   variant {9 - i}
-       	   unroll p;
-       	   assoc p;
-       	   toskip p;
+       	   unroll_pro ();
+       	   assoc_pro ();
+       	   toskip_pro ();
        	   i <- i+1;
        done;
-       toskip p;
+       toskip_pro ();
     );
-   finalize p
-
-
-(*let test4 () : unit
-requires {size >= 2}
-=
-    init p (Message 0 1 1 1 MPI_int);
-    if rank = 0 then (
-       intssend 1 1 1 p;
-    )
-    else if (rank = 1) then (
-       intrecv 0 1 1 MPI_int p;
-       ()
-    )
-    else (
-      toskip p;
-    );
-   finalize p
-
-let test42 () : unit
-requires {size >= 2}
-=
-    init p (Foreach 0 0 (fun i -> Message i (i+1) 1 1 MPI_int));
-    if rank = 0 then (
-       simpl p;
-       ssend 1 1 1 MPI_int p;
-       simpl p;
-       simpl p;
-   )
-    else if (rank = 1) then (
-         simpl p;
-    	 recv 0 1 1 MPI_int p;
-	 simpl p;
-	 simpl p;
-    )
-    else (
-      simpl p;
-      toskip p;
-      simpl p;
-      simpl p;
-    );
-   finalize p*)
+   finalize ()
 *)
+
 end
