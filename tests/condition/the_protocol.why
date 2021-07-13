@@ -3,7 +3,7 @@ module MPI_the_protocol
 use protocol.MPI_Protocol
 use int.Int
 
-let constant the_protocol : protocol =
+constant the_protocol : protocol =
      Foreach 0 9 (fun i -> IntMessage i (i+10) 1 1 (fun l -> true))
 
 end
