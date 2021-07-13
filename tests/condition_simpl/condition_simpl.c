@@ -3,7 +3,7 @@
 //frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver condition_simpl.c
 
 int main(int argc, char **argv){
-  int data = 0;
+  int data = -1;
   int my_rank = 0, num_procs = 0;
 
   /* Initialize the infrastructure necessary for communication */
@@ -27,6 +27,7 @@ int main(int argc, char **argv){
 
       /* Receive message from process 0 */
       MPI_Recv(&data, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      //@ assert data == 0;
     }
     /*@ ghost
        else {
@@ -34,7 +35,6 @@ int main(int argc, char **argv){
        }
       */
   }
-
   /* Tear down the communication infrastructure */
   MPI_Finalize();
   return 0;
