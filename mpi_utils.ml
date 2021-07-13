@@ -240,7 +240,7 @@ let papp s p l =
   Papp (l_i, l, p)
 
 let make_pred p name =
-  let pred =  {(Logic_const.unamed p) with pred_name = [name] } in
+  let pred = {(Logic_const.unamed p) with pred_name = [name] } in
   Logic_const.new_predicate pred
 
 let getFirst_get_type_protocol () =
