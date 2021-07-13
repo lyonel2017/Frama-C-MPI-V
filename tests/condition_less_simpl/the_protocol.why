@@ -4,6 +4,6 @@ use protocol.MPI_Protocol
 use int.Int
 
 let constant the_protocol : protocol =
-(Foreach 0 0 (fun i -> Message i (i+1) 1 1 MPI_int))
+(Foreach 0 0 (fun i -> IntMessage i (i+1) 1 1 (fun l -> true)))
 
 end

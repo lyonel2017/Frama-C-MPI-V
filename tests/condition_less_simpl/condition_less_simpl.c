@@ -27,7 +27,6 @@ int main(int argc, char **argv){
     MPI_Ssend(&data, 1, MPI_INT, 1, 1, MPI_COMM_WORLD);
 
     //@ ghost simpl();
-    //@ ghost simpl();
 
   } else{
     if (my_rank == 1){
@@ -38,14 +37,12 @@ int main(int argc, char **argv){
       MPI_Recv(&data, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       //@ ghost simpl();
-      //@ ghost simpl();
     }
 
     /*@ ghost
     else {
       simpl();
       toskip();
-      simpl();
       simpl();
     }
     @*/
