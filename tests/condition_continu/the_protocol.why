@@ -1,0 +1,16 @@
+module MPI_the_protocol
+
+use frama_c_wp.vlist.Vlist
+use protocol.MPI_Protocol
+use int.Int
+
+predicate p1 (l1: list int) (l2: list int) = nth l1 0 = nth l2 0
+predicate p2 (l1: list int) (l2: list int) = (nth l1 0) + 1 = (nth l2 0)
+
+function f (l1: list int) : protocol =
+              Seq (IntMessage 0 1 1 1 (p1 l1))
+                  (IntMessage 1 0 1 1 (p2 l1))
+
+constant the_protocol : protocol = IntGhostBroadcast 0 1 (fun _ -> true) f
+
+end
