@@ -546,7 +546,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @
   @ predicate predIntMessage (logic_protocol p , \list <int> l);
   @ predicate predIntBroadcast (logic_protocol p,  \list <int> l);
-  @ predicate countiIntBroadcast (logic_protocol p_old, logic_protocol p_new, \list <int> l);
+  @ predicate countiIntBroadcast (logic_protocol f_old, logic_protocol n_old, logic_protocol p_new, \list <int> l);
   @
   @ logic logic_protocol simpl(logic_protocol p);
   @ logic logic_protocol split(logic_protocol p,integer i);
@@ -707,7 +707,9 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, M
   @ requires datatype: datatype == MPI_CHAR;
 
   //@ requires protocol_for_bcast: isforIntBroadcast(getFirst(get_type(protocol)),root,count,to_list(buf, 0, count));
-  //@ ensures continu_protocol: countiIntBroadcast (\old(get_type(protocol)),get_type(protocol), to_list(buf, 0, count));
+  //@ ensures continu_protocol:
+  //      \let p = \old(get_type(protocol));
+  //            countiIntBroadcast (getFirst(p),getNext(p),get_type(protocol), to_list(buf, 0, count));
   //@ ensures pred_Message: predIntBroadcast (getFirst(\old(get_type(protocol))), to_list(buf, 0, count));
 
   @ behavior type_root :
@@ -734,7 +736,9 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
   @  requires count_is_not_neg: 0 <= count;
   @  requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @  requires protocol_for_bcast: isforIntGhostBroadcast(getFirst(get_type(protocol)),root,count,to_list(buf, 0, count));
-  @  ensures continu_protocol: countiIntBroadcast (\old(get_type(protocol)),get_type(protocol), to_list(buf, 0, count));
+  @  ensures continu_protocol:
+        \let p = \old(get_type(protocol));
+              countiIntBroadcast (getFirst(p),getNext(p),get_type(protocol), to_list(buf, 0, count));
   @  ensures pred_Message: predIntBroadcast (getFirst(\old(get_type(protocol))), to_list(buf, 0, count));
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;

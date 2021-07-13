@@ -60,7 +60,7 @@ logic logic_protocol "getNext" (logic_protocol) = "getNext";
 
 predicate "predIntMessage" (logic_protocol,list) = "predIntMessage";
 predicate "predIntBroadcast" (logic_protocol,list) = "predIntBroadcast";
-predicate "countiIntBroadcast" (logic_protocol, logic_protocol,list) = "countiIntBroadcast";
+predicate "countiIntBroadcast" (logic_protocol,logic_protocol,logic_protocol,list) = "countiIntBroadcast";
 
 why3.file += "protocol.why:MPI_Protocol_Handler";
 why3.file += "protocol.why:MPI_prop";

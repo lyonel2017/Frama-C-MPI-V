@@ -47,16 +47,34 @@ let pred_message f =
   Normal, Mpi_utils.make_pred p "pred_message"
 
 let continu_protocol f =
-  let t2 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "protocol")) in
-  let t2 = Mpi_utils.tapp "get_type" (t2 :: []) [] in
+  let t3 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "protocol")) in
+  let t3 = Mpi_utils.tapp "get_type" (t3 :: []) [] in
+  let t1 = Logic_const.told t3 in
 
-  let t1 = Logic_const.told t2 in
+  let var = Cil_const.make_logic_var_local "tmp" (t1.term_type) in
+  let info =
+    { l_var_info = var;
+      l_labels = [];
+      l_tparams = [];
+      l_type = Some t1.term_type;
+      l_profile = [];
+      l_body = LBterm t1 }
+  in
 
-  let t4 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
-  let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
-  let t3 = Mpi_utils.to_list t4 t3 in
+  let tmp =  Logic_const.term (Tapp (info, [], [])) t1.term_type in
 
-  let p = Mpi_utils.papp "countiIntBroadcast" (t1 :: t2 :: t3:: []) [] in
+  let t1 = Mpi_utils.tapp "getFirst" (tmp :: []) [] in
+  let t2 = Mpi_utils.tapp "getNext" (tmp :: []) [] in
+
+  let t5 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
+  let t4 = Mpi_utils.integer_var (List.nth f.sformals 1) in
+  let t4 = Mpi_utils.to_list t5 t4 in
+
+  let p = Mpi_utils.papp "countiIntBroadcast" (t1 :: t2 :: t3 :: t4 :: []) [] in
+
+  let pred = Logic_const.unamed p in
+  let p = Plet (info, pred) in
+
   Normal, Mpi_utils.make_pred p "continu_protocol"
 
 let same_array f =
