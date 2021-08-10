@@ -1,9 +1,9 @@
 #  Frama-C-MPI-V
 
 This is the *MPI-V (Message Passing Interface Verifier)* plug-in for *Frama-C*.
-The plugin allow to verify deadlock freedom and session fidelity in the case
-of parallele programming in C using the *Message Passing Interface* [MPI](https://www.mpi-forum.org/).
-*MPI-V* is inspired form the approach proposed in
+The plugin allow to verify deadlock freedom session fidelity and fonctional correcness in the case
+of distributed programming written in C using the *Message Passing Interface* [MPI](https://www.mpi-forum.org/).
+*MPI-V* is based on the concept of session types and inspired form the approach proposed in
 [ParTypes](http://rss.di.fc.ul.pt/tools/partypes/#Downloads).
 
 The tool support a small supset of the
@@ -12,13 +12,9 @@ standard. Support function included :
 * Synchronous point-to-point communication: `MPI_Ssend` and `MPI_Recv`
 * Collective communication: `MPI_Bcast`, `MPI_Gather`, `MPI_Scatter`
 
-
-*MPI-V* use session type to check the absence of deadlock freedom and session fiedeity.......TODO
-
-
 ## Installation
 
-*MPI-V v0.0.0* requires [Frama-C v22.0 (Titanium)](https://git.frama-c.com/pub/frama-c). For more information see [Frama-C](http://frama-c.com).
+*MPI-V v0.0.0* requires [Frama-C v23.1 (Vanadium)](https://git.frama-c.com/pub/frama-c). For more information see [Frama-C](http://frama-c.com).
 
 For installation, run following commands in the *MPI-V* directory:
 
@@ -49,7 +45,13 @@ int main(int argc, char **argv){
 	else{
 		if (my_rank == 1){
 			MPI_Recv(&data, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			//@ assert data == 0;
 		}
+		/*@ ghost
+			else {
+				toskip();
+			}
+		*/
 	}
 	MPI_Finalize();
 	return 0;
@@ -63,7 +65,8 @@ module MPI_the_protocol
 
 	use protocol.MPI_Protocol
 
-	let constant the_protocol : protocol = Message 0 1 1 1 MPI_int
+	constant the_protocol : protocol =
+           IntMessage 0 1 1 1 (fun l -> nth l 0 = 0)
 
 end
 ```

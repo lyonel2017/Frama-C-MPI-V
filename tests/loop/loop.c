@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv)
 {
-    char buf[2] = {'O','k'};;
+    int buf = 0;
     int my_rank, num_procs;
 
     /* Initialize the infrastructure necessary for communication */
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
         for (other_rank = 1; other_rank < num_procs; other_rank++){
 	  //@ ghost unroll();
 	  //@ ghost assoc();
-	  MPI_Ssend(buf, sizeof(buf), MPI_CHAR, other_rank,0, MPI_COMM_WORLD);
+	  MPI_Ssend(&buf, 1, MPI_INT, other_rank,0, MPI_COMM_WORLD);
         }
 	//@ ghost toskip();
         /* Receive messages from all other process */
@@ -41,12 +41,12 @@ int main(int argc, char **argv)
 	  @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),other_rank));
 	  @ loop invariant getNext(get_type(protocol)) ==
 	  @   getNext(\at(get_type(protocol),LoopEntry));
-	  @ loop assigns other_rank, protocol,buf[0..1];
+	  @ loop assigns other_rank, protocol,buf;
 	  @ loop variant num_procs - other_rank;*/
 	for (other_rank = 1; other_rank < num_procs; other_rank++){
 	  //@ ghost unroll();
 	  //@ ghost assoc();
-	  MPI_Recv(buf, sizeof(buf), MPI_CHAR, other_rank,0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(&buf, 1, MPI_INT, other_rank,0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 	//@ ghost toskip();
     } else {
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     @*/
 
         /* Receive message from process #0 */
-        MPI_Recv(buf, sizeof(buf), MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&buf, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     /*@ ghost
     i++;
@@ -115,9 +115,9 @@ int main(int argc, char **argv)
     unroll();
     assoc();
     @*/
-
+        buf = buf + 1;
         /* Send message to process #0 */
-        MPI_Ssend(buf, sizeof(buf), MPI_CHAR, 0,0, MPI_COMM_WORLD);
+        MPI_Ssend(&buf, 1, MPI_INT, 0,0, MPI_COMM_WORLD);
 
     /*@ ghost
     i++;
