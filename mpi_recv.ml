@@ -45,7 +45,7 @@ let pred_message f =
   let p = Mpi_utils.papp "predIntMessage" (t1 :: t2 :: []) [] in
   Normal, Mpi_utils.make_pred p "pred_message"
 
-let generate_spec t f _ : Cil_types.funspec =
+let generate_spec t _ f : Cil_types.funspec =
   let kf = Globals.Functions.find_by_name function_name in
   let spec = Annotations.funspec kf in
   let spec = Visitor.visitFramacFunspec (new Mpi_utils.visitor_beh t f.sformals) spec in

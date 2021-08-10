@@ -26,16 +26,6 @@ let () =
     Kernel.CppExtraArgs.add
       (Format.asprintf " -I%a" Datatype.Filepath.pp_abs share);
 
-    Kernel.Keep_unused_specified_functions.off ();
-    let ppc, ppk = File.get_preprocessor_command () in
-    let file = MPI_V_options.Self.Share.get_file ~mode:`Must_exist "mpi.h" in
-
-    File.pre_register
-      (File.NeedCPP
-         (file,
-          ppc
-          ^ Format.asprintf " -I%a" Datatype.Filepath.pp_abs share,
-          ppk));
     if Plugin.is_present "instantiate" then
       Dynamic.Parameter.Bool.on "-instantiate" ();
   in
