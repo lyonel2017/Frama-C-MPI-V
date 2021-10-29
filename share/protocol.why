@@ -37,11 +37,23 @@ type protocol =
     (* ++ the size and the root can go into the predicate and the continuation.
           Moreoverlenght data = count*)
   | IntGhostBroadcast int int (list int -> bool) (list int  -> protocol)
-  | If bool protocol protocol
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
   | Foreach int int (int -> protocol)
   | While int protocol
+
+(* Wildcard (int -> bool) (int -> bool) int int int subprotocol
+	- only consume if the predicate is false for the rank of the source and false for any rank for the targed.
+	- the source is not specified in the protocol
+	- we make a projection of the communication condition.
+	- the check of validity of the predication is done after a communication has take place.
+        - the received data must be expressed by a predicate valid for in any case
+        - in addition we have a predicate telling if I have to take place to the communication, if not am not autorised to
+          communicate with the target
+        - subprotocol is the protocol in the protocol
+*)
+
+  | If bool protocol protocol
   | Seq protocol protocol
   | Skip
 
