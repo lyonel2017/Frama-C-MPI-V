@@ -19,19 +19,26 @@
 (**************************************************************************)
 
 val string_of_typ : Cil_types.typ -> string
+val ptr_of: Cil_types.typ -> Cil_types.typ
+val const_of: Cil_types.typ -> Cil_types.typ
+val mpi_to_cil_typ: Cil_types.exp -> Cil_types.typ
+val cil_typ_to_mpi_string : Cil_types.typ -> string
+val exp_type_of_pointed: Cil_types.exp -> Cil_types.typ option
+val return_type: Cil_types.logic_info -> Cil_types.logic_type
 
 class visitor_beh: Cil_types.typ -> Cil_types.varinfo list -> Visitor.generic_frama_c_visitor
 
-val mpi_comm: unit -> Cil_types.typ
+val get_type: string -> Cil_types.typ
+val get_var: string -> Cil_types.varinfo
+val get_l_info: string -> Cil_types.logic_info
 
-val mpi_status: unit -> Cil_types.typ
+val reduce_protocol: unit -> Cil_types.termination_kind * Cil_types.identified_predicate
+val getFirst_get_type_protocol: unit -> Cil_types.term
+val to_list: Cil_types.term -> Cil_types.term -> Cil_types.term
+val integer_var: Cil_types.varinfo -> Cil_types.term
 
-val mpi_datatype: unit -> Cil_types.typ
-
-val ptr_of: Cil_types.typ -> Cil_types.typ
-
-val const_of: Cil_types.typ -> Cil_types.typ
-
-val mpi_to_cil_typ: Cil_types.exp -> Cil_types.typ
-
-val exp_type_of_pointed: Cil_types.exp -> Cil_types.typ option
+val make_pred: Cil_types.predicate_node -> string -> Cil_types.identified_predicate
+val tapp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.term
+val papp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.predicate_node
+val update_spec: Cil_types.spec -> string -> Cil_types.identified_predicate list ->
+  (Cil_types.termination_kind * Cil_types.identified_predicate) list -> Cil_types.spec

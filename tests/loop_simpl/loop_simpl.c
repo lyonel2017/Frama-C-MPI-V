@@ -3,7 +3,7 @@
 //frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver loop_simpl.c
 
 int main(int argc, char **argv){
-  char buf[2] = {'O','k'};
+  int buf = 0;
   int my_rank, num_procs;
 
   /* Initialize the infrastructure necessary for communication */
@@ -32,7 +32,7 @@ int main(int argc, char **argv){
       //@ ghost unroll();
       //@ ghost assoc();
 
-      MPI_Ssend(buf, sizeof(buf), MPI_CHAR, 1,0, MPI_COMM_WORLD);
+      MPI_Ssend(&buf, 1, MPI_INT, 1,0, MPI_COMM_WORLD);
       count++;
     }
 
@@ -47,13 +47,13 @@ int main(int argc, char **argv){
 	@  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),count));
 	@ loop invariant getNext(get_type(protocol)) ==
 	@    getNext(\at(get_type(protocol),LoopEntry));
-	@ loop assigns count, protocol,buf[0..1];
+	@ loop assigns count, protocol,buf;
 	@ loop variant 9 - count;*/
       while (count <= 9){
 	//@ ghost unroll();
 	//@ ghost assoc();
 
-	MPI_Recv(buf, sizeof(buf), MPI_CHAR, 0,0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	MPI_Recv(&buf, 1, MPI_INT, 0,0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	count++;
       }
 

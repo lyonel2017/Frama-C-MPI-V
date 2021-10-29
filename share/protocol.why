@@ -20,212 +20,372 @@
 
 module MPI_Protocol
 
-use int.Int
-use option.Option
-use array.Array
+use frama_c_wp.vlist.Vlist
+(* use list.List *)
 
 type mpi_datatype =
 | MPI_char
 | MPI_int
 
-let constant get_mpi_char : mpi_datatype = MPI_char
-let constant get_mpi_int : mpi_datatype = MPI_int
-
-val constant rank : int
 val constant size : int
 
 type protocol =
-  | Message int int int int mpi_datatype
-  | Foreach int int (int -> protocol)
-  | While int protocol
-  | Seq protocol protocol
-  | Skip
-  | Broadcast int int mpi_datatype
+  | IntMessage int int int int (list int -> bool)
+    (* ++ the size, sender and recever can go into the predicate.
+          Moreover information lenght data = count*)
+  | IntBroadcast int int (list int -> bool) (list int  -> protocol)
+    (* ++ the size and the root can go into the predicate and the continuation.
+          Moreoverlenght data = count*)
+  | IntGhostBroadcast int int (list int -> bool) (list int  -> protocol)
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
+  | Foreach int int (int -> protocol)
+  | While int protocol
 
-(* | choice (int list) int int int mpi_datatype)
-    A nondet recev require a complete choice (all posibilitiase are in the choice)
-    A send check if send to the dest (define in the nondet), if yes he must by in the list of source, if
-     the send not to the dest he simpl to skip the nondet and check the rest of the protocol
-    The choice can be simpl like foreach
- *)
-
-
-
-(*  | IntVal (pred int) (cont int)
-    require
-    to proof that the variable introduised is the same
-    for all process (or the same property ?)
-
-    Maybe use a ghost broadcast
+(* Wildcard (int -> bool) (int -> bool) int int int subprotocol
+	- only consume if the predicate is false for the rank of the source and false for any rank for the targed.
+	- the source is not specified in the protocol
+	- we make a projection of the communication condition.
+	- the check of validity of the predication is done after a communication has take place.
+        - the received data must be expressed by a predicate valid for in any case
+        - in addition we have a predicate telling if I have to take place to the communication, if not am not autorised to
+          communicate with the target
+        - subprotocol is the protocol in the protocol
 *)
 
-function seq (p1: protocol) (p2: protocol): protocol = Seq p1 p2
+  | If bool protocol protocol
+  | Seq protocol protocol
+  | Skip
 
-predicate isMessage (p:protocol) =
-       match p with
-         | Message _ _ _ _ _ -> true
-         | _ -> false
-       end
+end
 
-predicate isForeach (p:protocol) =
-       match p with
-       | Foreach _ _ _ -> true
-       | _ -> false
-       end
+module MPI_Protocol_Handler
 
-predicate isSkip (p:protocol) =
-       match p with
-       | Skip -> true
-       | _ -> false
-       end
+use int.Int
+use option.Option
+use array.Array
+use MPI_Protocol
+use frama_c_wp.vlist.Vlist
+(* use list.List *)
 
-predicate isBroadcast (p: protocol) =
-	match p with
-	| Broadcast _ _ _ -> true
-	| _ -> false
-	end
+val constant rank : int
 
-predicate isGather (p: protocol) =
-	  match p with
-	  | Gather _ _ _ -> true
-	  | _ -> false
-	  end
+(* -------------------------------------------------------------------- *)
+(* --- isMessageforIntSend                                          --- *)
+(* -------------------------------------------------------------------- *)
 
-predicate isScatter (p: protocol) =
-	  match p with
-	  | Scatter _ _ _ -> true
-	  | _ -> false
-	  end
+predicate isIntMessage (p:protocol)
 
-predicate isMessageforSend (p:protocol) (dest: int) (count: int) (tag: int) (datatype: mpi_datatype) =
-       match p with
-         | Message src dst data_size t mt ->
-	           src = rank /\ dest = dst /\ data_size = count /\ tag = t /\ datatype = mt
-		   /\ 0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src
-         | _ -> false
-       end
+axiom IsIntMessage: forall src dst data_size t: int, pre: list int -> bool.
+      isIntMessage (IntMessage src dst data_size t pre)
 
-predicate isMessageforRecv (p:protocol) (source: int) (count: int) (tag: int) (datatype: mpi_datatype) =
-       match p with
-         | Message src dst data_size t mt ->
-	           src = source /\ dst = rank /\ data_size <= count /\ tag = t /\ datatype = mt
-		   /\ 0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src
-         | _ -> false
-       end
+(* -------------------------------------------------------------------- *)
+(* --- isIntBroadcast                                               --- *)
+(* -------------------------------------------------------------------- *)
 
-predicate isforBroadcast (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
-	match p with
-	  | Broadcast r data_size mt -> root = r /\  data_size = count /\ datatype = mt
-	    	      /\ 0 <= r /\ r < size
-	  | _ -> false
-        end
+predicate isIntBroadcast (p: protocol)
 
-predicate isforGather (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
-	match p with
-	  | Gather r data_size mt -> root = r /\  data_size = count /\ datatype = mt
-	    	     /\ 0 <= r /\ r < size
-	  | _ -> false
-        end
+axiom IsIntBroadcast: forall r data_size: int, pred: (list int -> bool), cont: (list int  -> protocol).
+      isIntBroadcast (IntBroadcast r data_size pred cont)
 
-predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) =
-	match p with
-	  | Scatter r data_size mt -> root = r /\  data_size = count /\ datatype = mt
-	    	    /\ 0 <= r /\ r < size
-	  | _ -> false
-        end
+(* -------------------------------------------------------------------- *)
+(* --- isGather                                                     --- *)
+(* -------------------------------------------------------------------- *)
 
-function simpl (p: protocol) : protocol =
-	 match p with
-	 | Seq Skip q -> q
-	 | Seq h Skip -> h
-         | Message source dest _ _ _ ->
-            if rank <> source /\ rank <> dest /\
-	       0 <= source /\ source < size /\ 0 <= dest /\ dest < size /\ dest <> source
-            then Skip
-            else p
-	 | Foreach low high body ->
-	    if low <= high
-  	    then Seq (body low) (Foreach (low + 1) high body)
- 	    else Skip
-	 | While n body ->
-	    if n > 0
-	    then Seq body (While (n-1) body)
-	    else Skip
-         | _ -> p
-         end
+predicate isGather (p: protocol)
 
-function split (p: protocol) (c : int): protocol  =
-        match p with
-       | Foreach low high body ->
-         if low <= c <= high
-         then Seq (Foreach low (c-1) body) (Foreach c high body)
-	 else if low <= high < c
-	 then Seq (Foreach low high body) (Foreach c high body)
-         else if c < low <= high
-	 then Seq (Foreach low c body) (Foreach low high body)
-	 else p
-       | While n body ->
-         if 0 <= c <= n
-         then Seq (While c body) (While (n-c) body)
-         else if 0 <= n < c
-	 then Seq (While n body) (While (n-c) body)
-	 else if c < 0 <= n
-	 then Seq (While c body) (While n body)
-	 else p
-       | _ -> p
-        end
+axiom IsGather: forall r data_size: int, mt: mpi_datatype.
+      isGather (Gather r data_size mt)
 
-function assoc (p:protocol) :protocol =
-	 match p with
-	 | Seq (Seq h q) p -> Seq h (Seq q p)
-	 | p -> p
-	 end
+(* -------------------------------------------------------------------- *)
+(* --- isScatter                                                    --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isScatter (p: protocol)
+
+axiom IsScatter: forall r data_size: int, mt: mpi_datatype.
+      isScatter (Scatter r data_size mt)
+
+(* -------------------------------------------------------------------- *)
+(* --- isForeach                                                    --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isForeach (p: protocol)
+
+axiom IsForeach: forall low high: int, body: int -> protocol.
+      isForeach (Foreach low high body)
+
+(* -------------------------------------------------------------------- *)
+(* --- isSkip                                                       --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isSkip (p: protocol)
+
+axiom IsSkip:  isSkip (Skip)
+
+
+(* -------------------------------------------------------------------- *)
+(* --- isMessageforIntSend                                          --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isMessageforIntSend (p:protocol) (dest: int) (count: int) (tag: int) (data: list int)
+
+axiom isforIntSend: forall dest count tag : int, src dst data_size t: int,
+                           data: list int, pre: list int -> bool.
+      (*Well define session type*)
+      0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src /\
+      (*Check is Message for IntSend *)
+      src = rank /\ dest = dst /\ data_size = count /\ tag = t /\ pre data ->
+      isMessageforIntSend (IntMessage src dst data_size t pre) dest count tag data
+
+(* -------------------------------------------------------------------- *)
+(* --- isMessageforIntRecv                                          --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isMessageforIntRecv (p:protocol) (source: int) (count: int) (tag: int)
+
+axiom isforIntRecv: forall source count tag: int, src dst data_size t: int, pre: list int -> bool.
+      (*Well define session type*)
+      0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src /\
+      (*Check is Message for IntSend *)
+      src = source /\ dst = rank /\ data_size = count /\ tag = t  ->
+      isMessageforIntRecv (IntMessage src dst data_size t pre) source count tag
+
+(* -------------------------------------------------------------------- *)
+(* --- isforIntBroadcast                                            --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforIntBroadcast (p: protocol) (root: int) (count: int) (data: list int)
+
+axiom isIntBroadcast: forall root r count data_size : int, data : (list int),
+                            pred: (list int -> bool), cont: (list int  -> protocol).
+      (*Well define session type*)
+      0 <= r /\ r < size /\
+      (*Typecheck the scatter*)
+      root = r /\  data_size = count /\ (rank = root -> pred data) ->
+      isforIntBroadcast (IntBroadcast r data_size pred cont) root count data
+
+(* -------------------------------------------------------------------- *)
+(* --- isforIntGhostBroadcast                                       --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforIntGhostBroadcast (p: protocol) (root: int) (count: int) (data: list int)
+
+axiom isIntGhostBroadcast: forall root r count data_size : int, data : (list int),
+                            pred: (list int -> bool), cont: (list int  -> protocol).
+      (*Well define session type*)
+      0 <= r /\ r < size /\
+      (*Typecheck the scatter*)
+      root = r /\  data_size = count /\ (rank = root -> pred data) ->
+      isforIntGhostBroadcast (IntGhostBroadcast r data_size pred cont) root count data
+
+(* -------------------------------------------------------------------- *)
+(* --- isforGather                                                 --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforGather (p: protocol) (root: int) (count: int) (datatype: mpi_datatype)
+
+axiom isGather: forall root r count data_size : int, datatype mt : mpi_datatype.
+      (*Well define session type*)
+      0 <= r /\ r < size /\
+      (*Typecheck the scatter*)
+      root = r /\  data_size = count /\ datatype = mt  ->
+      isforGather (Gather r data_size mt) root count datatype
+
+(* -------------------------------------------------------------------- *)
+(* --- isforScatter                                                 --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_datatype)
+
+axiom isScatter: forall root r count data_size : int, datatype mt : mpi_datatype.
+      (*Well define session type*)
+      0 <= r /\ r < size /\
+      (*Typecheck the scatter*)
+      root = r /\  data_size = count /\ datatype = mt  ->
+      isforScatter (Scatter r data_size mt) root count datatype
+
+(* -------------------------------------------------------------------- *)
+(* --- simpl                                                       --- *)
+(* -------------------------------------------------------------------- *)
+
+function simpl (p: protocol) : protocol
+
+axiom simpl_seq_1: forall p: protocol. simpl(Seq Skip p) = p
+
+axiom simpl_seq_2: forall p: protocol. simpl(Seq p Skip) = p
+
+axiom simp_if_true: forall b:bool, p1 p2: protocol. b -> simpl(If b p1 p2) = p1
+
+axiom simp_if_false: forall b:bool, p1 p2: protocol. not b -> simpl(If b p1 p2) = p2
+
+axiom simpl_intmessage: forall source dest data_size tag: int, pre: (list int -> bool).
+      (*Well define session type*)
+      0 <= source /\ source < size /\  0 <= dest /\ dest < size /\ dest <> source /\
+      (*The message does not concern rank*)
+      rank <> source /\ rank <> dest ->
+      simpl(IntMessage source dest data_size tag pre) = Skip
+
+axiom simpl_foreach_1: forall low high: int, body: (int -> protocol).
+      low <= high ->
+      simpl(Foreach low high body) = Seq (body low) (Foreach (low + 1) high body)
+
+axiom simpl_foreach_2: forall low high: int, body: (int -> protocol).
+      low > high ->
+      simpl(Foreach low high body) = Skip
+
+axiom simpl_while_1: forall n: int, body: protocol.
+      n > 0 ->
+      simpl(While n body) = Seq body (While (n-1) body)
+
+axiom simpl_while_2: forall n: int, body: protocol.
+      n <= 0 ->
+      simpl(While n body) = Skip
+
+axiom simpl_Skip: simpl(Skip) = Skip
+
+(* -------------------------------------------------------------------- *)
+(* --- Split                                                        --- *)
+(* -------------------------------------------------------------------- *)
+
+function split (p: protocol) (c : int): protocol
+
+axiom split_foreach1: forall low high c: int, body: (int -> protocol).
+      low <= c <= high ->
+      split (Foreach low high body) c = Seq (Foreach low (c-1) body) (Foreach c high body)
+
+axiom split_foreach2: forall low high c: int, body: (int -> protocol).
+      low <= high < c ->
+      split (Foreach low high body) c = Seq (Foreach low high body) (Foreach c high body)
+
+axiom split_foreach3: forall low high c: int, body: (int -> protocol).
+      c < low <= high ->
+      split (Foreach low high body) c = Seq (Foreach low c body) (Foreach low high body)
+
+axiom split_while1: forall n c: int, body: protocol.
+      0 <= c <= n ->
+      split (While n body) c = Seq (While c body) (While (n-c) body)
+
+axiom split_while2: forall n c: int, body: protocol.
+      0 <= n < c ->
+      split (While n body) c = Seq (While n body) (While (n-c) body)
+
+axiom split_while3: forall n c: int, body: protocol.
+      c < 0 <= n ->
+      split (While n body) c = Seq (While c body) (While n body)
+
+(* -------------------------------------------------------------------- *)
+(* --- Assoc                                                        --- *)
+(* -------------------------------------------------------------------- *)
+
+function assoc (p:protocol): protocol
+
+axiom Assoc: forall h q p: protocol. assoc (Seq (Seq h q) p) = Seq h (Seq q p)
+
+(* -------------------------------------------------------------------- *)
+(* --- GetFirst                                                        --- *)
+(* -------------------------------------------------------------------- *)
 
 let rec function getFirst (p: protocol) : protocol variant {p} =
-           match p with
-	   | Seq h _ -> getFirst h
-	   | p -> p
-	   end
+        match p with
+        | Seq h _ -> getFirst h
+        | p -> p
+        end
+
+(* -------------------------------------------------------------------- *)
+(* --- GetNext                                                        --- *)
+(* -------------------------------------------------------------------- *)
 
 let rec function aux (p: protocol) : option protocol variant {p} =
           match p with
-	   | Seq h q ->
-               	   match (aux h) with
-         	   | None -> Some q
-	           | Some p ->  Some (Seq p q)
-		   end
-	   | _ -> None
-	   end
+          | Seq h q ->
+                   match (aux h) with
+                   | None -> Some q
+                   | Some p ->  Some (Seq p q)
+                   end
+          | _ -> None
+          end
 
 let function getNext (p: protocol): protocol =
         match aux p with
-	| None -> Skip
-	| Some p -> p
-	end
+        | None -> Skip
+        | Some p -> p
+        end
+
+(* -------------------------------------------------------------------- *)
+(* --- predIntMessage                                               --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate predIntMessage (p: protocol) (data: list int)
+
+axiom PredIntMessage: forall src dst data_size t: int, data: list int, pre: list int -> bool.
+      predIntMessage (IntMessage src dst data_size t pre) data -> pre data
+
+
+(* -------------------------------------------------------------------- *)
+(* --- predIntBroadcast                                             --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate predIntBroadcast (p: protocol) (data: list int)
+
+axiom PredIntBroadcast:
+   forall r data_size: int, pred: (list int -> bool), cont: (list int  -> protocol), data: list int.
+      predIntBroadcast (IntBroadcast r data_size pred cont) data -> pred data
+
+axiom PredIntGhostBroadcast:
+   forall r data_size: int, pred: (list int -> bool), cont: (list int  -> protocol), data: list int.
+      predIntBroadcast (IntGhostBroadcast r data_size pred cont) data -> pred data
+
+
+(* -------------------------------------------------------------------- *)
+(* --- countiIntBroadcast                                           --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate countiIntBroadcast (old_f: protocol) (old_n: protocol) (new_p: protocol) (data: list int)
+
+axiom CountiIntBroadcast:
+   forall r data_size: int, pred: (list int -> bool),
+          cont: (list int  -> protocol), data: list int,
+          old_n new_p: protocol.
+      countiIntBroadcast (IntBroadcast r data_size pred cont) old_n new_p data ->
+             new_p = Seq (cont data) old_n
+
+axiom CountiIntGhostBroadcast:
+   forall r data_size: int, pred: (list int -> bool),
+          cont: (list int  -> protocol), data: list int,
+          old_n new_p: protocol.
+      countiIntBroadcast (IntGhostBroadcast r data_size pred cont) old_n new_p data ->
+             new_p = Seq (cont data) old_n
+
+(* -------------------------------------------------------------------- *)
+(* --- seq                                                          --- *)
+(* -------------------------------------------------------------------- *)
+
+function seq (p1: protocol) (p2: protocol): protocol = Seq p1 p2
+
 end
 
 module MPI_prop
 
 use MPI_Protocol
+use MPI_Protocol_Handler
 
 predicate isLineare (p : protocol) =
         match p with
-	   | Seq (Seq _ _ ) _ -> false
-	   | _ -> true
+        | Seq (Seq _ _ ) _ -> false
+        | _ -> true
         end
 
 predicate isBasic (p : protocol) =
         match p with
-	   | Seq _ _  -> false
-	   | _ -> true
+        | Seq _ _  -> false
+        | _ -> true
         end
 
 predicate isComposed (p : protocol) =
         match p with
-	   | Seq _ _  -> true
-	   | _ -> false
+        | Seq _ _  -> true
+        | _ -> false
         end
 
 lemma test1: forall p1,p2:protocol. isLineare (Seq p1 p2) -> getNext (Seq p1 p2) = p2
