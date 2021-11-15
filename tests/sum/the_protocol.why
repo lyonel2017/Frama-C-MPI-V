@@ -2,10 +2,23 @@ module MPI_the_protocol
 
 use protocol.MPI_Protocol
 use int.Int
-use int.EuclideanDivision
+use int.Sum
+use frama_c_wp.vlist.Vlist
+use int.ComputerDivision
 
+constant offset: int = if (size <= 1000) then div 1000 size else 1
+constant active: int = if (size <= 1000) then size else 1000
 
-let constant the_protocol : protocol =
-  Seq (Foreach 1 (size-1) (fun i -> Message 0 i (div 1000 size) 1 MPI_int))
-      (Foreach 1 (size-1) (fun i -> Message i 0 1 1 MPI_int))
+predicate p1 (l1: list int) (i: int) (l2: list int) =
+  forall k: int. 0 <= k < offset -> nth l1 (i*offset + k) = nth l2 k
+
+predicate p2 (l1: list int) (i: int) (l2: list int) =
+  sum (nth l1) (i*offset) ((i+1)*offset) = (nth l2 0)
+
+function f (l1: list int) : protocol =
+  Seq (Foreach 1 (active-1) (fun i -> IntMessage 0 i offset 1 (p1 l1 i)))
+      (Foreach 1 (active-1) (fun i -> IntMessage i 0 1 1 (p2 l1 i)))
+
+constant the_protocol : protocol = IntGhostBroadcast 0 1000 (fun _ -> true) f
+
 end
