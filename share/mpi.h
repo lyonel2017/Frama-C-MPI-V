@@ -545,6 +545,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ predicate isforScatter(logic_protocol p, integer root, integer count, mpi_datatype datatype);
   @
   @ predicate predIntMessage (logic_protocol p , \list <int> l);
+  @ predicate isPredIntMessage (logic_protocol p , \list <int> l);
   @ predicate predIntBroadcast (logic_protocol p,  \list <int> l);
   @ predicate countiIntBroadcast (logic_protocol f_old, logic_protocol n_old, logic_protocol p_new, \list <int> l);
   @
@@ -602,20 +603,41 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @*/
 
 /*
- * Arrays and Lists
+ * Arrays to Lists
  */
 
-/*@ predicate same_array{L1,L2}(int *a, int *b, integer debut, integer fin) =
-      \forall integer k; debut <= k < fin ==> \at(a[k],L1) == \at(b[k],L2);
+/*@ axiomatic same_array {
+  @ predicate same_array{L1,L2}(int *a, int *b, integer debut, integer fin) =
+      \forall integer k; debut <= k < fin ==> \at(a[k],L1) == \at(b[k],L2);}
 */
 
-/*@ axiomatic list{
-  @ logic \list<int> to_list (int* a, integer i, integer n) =
-  @   i >= n ? [||] :
-  @     \Cons (a[i], to_list (a, i+1, n));
+/*@ axiomatic to_list{
+  @ logic \list<int> to_list{l} (int* a, integer i, integer n) reads a[i .. n-1];
   @
-  //@ lemma test {L1,L2} : \forall int* a, int* b, integer n;
- // @ same_array{L1,L2} (a, b, 0, n) <==> to_list{L1} (a, 0, n) == to_list{L2} (b, 0, n);
+  @ axiom to_list_empty {l}:
+  @   \forall int* a, integer i, integer n;
+  @   i >= n ==>
+  @   to_list{l} (a,i,n) == [||];
+  @
+  @ axiom to_list_cons {l}:
+  @   \forall int* a, integer i, integer n;
+  @   i < n ==>
+  @   to_list{l}(a,i,n) == \Cons (\at(a[i],l), to_list{l}(a, i+1, n));
+  @
+  @ lemma to_list_length :
+  @   \forall int* a, integer i,n;
+  @   i <= n ==>
+  @   \length(to_list (a, i, n)) == n - i;
+  @
+  @ lemma to_list_nth :
+  @   \forall int* a, integer i,n,k;
+  @   i < n && 0 <= k < n-i ==>
+  @   \nth(to_list (a, i, n),k) == a[k+i];
+  @
+  @ lemma to_list_nth_shift :
+  @   \forall int* a, integer i,n,k,j;
+  @   i < n && 0 <= k < n-i ==>
+  @   \nth(to_list (a+j, i, n),k) == a[j+i+k];
   @ }*/
 
 /*
@@ -676,6 +698,7 @@ int MPI_Finalize(void);
   @ assigns \result,protocol;
 
   //@ requires protocol_for_ssend: isMessageforIntSend(getFirst(get_type(protocol)),dest,count,tag,to_list(buf, 0, count));
+  //@ requires is_pred_Message: isPredIntMessage(getFirst(get_type(protocol)), to_list(buf, 0, count));
   //@ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
 */
 int MPI_Ssend(const void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
@@ -746,12 +769,12 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
   @                                                    \valid((buf)+(0..count-1));
   @   requires initialization_buf: \initialized(buf + (0 .. count - 1));
   @ //  requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling(buf + i);
-  @   ensures same_array: same_array{Pre,Post}(buf, buf, 0, count);
+  @   ensures same_array: \forall integer k; 0 <= k < count ==> \at(buf[k],Pre) == \at(buf[k],Post);
   @   assigns buf[0..count-1], \result, protocol;
   @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: ((\block_length(buf) == 0 && \offset(buf) == 0) && count == 0) ||
-  @                                                           \valid_read((buf)+(0..count-1));
+  @                                                    \valid_read((buf)+(0..count-1));
   @ //  requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling(buf + i);
   @   assigns buf[0..count-1], \result, protocol;@/
   int MPI_GIntBcast(int \ghost * buf, int count, int root);

@@ -162,10 +162,10 @@ class visitor_beh t formals = object(self)
       let name = r.ip_content.tp_statement.pred_name in
       match name with
       | [] -> true
-      | h :: [] ->
-        let b1 = String.equal h "danglingness_buf" in
-        let b2 = String.equal h "initialization_buf" in
-        not (b1 or b2)
+      | h :: [] when String.equal h "danglingness_buf" ->
+        false
+      | h :: [] when String.equal h "initialization_buf" ->
+        false
       | _ -> true
     in
     List.filter aux lr
