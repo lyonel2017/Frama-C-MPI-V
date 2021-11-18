@@ -622,12 +622,17 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ axiom to_list_cons {l}:
   @   \forall int* a, integer i, integer n;
   @   i < n ==>
-  @   to_list{l}(a,i,n) == \Cons (\at(a[i],l), to_list{l}(a, i+1, n));
+  @   to_list{l}(a,i,n) == \concat(to_list{l}(a, i, n-1),\Cons (\at(a[n-1],l), [||]));
   @
   @ lemma to_list_length :
   @   \forall int* a, integer i,n;
   @   i <= n ==>
   @   \length(to_list (a, i, n)) == n - i;
+  @
+  @ lemma to_list_concat :
+  @   \forall int* a, integer i,k,n;
+  @   i <= k <= n ==>
+  @   to_list (a, i, n) == \concat(to_list(a,i,k),to_list(a,k,n));
   @
   @ lemma to_list_nth :
   @   \forall int* a, integer i,n,k;
