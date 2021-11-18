@@ -59,6 +59,7 @@ logic logic_protocol "getFirst" (logic_protocol) = "getFirst";
 logic logic_protocol "getNext" (logic_protocol) = "getNext";
 
 predicate "predIntMessage" (logic_protocol,list) = "predIntMessage";
+predicate "isPredIntMessage" (logic_protocol,list) = "isPredIntMessage";
 predicate "predIntBroadcast" (logic_protocol,list) = "predIntBroadcast";
 predicate "countiIntBroadcast" (logic_protocol,logic_protocol,logic_protocol,list) = "countiIntBroadcast";
 

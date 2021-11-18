@@ -1,0 +1,6 @@
+library the_protocol:
+
+logic logic_protocol "the_protocol" = "the_protocol";
+type list = "\\list <int>";
+logic logic_protocol "f" (list) = "f";
+why3.file += "the_protocol.why:MPI_the_protocol";

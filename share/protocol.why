@@ -31,10 +31,10 @@ val constant size : int
 
 type protocol =
   | IntMessage int int int int (list int -> bool)
-    (* ++ the size, sender and recever can go into the predicate.
+    (* ++ sender and recever can go into the predicate.
           Moreover information lenght data = count*)
   | IntBroadcast int int (list int -> bool) (list int  -> protocol)
-    (* ++ the size and the root can go into the predicate and the continuation.
+    (* ++ the root can go into the predicate and into the continuation.
           Moreoverlenght data = count*)
   | IntGhostBroadcast int int (list int -> bool) (list int  -> protocol)
   | Gather int int mpi_datatype
@@ -123,10 +123,11 @@ predicate isSkip (p: protocol)
 
 axiom IsSkip:  isSkip (Skip)
 
+(* -------------------------------------------------------------------- *)
+(* --- IntSend                                          --- *)
+(* -------------------------------------------------------------------- *)
 
-(* -------------------------------------------------------------------- *)
 (* --- isMessageforIntSend                                          --- *)
-(* -------------------------------------------------------------------- *)
 
 predicate isMessageforIntSend (p:protocol) (dest: int) (count: int) (tag: int) (data: list int)
 
@@ -134,13 +135,23 @@ axiom isforIntSend: forall dest count tag : int, src dst data_size t: int,
                            data: list int, pre: list int -> bool.
       (*Well define session type*)
       0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src /\
-      (*Check is Message for IntSend *)
-      src = rank /\ dest = dst /\ data_size = count /\ tag = t /\ pre data ->
+      (*Typecheck IntSend*)
+      src = rank /\ dest = dst /\ data_size = count /\ tag = t (*/\ pre data*) ->
       isMessageforIntSend (IntMessage src dst data_size t pre) dest count tag data
 
+(* --- isPredIntMessage                                               --- *)
+
+predicate isPredIntMessage (p: protocol) (data: list int)
+
+axiom isPredIntMessage: forall src dst data_size t: int, data: list int, pre: list int -> bool.
+      pre data ->
+      isPredIntMessage (IntMessage src dst data_size t pre) data
+
 (* -------------------------------------------------------------------- *)
+(* --- IntRecv                                                      --- *)
+(* -------------------------------------------------------------------- *)
+
 (* --- isMessageforIntRecv                                          --- *)
-(* -------------------------------------------------------------------- *)
 
 predicate isMessageforIntRecv (p:protocol) (source: int) (count: int) (tag: int)
 
@@ -148,12 +159,22 @@ axiom isforIntRecv: forall source count tag: int, src dst data_size t: int, pre:
       (*Well define session type*)
       0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src /\
       (*Check is Message for IntSend *)
+      (*Typecheck IntRecv*)
       src = source /\ dst = rank /\ data_size = count /\ tag = t  ->
       isMessageforIntRecv (IntMessage src dst data_size t pre) source count tag
 
+(* --- predIntMessage                                               --- *)
+
+predicate predIntMessage (p: protocol) (data: list int)
+
+axiom PredIntMessage: forall src dst data_size t: int, data: list int, pre: list int -> bool.
+      predIntMessage (IntMessage src dst data_size t pre) data -> pre data
+
 (* -------------------------------------------------------------------- *)
+(* --- IntBroadcast                                            --- *)
+(* -------------------------------------------------------------------- *)
+
 (* --- isforIntBroadcast                                            --- *)
-(* -------------------------------------------------------------------- *)
 
 predicate isforIntBroadcast (p: protocol) (root: int) (count: int) (data: list int)
 
@@ -161,13 +182,11 @@ axiom isIntBroadcast: forall root r count data_size : int, data : (list int),
                             pred: (list int -> bool), cont: (list int  -> protocol).
       (*Well define session type*)
       0 <= r /\ r < size /\
-      (*Typecheck the scatter*)
+      (*Typecheck IntBroadcast*)
       root = r /\  data_size = count /\ (rank = root -> pred data) ->
       isforIntBroadcast (IntBroadcast r data_size pred cont) root count data
 
-(* -------------------------------------------------------------------- *)
 (* --- isforIntGhostBroadcast                                       --- *)
-(* -------------------------------------------------------------------- *)
 
 predicate isforIntGhostBroadcast (p: protocol) (root: int) (count: int) (data: list int)
 
@@ -175,9 +194,39 @@ axiom isIntGhostBroadcast: forall root r count data_size : int, data : (list int
                             pred: (list int -> bool), cont: (list int  -> protocol).
       (*Well define session type*)
       0 <= r /\ r < size /\
-      (*Typecheck the scatter*)
+      (*Typecheck InGhostBroadcast*)
       root = r /\  data_size = count /\ (rank = root -> pred data) ->
       isforIntGhostBroadcast (IntGhostBroadcast r data_size pred cont) root count data
+
+(* --- predIntBroadcast                                             --- *)
+
+predicate predIntBroadcast (p: protocol) (data: list int)
+
+axiom PredIntBroadcast:
+   forall r data_size: int, pred: (list int -> bool), cont: (list int  -> protocol), data: list int.
+      predIntBroadcast (IntBroadcast r data_size pred cont) data -> pred data
+
+axiom PredIntGhostBroadcast:
+   forall r data_size: int, pred: (list int -> bool), cont: (list int  -> protocol), data: list int.
+      predIntBroadcast (IntGhostBroadcast r data_size pred cont) data -> pred data
+
+(* --- countiIntBroadcast                                           --- *)
+
+predicate countiIntBroadcast (old_f: protocol) (old_n: protocol) (new_p: protocol) (data: list int)
+
+axiom CountiIntBroadcast:
+   forall r data_size: int, pred: (list int -> bool),
+          cont: (list int  -> protocol), data: list int,
+          old_n new_p: protocol.
+      countiIntBroadcast (IntBroadcast r data_size pred cont) old_n new_p data ->
+             new_p = Seq (cont data) old_n
+
+axiom CountiIntGhostBroadcast:
+   forall r data_size: int, pred: (list int -> bool),
+          cont: (list int  -> protocol), data: list int,
+          old_n new_p: protocol.
+      countiIntBroadcast (IntGhostBroadcast r data_size pred cont) old_n new_p data ->
+             new_p = Seq (cont data) old_n
 
 (* -------------------------------------------------------------------- *)
 (* --- isforGather                                                 --- *)
@@ -188,7 +237,7 @@ predicate isforGather (p: protocol) (root: int) (count: int) (datatype: mpi_data
 axiom isGather: forall root r count data_size : int, datatype mt : mpi_datatype.
       (*Well define session type*)
       0 <= r /\ r < size /\
-      (*Typecheck the scatter*)
+      (*Typecheck Gather*)
       root = r /\  data_size = count /\ datatype = mt  ->
       isforGather (Gather r data_size mt) root count datatype
 
@@ -201,7 +250,7 @@ predicate isforScatter (p: protocol) (root: int) (count: int) (datatype: mpi_dat
 axiom isScatter: forall root r count data_size : int, datatype mt : mpi_datatype.
       (*Well define session type*)
       0 <= r /\ r < size /\
-      (*Typecheck the scatter*)
+      (*Typecheck Scatter*)
       root = r /\  data_size = count /\ datatype = mt  ->
       isforScatter (Scatter r data_size mt) root count datatype
 
@@ -311,51 +360,6 @@ let function getNext (p: protocol): protocol =
         | None -> Skip
         | Some p -> p
         end
-
-(* -------------------------------------------------------------------- *)
-(* --- predIntMessage                                               --- *)
-(* -------------------------------------------------------------------- *)
-
-predicate predIntMessage (p: protocol) (data: list int)
-
-axiom PredIntMessage: forall src dst data_size t: int, data: list int, pre: list int -> bool.
-      predIntMessage (IntMessage src dst data_size t pre) data -> pre data
-
-
-(* -------------------------------------------------------------------- *)
-(* --- predIntBroadcast                                             --- *)
-(* -------------------------------------------------------------------- *)
-
-predicate predIntBroadcast (p: protocol) (data: list int)
-
-axiom PredIntBroadcast:
-   forall r data_size: int, pred: (list int -> bool), cont: (list int  -> protocol), data: list int.
-      predIntBroadcast (IntBroadcast r data_size pred cont) data -> pred data
-
-axiom PredIntGhostBroadcast:
-   forall r data_size: int, pred: (list int -> bool), cont: (list int  -> protocol), data: list int.
-      predIntBroadcast (IntGhostBroadcast r data_size pred cont) data -> pred data
-
-
-(* -------------------------------------------------------------------- *)
-(* --- countiIntBroadcast                                           --- *)
-(* -------------------------------------------------------------------- *)
-
-predicate countiIntBroadcast (old_f: protocol) (old_n: protocol) (new_p: protocol) (data: list int)
-
-axiom CountiIntBroadcast:
-   forall r data_size: int, pred: (list int -> bool),
-          cont: (list int  -> protocol), data: list int,
-          old_n new_p: protocol.
-      countiIntBroadcast (IntBroadcast r data_size pred cont) old_n new_p data ->
-             new_p = Seq (cont data) old_n
-
-axiom CountiIntGhostBroadcast:
-   forall r data_size: int, pred: (list int -> bool),
-          cont: (list int  -> protocol), data: list int,
-          old_n new_p: protocol.
-      countiIntBroadcast (IntGhostBroadcast r data_size pred cont) old_n new_p data ->
-             new_p = Seq (cont data) old_n
 
 (* -------------------------------------------------------------------- *)
 (* --- seq                                                          --- *)

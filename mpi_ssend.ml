@@ -34,6 +34,18 @@ let protocol_for_intssend f =
   in
   Mpi_utils.make_pred p "protocol_for_ssend"
 
+let pred_message f =
+  let t1 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "protocol")) in
+  let t1 = Mpi_utils.tapp "get_type" (t1 :: []) [] in
+  let t1 = Mpi_utils.tapp "getFirst" (t1 :: []) [] in
+
+  let t2 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
+  let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
+  let t2 = Mpi_utils.to_list t2 t3 in
+
+  let p = Mpi_utils.papp "isPredIntMessage" (t1 :: t2 :: []) [] in
+  Mpi_utils.make_pred p "is_pred_message"
+
 let generate_spec t _ f : Cil_types.funspec =
   let kf = Globals.Functions.find_by_name function_name in
   let spec = Annotations.funspec kf in
@@ -41,6 +53,7 @@ let generate_spec t _ f : Cil_types.funspec =
 
   if String.equal (Mpi_utils.cil_typ_to_mpi_string t) "mpi_mpi_int" then
     let requires = [protocol_for_intssend f] in
+    let requires = pred_message f :: requires in
     let ensures = [Mpi_utils.reduce_protocol ()] in
     Mpi_utils.update_spec spec Cil.default_behavior_name requires ensures
   else spec
