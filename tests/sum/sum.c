@@ -15,9 +15,9 @@
   @       0 <= i <= j <= k ==>
   @         sum(t,i,k) == sum(t,i,j) + sum(t,j,k);
   @   lemma sum_4{L1,L2} :
-  @     \forall int *t, integer i, j;
-  @       (\forall integer k; i <= k < j ==> \at(t[k],L1) == \at(t[k],L2)) ==>
-  @       \at(sum(t,i,j),L1) == \at(sum(t,i,j),L2);
+  @     \forall int *t1, int *t2, integer i, j;
+  @       (\forall integer k; i <= k < j ==> \at(t1[k],L1) == \at(t2[k],L2)) ==>
+  @       \at(sum(t1,i,j),L1) == \at(sum(t2,i,j),L2);
   @ }
   @*/
 
@@ -144,7 +144,7 @@ int main(int argc, char **argv){
 
       //@ ghost simpl();
       /*@ assert get_type(protocol) == f(to_list(&g[0], 0, MAX_LENGTH));*/
-    l11:;
+
       // receive & add up elements from process 0 by mpi_recv
       /*@ ghost
           l1:;
@@ -198,7 +198,7 @@ int main(int argc, char **argv){
       for (int i = 0; i < offset; i++) {
         sum += data[i];
       }
-      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l11));*/
+      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l1));*/
 
       /*@ ghost
         l2:;

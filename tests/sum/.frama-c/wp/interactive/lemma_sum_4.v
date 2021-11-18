@@ -342,12 +342,13 @@ Axiom Q_sum1 :
 (* Why3 goal *)
 Theorem wp_goal :
   forall (t:addr -> Numbers.BinNums.Z) (t1:addr -> Numbers.BinNums.Z)
-    (a:addr) (i:Numbers.BinNums.Z) (i1:Numbers.BinNums.Z),
-  (forall (i2:Numbers.BinNums.Z),
-   let a1 := shift a i2 in (i2 < i1)%Z -> (i <= i2)%Z -> ((t1 a1) = (t a1))) ->
-  ((L_sum t1 a i i1) = (L_sum t a i i1)).
+    (a:addr) (a1:addr) (i:Numbers.BinNums.Z) (i1:Numbers.BinNums.Z),
+  (forall (i2:Numbers.BinNums.Z), (i2 < i1)%Z -> (i <= i2)%Z ->
+   ((t1 (shift a i2)) = (t (shift a1 i2)))) ->
+  ((L_sum t1 a i i1) = (L_sum t a1 i i1)).
+(* Why3 intros t t1 a a1 i i1 h1. *)
 Proof.
-intros M1 M2 t i j  H.
+intros M1 M2 t1 t2 i j  H.
 assert (h: (i > j \/ i <= j)%Z ) by Lia.lia.
 destruct h.
 - rewrite Q_sum1 by Lia.lia.
@@ -356,8 +357,8 @@ destruct h.
 - generalize dependent H.
   apply (Zlt_lower_bound_ind
   (fun j => 
-  (forall i2 : int, let a1 := shift t i2 in (i2 < j)%Z -> (i <= i2)%Z -> M2 a1 = M1 a1) ->
-  L_sum M2 t i j = L_sum M1 t i j) i);[ | Lia.lia].
+  (forall i2 : int, (i2 < j)%Z -> (i <= i2)%Z -> M2 (shift t1 i2) = M1 (shift t2 i2)) ->
+  L_sum M2 t1 i j = L_sum M1 t2 i j) i);[ | Lia.lia].
   intros.
   assert (h: (i = x \/ i < x)%Z) by Lia.lia.
   destruct h.
