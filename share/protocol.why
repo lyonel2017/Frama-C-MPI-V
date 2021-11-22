@@ -27,6 +27,9 @@ type mpi_datatype =
 | MPI_char
 | MPI_int
 
+type mpi_op =
+| MPI_sum
+
 val constant size : int
 
 type protocol =
@@ -39,16 +42,19 @@ type protocol =
   | IntGhostBroadcast int int (list int -> bool) (list int  -> protocol)
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
+  | Reduce int int mpi_datatype mpi_op
   | Foreach int int (int -> protocol)
   | While int protocol
 
 (* Wildcard (int -> bool) (int -> bool) int int int subprotocol
-	- only consume if the predicate is false for the rank of the source and false for any rank for the targed.
+	- only consume if the predicate is false for the rank of the source and false for any rank
+          for the targed.
 	- the source is not specified in the protocol
 	- we make a projection of the communication condition.
 	- the check of validity of the predication is done after a communication has take place.
         - the received data must be expressed by a predicate valid for in any case
-        - in addition we have a predicate telling if I have to take place to the communication, if not am not autorised to
+        - in addition we have a predicate telling if I have to take place to the communication,
+          if not am not autorised to
           communicate with the target
         - subprotocol is the protocol in the protocol
 *)
@@ -69,6 +75,17 @@ use frama_c_wp.vlist.Vlist
 (* use list.List *)
 
 val constant rank : int
+
+let constant get_mpi_char : mpi_datatype = MPI_char
+let constant get_mpi_int : mpi_datatype = MPI_int
+let constant get_mpi_sum : mpi_op = MPI_sum
+
+(* -------------------------------------------------------------------- *)
+(* --- seq                                                          --- *)
+(* -------------------------------------------------------------------- *)
+
+function seq (p1: protocol) (p2: protocol): protocol = Seq p1 p2
+
 
 (* -------------------------------------------------------------------- *)
 (* --- isMessageforIntSend                                          --- *)
@@ -105,6 +122,15 @@ predicate isScatter (p: protocol)
 
 axiom IsScatter: forall r data_size: int, mt: mpi_datatype.
       isScatter (Scatter r data_size mt)
+
+(* -------------------------------------------------------------------- *)
+(* --- isReduce                                                    --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isReduce (p: protocol)
+
+axiom IsReduce: forall r data_size: int, mt: mpi_datatype, op: mpi_op.
+      isReduce(Reduce r data_size mt op)
 
 (* -------------------------------------------------------------------- *)
 (* --- isForeach                                                    --- *)
@@ -255,7 +281,20 @@ axiom isScatter: forall root r count data_size : int, datatype mt : mpi_datatype
       isforScatter (Scatter r data_size mt) root count datatype
 
 (* -------------------------------------------------------------------- *)
-(* --- simpl                                                       --- *)
+(* --- isforReduce                                                 --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforReduce (p: protocol) (root: int) (count: int) (datatype: mpi_datatype) (opera: mpi_op)
+
+axiom isReduce: forall root r count data_size: int, datatype mt : mpi_datatype, op opera : mpi_op.
+      (*Well define session type*)
+      0 <= r /\ r < size /\
+      (*Typecheck Scatter*)
+      root = r /\ data_size = count /\ datatype = mt /\ opera = op ->
+      isforReduce (Reduce r data_size mt op) root count datatype opera
+
+(* -------------------------------------------------------------------- *)
+(* --- simpl                                                        --- *)
 (* -------------------------------------------------------------------- *)
 
 function simpl (p: protocol) : protocol
@@ -360,12 +399,6 @@ let function getNext (p: protocol): protocol =
         | None -> Skip
         | Some p -> p
         end
-
-(* -------------------------------------------------------------------- *)
-(* --- seq                                                          --- *)
-(* -------------------------------------------------------------------- *)
-
-function seq (p1: protocol) (p2: protocol): protocol = Seq p1 p2
 
 end
 

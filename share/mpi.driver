@@ -24,6 +24,8 @@ type list = "\\list <int>";
 
 type "mpi_datatype" = "mpi_datatype";
 
+type "mpi_op" = "mpi_op";
+
 type "logic_protocol" = "protocol";
 
 logic integer "MPI_COMM_WORLD_size_ACSL" = "size";
@@ -32,6 +34,8 @@ why3.file += "protocol.why:MPI_Protocol";
 
 logic mpi_datatype "get_mpi_char" = "get_mpi_char";
 logic mpi_datatype "get_mpi_int" =  "get_mpi_int";
+
+logic mpi_op "get_mpi_sum" = "get_mpi_sum";
 
 logic integer "MPI_COMM_WORLD_rank_ACSL" = "rank";
 
@@ -43,6 +47,7 @@ predicate "isSkip" (logic_protocol) = "isSkip";
 predicate "isBroadcast" (logic_protocol) = "isBroadcast";
 predicate "isGather" (logic_protocol) = "isGather";
 predicate "isScatter" (logic_protocol) ="isScatter";
+predicate "isReduce" (logic_protocol) = "isReduce";
 
 predicate "isMessageforIntSend" (logic_protocol,integer,integer,integer,list) = "isMessageforIntSend";
 predicate "isMessageforIntRecv" (logic_protocol,integer,integer,integer) = "isMessageforIntRecv";
@@ -51,6 +56,7 @@ predicate "isforIntGhostBroadcast" (logic_protocol,integer,integer,list) = "isfo
 
 predicate "isforGather" (logic_protocol,integer,integer,mpi_datatype) = "isforGather";
 predicate "isforScatter" (logic_protocol,integer,integer,mpi_datatype) = "isforScatter";
+predicate "isforReduce" (logic_protocol,integer,integer,mpi_datatype,mpi_op) = "isforReduce";
 
 logic logic_protocol "simpl" (logic_protocol) = "simpl";
 logic logic_protocol "split" (logic_protocol,integer) = "split";
