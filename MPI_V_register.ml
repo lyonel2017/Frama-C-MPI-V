@@ -46,5 +46,4 @@ let () =
     (module Mpi_scatter.M:Instantiate.Instantiator_builder.Generator_sig);
   Instantiate.Transform.register
     (module Mpi_reduce.M:Instantiate.Instantiator_builder.Generator_sig);
-
-Db.Main.extend run
+  Db.Main.extend run

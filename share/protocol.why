@@ -124,7 +124,7 @@ axiom IsScatter: forall r data_size: int, mt: mpi_datatype.
       isScatter (Scatter r data_size mt)
 
 (* -------------------------------------------------------------------- *)
-(* --- isScatter                                                    --- *)
+(* --- isReduce                                                    --- *)
 (* -------------------------------------------------------------------- *)
 
 predicate isReduce (p: protocol)

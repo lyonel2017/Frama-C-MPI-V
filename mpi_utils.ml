@@ -67,9 +67,6 @@ let get_l_info s =
   | h :: _ -> h
   | [] -> MPI_V_options.Self.fatal "Logic_info of %s not found" s
 
-let mpi_op () = 
-  Globals.Types.find_type Logic_typing.Typedef "MPI_Op"
-
 let ptr_of t = TPtr(t, [])
 let const_of t = Cil.typeAddAttributes [Attr("const", [])] t
 
