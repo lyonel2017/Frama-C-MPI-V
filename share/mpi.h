@@ -912,5 +912,4 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count,
 /*like a recv but does not consume the protocol message*/
 /*  int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status); */
 
-
 #endif /* __FC_MPI */
