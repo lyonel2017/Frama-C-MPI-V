@@ -22,7 +22,7 @@ open Cil_types
 
 let function_name = "MPI_Reduce"
 
-let generate_spec t f _ : Cil_types.funspec =
+let generate_spec t _ f : Cil_types.funspec =
   let kf = Globals.Functions.find_by_name function_name in
   let spec = Annotations.funspec kf in
   let spec = Visitor.visitFramacFunspec (new Mpi_utils.visitor_beh t f.sformals) spec in
@@ -35,10 +35,10 @@ let generate_function_type t =
       ("sendbuf" , Mpi_utils.const_of(Mpi_utils.ptr_of t), []) ;
       ("recvbuf" , Mpi_utils.ptr_of t, []) ;
       ("count", Cil.intType, []);
-      ("datatype", Mpi_utils.mpi_datatype (), []);
-      ("op", Mpi_utils.mpi_op (), []);
+      ("datatype", Mpi_utils.get_type "MPI_Datatype", []);
+      ("op", Mpi_utils.get_type "MPI_Op", []);
       ("root", Cil.intType, []);
-      ("comm", Mpi_utils.mpi_comm (), [])
+      ("comm", Mpi_utils.get_type "MPI_Comm", [])
     ]
   in
   TFun(ret, Some ps, false, [])
@@ -52,10 +52,10 @@ let well_typed_call _ret _fct = function
   | [ sendbuf ; recvbuf ; count ; datatype ; op ; root ; comm] ->
     let test =
       Cil.isIntegralType (Cil.typeOf count) &&
-      Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.mpi_datatype ()) &&
-      Cil_datatype.Typ.equal (Cil.typeOf op) (Mpi_utils.mpi_op ()) &&
+      Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.get_type "MPI_Datatype") &&
+      Cil_datatype.Typ.equal (Cil.typeOf op) (Mpi_utils.get_type "MPI_Op") &&
       Cil.isIntegralType (Cil.typeOf root) &&
-      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.mpi_comm ())
+      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.get_type "MPI_Comm")
     in
     let ts = Mpi_utils.exp_type_of_pointed sendbuf in
     let tr = Mpi_utils.exp_type_of_pointed recvbuf in
@@ -82,7 +82,7 @@ let key_from_call _ret _fct args =
 let retype_args _ args =
   match args with
   | [ sendbuf ; recvbuf ; count ; datatype ; op ; root; comm] ->
-    [ Cil.stripCasts sendbuf ; Cil.stripCasts recvbuf; count ; 
+    [ Cil.stripCasts sendbuf ; Cil.stripCasts recvbuf; count ;
       datatype ; op ; root ; comm]
   | _ -> assert false
 

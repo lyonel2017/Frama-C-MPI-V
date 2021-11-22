@@ -1,0 +1,7 @@
+module MPI_size
+use int.Int
+use int.ComputerDivision
+
+predicate size_constrain (s: int) = s >= 2 && if (s <= 1000) then mod 1000 s = 0 else true
+
+end

@@ -27,7 +27,7 @@ let generate_prototype t =
   let name = function_name ^ "_" ^ (Mpi_utils.string_of_typ t) in
   name, ftype
 
-let generate_spec t f _ : Cil_types.funspec =
+let generate_spec t _ f : Cil_types.funspec =
   let kf = Globals.Functions.find_by_name function_name in
   let spec = Annotations.funspec kf in
   let spec = Visitor.visitFramacFunspec (new Mpi_utils.visitor_beh t f.sformals) spec in
