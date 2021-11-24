@@ -522,7 +522,20 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @
   @ type mpi_op;
   @
+  @ logic mpi_op get_mpi_max;
+  @ logic mpi_op get_mpi_min;
   @ logic mpi_op get_mpi_sum;
+  @ logic mpi_op get_mpi_prod;
+  @ logic mpi_op get_mpi_land;
+  @ logic mpi_op get_mpi_band;
+  @ logic mpi_op get_mpi_lor;
+  @ logic mpi_op get_mpi_bor;
+  @ logic mpi_op get_mpi_lxor;
+  @ logic mpi_op get_mpi_bxor;
+  @ logic mpi_op get_mpi_maxloc;
+  @ logic mpi_op get_mpi_minloc;
+  @ logic mpi_op get_mpi_replace;
+  @ logic mpi_op get_mpi_no_op;
   @
   @ logic integer MPI_COMM_WORLD_size_ACSL;
   @ logic integer MPI_COMM_WORLD_rank_ACSL;
@@ -543,6 +556,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ predicate isAllgather(logic_protocol p);
   @ predicate isScatter(logic_protocol p);
   @ predicate isReduce(logic_protocol p);
+  @ predicate isAllreduce(logic_protocol p);
   @
   @ predicate isMessageforIntSend(logic_protocol p, integer dest, integer count, integer tag, \list<int> l);
   @ predicate isMessageforIntRecv(logic_protocol p, integer source, integer count, integer tag);
@@ -552,6 +566,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ predicate isforAllgather(logic_protocol p, integer count, mpi_datatype datatype);
   @ predicate isforScatter(logic_protocol p, integer root, integer count, mpi_datatype datatype);
   @ predicate isforReduce(logic_protocol p, integer root, integer count, mpi_datatype datatype, mpi_op op);
+  @ predicate isforAllreduce(logic_protocol p, integer count, mpi_datatype datatype, mpi_op op);
   @
   @ predicate predIntMessage (logic_protocol p , \list <int> l);
   @ predicate isPredIntMessage (logic_protocol p , \list <int> l);
@@ -574,7 +589,20 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
 
 /*@ axiomatic MPI_op {
   @ logic mpi_op c_to_why_mpi_op (MPI_Op op);
+  @ axiom mpi_max: c_to_why_mpi_op(MPI_MAX) == get_mpi_max;
+  @ axiom mpi_min: c_to_why_mpi_op(MPI_MIN) == get_mpi_min;
   @ axiom mpi_sum: c_to_why_mpi_op(MPI_SUM) == get_mpi_sum;
+  @ axiom mpi_prod: c_to_why_mpi_op(MPI_PROD) == get_mpi_prod;
+  @ axiom mpi_land: c_to_why_mpi_op(MPI_LAND) == get_mpi_land;
+  @ axiom mpi_band: c_to_why_mpi_op(MPI_BAND) == get_mpi_band;
+  @ axiom mpi_lor: c_to_why_mpi_op(MPI_LOR) == get_mpi_lor;
+  @ axiom mpi_bor: c_to_why_mpi_op(MPI_BOR) == get_mpi_bor;
+  @ axiom mpi_lxor: c_to_why_mpi_op(MPI_LXOR) == get_mpi_lxor;
+  @ axiom mpi_bxor: c_to_why_mpi_op(MPI_BXOR) == get_mpi_bxor;
+  @ axiom mpi_maxloc: c_to_why_mpi_op(MPI_MAXLOC) == get_mpi_maxloc;
+  @ axiom mpi_minloc: c_to_why_mpi_op(MPI_MINLOC) == get_mpi_minloc;
+  @ axiom mpi_replace: c_to_why_mpi_op(MPI_REPLACE) == get_mpi_replace;
+  @ axiom mpi_no_op: c_to_why_mpi_op(MPI_NO_OP) == get_mpi_no_op;
 }*/
 
 /*
@@ -931,6 +959,28 @@ int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 int MPI_Reduce(const void *sendbuf, void *recvbuf, int count,
                MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm);
 
+/*@ requires in_mpi_section: priority == 1;
+  @ requires is_comm_world: comm == MPI_COMM_WORLD; //limitation l1
+  @ requires count_not_neg : 0 <= count;
+  @ requires datatype: datatype == MPI_CHAR;
+  @ requires protocol_for_allreduce: isforAllreduce(getFirst(get_type(protocol)),count,c_to_why_mpi_datatype(datatype),c_to_why_mpi_op(op));
+  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @ assigns \result, protocol;
+  // no root specific behavior
+  // compared to gather all processes are root
+  @ behavior all_processes:
+  @   requires valid_buf: ((\block_length((char*)sendbuf) == 0 && \offset((char*)sendbuf) == 0) && count == 0) ||
+                          \valid_read(((char*)sendbuf)+(0..count-1));
+  @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. count - 1));
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)sendbuf + i);
+  @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && count == 0) ||
+                          \valid(((char*)recvbuf)+(0..count-1));
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)recvbuf + i);
+  @   assigns ((char *)recvbuf)[0..count*MPI_COMM_WORLD_size_ACSL-1];
+*/
+int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
+
 /* the nonblock communication will spone in the protocol the requirement
    to check termination of the communication.
    Cannot be done, because WP does not support dynamic allocation for the request
@@ -941,5 +991,6 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count,
 
 /*like a recv but does not consume the protocol message*/
 /*  int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status); */
+
 
 #endif /* __FC_MPI */

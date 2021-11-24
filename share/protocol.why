@@ -29,7 +29,20 @@ type mpi_datatype =
 | MPI_float
 
 type mpi_op =
+| MPI_max
+| MPI_min
 | MPI_sum
+| MPI_prod
+| MPI_land
+| MPI_band
+| MPI_lor
+| MPI_bor
+| MPI_lxor
+| MPI_bxor
+| MPI_maxloc
+| MPI_minloc
+| MPI_replace
+| MPI_no_op
 
 val constant size : int
 
@@ -45,6 +58,7 @@ type protocol =
   | Scatter int int mpi_datatype
   | Reduce int int mpi_datatype mpi_op
   | Allgather int mpi_datatype
+  | Allreduce int mpi_datatype mpi_op
   | Foreach int int (int -> protocol)
   | While int protocol
 
@@ -80,9 +94,23 @@ val constant rank : int
 
 let constant get_mpi_char : mpi_datatype = MPI_char
 let constant get_mpi_int : mpi_datatype = MPI_int
-let constant get_mpi_float: mpi_datatype = MPI_float 
+let constant get_mpi_float: mpi_datatype = MPI_float
 
+let constant get_mpi_max : mpi_op = MPI_max
+let constant get_mpi_min : mpi_op = MPI_min
 let constant get_mpi_sum : mpi_op = MPI_sum
+let constant get_mpi_prod : mpi_op = MPI_prod
+let constant get_mpi_land : mpi_op = MPI_land
+let constant get_mpi_band : mpi_op = MPI_band
+let constant get_mpi_lor : mpi_op = MPI_lor
+let constant get_mpi_bor : mpi_op = MPI_bor
+let constant get_mpi_lxor : mpi_op = MPI_lxor
+let constant get_mpi_bxor : mpi_op = MPI_bxor
+let constant get_mpi_maxloc : mpi_op = MPI_maxloc
+let constant get_mpi_minloc : mpi_op = MPI_minloc
+let constant get_mpi_replace : mpi_op = MPI_replace
+let constant get_mpi_no_op : mpi_op = MPI_no_op
+
 
 (* -------------------------------------------------------------------- *)
 (* --- seq                                                          --- *)
@@ -143,6 +171,15 @@ predicate isAllgather (p: protocol)
 
 axiom IsAllgather: forall data_size: int, mt: mpi_datatype.
       isAllgather(Allgather data_size mt)
+
+(* -------------------------------------------------------------------- *)
+(* --- isAllreduce                                                  --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isAllreduce (p: protocol)
+
+axiom IsAllreduce: forall data_size: int, mt: mpi_datatype, op: mpi_op.
+      isAllreduce(Allreduce data_size mt op)
 
 (* -------------------------------------------------------------------- *)
 (* --- isForeach                                                    --- *)
@@ -315,6 +352,17 @@ axiom isAllgather: forall data_size count: int, datatype mt: mpi_datatype.
       (*Typecheck Scatter*)
       data_size = count /\ datatype = mt ->
       isforAllgather (Allgather data_size mt) count datatype
+
+(* -------------------------------------------------------------------- *)
+(* --- isforAllreduce                                               --- *)
+(* -------------------------------------------------------------------- *)
+
+predicate isforAllreduce (p: protocol) (count: int) (datatype: mpi_datatype) (opera: mpi_op)
+
+axiom isAllreduce: forall data_size count: int, datatype mt: mpi_datatype, op opera: mpi_op.
+      (*Typecheck Allreduce*)
+      data_size = count /\ datatype = mt  /\ opera = op ->
+      isforAllreduce (Allreduce data_size mt op) count datatype opera
 
 (* -------------------------------------------------------------------- *)
 (* --- simpl                                                        --- *)
