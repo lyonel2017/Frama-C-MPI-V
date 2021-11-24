@@ -540,6 +540,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ predicate isSkip(logic_protocol p);
   @ predicate isBroadcast(logic_protocol p);
   @ predicate isGather(logic_protocol p);
+  @ predicate isAllgather(logic_protocol p);
   @ predicate isScatter(logic_protocol p);
   @ predicate isReduce(logic_protocol p);
   @
@@ -548,6 +549,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ predicate isforIntBroadcast(logic_protocol p, integer root, integer count, \list<int> l);
   @ predicate isforIntGhostBroadcast(logic_protocol p, integer root, integer count, \list<int> l);
   @ predicate isforGather(logic_protocol p, integer root, integer count, mpi_datatype datatype);
+  @ predicate isforAllgather(logic_protocol p, integer count, mpi_datatype datatype);
   @ predicate isforScatter(logic_protocol p, integer root, integer count, mpi_datatype datatype);
   @ predicate isforReduce(logic_protocol p, integer root, integer count, mpi_datatype datatype, mpi_op op);
   @
@@ -835,6 +837,32 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
 int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                void *recvbuf, int recvcount, MPI_Datatype recvtype,
                int root, MPI_Comm comm);
+
+/*@ requires in_mpi_section: priority == 1;
+  @ requires is_comm_world: comm == MPI_COMM_WORLD; //limitation l1
+  @ requires sendcount_is_not_neg: 0 <= sendcount;
+  @ requires datatype: sendtype == MPI_CHAR;
+  @ requires recvcount_is_not_neg: 0 <= recvcount;
+  @ requires datatype: recvtype == MPI_CHAR;
+  @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
+  @ requires protocol_for_allgather: isforAllgather(getFirst(get_type(protocol)),sendcount,c_to_why_mpi_datatype(sendtype));
+  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @ assigns \result,protocol;
+  // no root specific behavior
+  // compared to gather all processes are root
+  @ behavior all_process:
+  @   requires valid_buf: ((\block_length((char*)sendbuf) == 0 && \offset((char*)sendbuf) == 0) && sendcount == 0) ||
+                          \valid_read(((char*)sendbuf)+(0..sendcount-1));
+  @   requires initialization_buf: \initialized((char *)sendbuf + (0 .. sendcount - 1));
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < sendcount ⇒ ¬\dangling((char*)sendbuf + i);
+  @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && recvcount == 0) ||
+                          \valid(((char*)recvbuf)+(0..recvcount*MPI_COMM_WORLD_size_ACSL-1));
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < recvcount*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)recvbuf + i);
+  @   assigns ((char *)recvbuf)[0..recvcount*MPI_COMM_WORLD_size_ACSL-1];
+*/
+int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void * recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPI_Comm comm);
 
 /*@ requires in_mpi_section: priority == 1;
   @ requires is_comm_world: comm == MPI_COMM_WORLD; //limitation l1
