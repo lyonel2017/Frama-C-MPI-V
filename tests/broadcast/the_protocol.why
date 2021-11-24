@@ -1,7 +1,9 @@
 module MPI_the_protocol
 
 use protocol.MPI_Protocol
+use frama_c_wp.vlist.Vlist
+use int.Int
 
-let constant the_protocol : protocol = Broadcast 0 1 MPI_int
+constant the_protocol : protocol = IntBroadcast 0 1 (fun l -> nth l 0 = 0) (fun _ -> Skip)
 
 end
