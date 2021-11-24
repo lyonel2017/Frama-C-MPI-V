@@ -61,7 +61,7 @@ let continu_protocol f =
       l_body = LBterm t1 }
   in
 
-  let tmp =  Logic_const.term (Tapp (info, [], [])) t1.term_type in
+  let tmp =  Logic_const.tvar var in
 
   let t1 = Mpi_utils.tapp "getFirst" (tmp :: []) [] in
   let t2 = Mpi_utils.tapp "getNext" (tmp :: []) [] in
