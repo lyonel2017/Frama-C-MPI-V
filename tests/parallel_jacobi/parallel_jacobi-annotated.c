@@ -44,28 +44,26 @@ void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_o
   @ logic logic_protocol protocol_while_0;
 }*/
 
-/** CAN BE VERIFIED IN 10s **/
 int main( int argc, char** argv){
-    // CHANGED: MAX_DIM s.t. MAX_DIM * MAX_DIM can be int
-    int        p;
-    int        rank;
-    int        n;
-    int        n_by_p;
-    int        iter;
-    int        converged;
-    // CHANGED: declaration without #define
-    float      A_initial[MAX_DIM * MAX_DIM];
-    float      A_local[MAX_DIM * MAX_DIM];
 
-    float      b_initial[MAX_DIM];
-    float      x_local[MAX_DIM];
-    float      b_local[MAX_DIM];
-    float   x_temp1[MAX_DIM];
-    float   x_temp2[MAX_DIM];
-    float   x_final[MAX_DIM];
-    float*  x_old;
-    float*  x_new;
-    float*  tmp;
+    int    p;
+    int    rank;
+    int    n;
+    int    n_by_p;
+    int    iter;
+    int    converged;
+
+    float  A_initial[MAX_DIM * MAX_DIM];
+    float  A_local[MAX_DIM * MAX_DIM];
+    float  b_initial[MAX_DIM];
+    float  b_local[MAX_DIM];
+    float  x_local[MAX_DIM];
+    float  x_temp1[MAX_DIM];
+    float  x_temp2[MAX_DIM];
+    float  x_final[MAX_DIM];
+    float* x_old;
+    float* x_new;
+    float* tmp;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &p);
@@ -80,13 +78,12 @@ int main( int argc, char** argv){
     MPI_Scatter(A_initial, n_by_p * n, MPI_FLOAT, A_local, n_by_p * n , MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatter(b_initial, n_by_p, MPI_FLOAT, x_local, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Allgather(b_local, n_by_p, MPI_FLOAT, x_temp1, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
+
+    /*@ assert get_type(protocol) == protocol_3;*/
+
     x_new = x_temp1;
     x_old = x_temp1;
 
-    /*@ requires get_type(protocol) == protocol_3;
-      @ assigns protocol, iter, tmp, x_old, x_new, x_local[0..n_by_p-1];
-      @ ensures \valid(x_new + (0..n_by_p*p-1));
-      @ ensures get_type(protocol) == protocol_4;*/
     /** BOTTLENECK: 'NUM_ITER'-invariants **/
     /*@ loop invariant 1 <= iter <= NUM_ITER+1;
       @ loop invariant iter < NUM_ITER+1 ==> getFirst(get_type(protocol)) ==
@@ -121,12 +118,14 @@ int main( int argc, char** argv){
 
     }
 
+    /*@ assert \valid(x_new + (0..n_by_p*p-1));*/
+    /*@ assert get_type(protocol) == protocol_4;*/
+
     MPI_Gather(x_new, n_by_p, MPI_FLOAT, x_final, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    // REMOVED: no I/O
-    // if (rank == 0) {
-    //   printVector(x_new, n);
-    // }
+    if (rank == 0) {
+      printVector(x_new, n);
+    }
 
     MPI_Finalize();
     // uncomment for sanity check
