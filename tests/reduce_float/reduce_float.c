@@ -1,8 +1,9 @@
 #include "mpi.h"
 #include <stdio.h>
 
-int main(argc,argv) int argc; char *argv[];
-{
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver reduce_float.c
+
+int main(int argc, char argv){
     int numtasks, rank;
 
     MPI_Init(&argc,&argv);
@@ -19,5 +20,5 @@ int main(argc,argv) int argc; char *argv[];
         // printf("sum: %f\n", global);
     }
     MPI_Finalize();
-    //@ assert \false;
+    // assert \false;
 }
