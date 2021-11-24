@@ -13,6 +13,19 @@
 #include <mpi.h>
 #include <math.h>
 
+/*@ ensures \result > 0;
+  @ assigns \result;*/
+int get_n (void);
+      // printf("Enter the number of intervals: ");
+      // scanf("%d",&n);
+
+
+/*@ assigns \nothing;*/
+void do_pi(float pi, float PI25DT);
+    //  printf("pi is approximately %.16f, Error is %.16f\n", pi, fabs(pi - PI25DT));
+
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver pi.c
+
 int main(int argc, char **argv)
 {
   int n = 0, myid = 0, numprocs = 0, i = 0;
@@ -22,13 +35,11 @@ int main(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if (myid == 0) {
-      // printf("Enter the number of intervals: ");
-      // scanf("%d",&n);
-      n = 10; // statically set intervals
+    n = get_n();;
   }
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  //inserted, not necessary if bcast implies this assignment
-  n = 10;
+  /*@ assert n > 0;*/
+  //@ ghost toskip();
   h   = 1.0f / (float) n;
   sum = 0.0f;
   /*@
@@ -45,9 +56,9 @@ int main(int argc, char **argv)
   MPI_Reduce(&mypi, &pi, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (myid == 0) {
-    //  printf("pi is approximately %.16f, Error is %.16f\n", pi, fabs(pi - PI25DT));
+    do_pi(pi,PI25DT);
   }
   MPI_Finalize();
-  // //@ assert \false;
+  // assert \false;
   return 0;
 }
