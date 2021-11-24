@@ -1,6 +1,8 @@
 #include "mpi.h"
 #include "stdio.h"
 
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver allreduce.c
+
 int main(int argc, char **argv) {
   int my_rank = 0, num_procs = 0;
   int sum[2];
@@ -19,5 +21,5 @@ int main(int argc, char **argv) {
   // printf("my rank: %i, sum_1: %i, sum_2: %i\n", my_rank, sum[0], sum[1]);
 
   MPI_Finalize();
-  //@ assert \false;
+  // assert \false;
 }
