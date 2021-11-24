@@ -26,6 +26,7 @@ use frama_c_wp.vlist.Vlist
 type mpi_datatype =
 | MPI_char
 | MPI_int
+| MPI_float
 
 type mpi_op =
 | MPI_sum
@@ -78,6 +79,8 @@ val constant rank : int
 
 let constant get_mpi_char : mpi_datatype = MPI_char
 let constant get_mpi_int : mpi_datatype = MPI_int
+let constant get_mpi_float: mpi_datatype = MPI_float 
+
 let constant get_mpi_sum : mpi_op = MPI_sum
 
 (* -------------------------------------------------------------------- *)

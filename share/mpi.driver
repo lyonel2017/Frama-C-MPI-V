@@ -34,6 +34,7 @@ why3.file += "protocol.why:MPI_Protocol";
 
 logic mpi_datatype "get_mpi_char" = "get_mpi_char";
 logic mpi_datatype "get_mpi_int" =  "get_mpi_int";
+logic mpi_datatype "get_mpi_float" = "get_mpi_float";
 
 logic mpi_op "get_mpi_sum" = "get_mpi_sum";
 

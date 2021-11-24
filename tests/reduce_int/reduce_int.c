@@ -1,7 +1,7 @@
 #include "mpi.h"
 #include <stdio.h>
 
-//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver gather_scatter.c
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver reduce_int.c
 
 int main(int argc, char* argv){
     int numtasks, rank;
