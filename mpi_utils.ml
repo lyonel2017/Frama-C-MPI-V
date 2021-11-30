@@ -270,6 +270,36 @@ let reduce_protocol () =
   let p = papp "set_type" (t1 :: t2 :: []) [] in
   Normal, make_pred p "reduce_protocol"
 
+let same_array var1 var2 =
+  let t1 = Logic_const.tvar (Cil.cvar_to_lvar var1) in
+  let t2 = Logic_const.tinteger 0 in
+  let t3 = integer_var var2 in
+
+  let var = Cil_const.make_logic_var_quant "k" (Cil_types.Linteger) in
+  let tk =  Logic_const.tvar var in
+
+  let pred1 = Logic_const.prel (Rle, t2, tk) in
+  let pred2 = Logic_const.prel (Rlt, tk, t3) in
+
+  let pred1 = Logic_const.pand (pred1, pred2) in
+
+  let t1 = Logic_const.term (TBinOp (PlusPI, t1, tk)) (t1.term_type) in
+
+  let typ = match t1.term_type with
+    | Ctype typ -> Ctype (Cil.typeOf_pointed typ)
+    | _ -> assert false
+  in
+
+  let t4 = Logic_const.term (TLval (TMem t1,TNoOffset)) typ in
+
+  let tpre = Logic_const.tat(t4,BuiltinLabel Pre) in
+  let tpost = Logic_const.tat(t4,BuiltinLabel Post) in
+
+  let pred2 = Logic_const.prel (Req, tpre, tpost) in
+
+  let pred = Logic_const.pimplies (pred1, pred2) in
+  Pforall([var],pred)
+
 let update_spec spec name requires ensures =
   let has_same_name b = b.b_name = name in
   let aux b =

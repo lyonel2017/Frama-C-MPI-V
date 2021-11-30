@@ -51,9 +51,8 @@ let continu_protocol f =
   let t3 = Mpi_utils.tapp "get_type" (t3 :: []) [] in
   let t1 = Logic_const.told t3 in
 
-  let var = Cil_const.make_logic_var_local "tmp" (t1.term_type) in
   let info =
-    { l_var_info = var;
+    { l_var_info = Cil_const.make_logic_var_local "tmp" (t1.term_type);
       l_labels = [];
       l_tparams = [];
       l_type = Some t1.term_type;
@@ -61,7 +60,7 @@ let continu_protocol f =
       l_body = LBterm t1 }
   in
 
-  let tmp =  Logic_const.tvar var in
+  let tmp =  Logic_const.tvar info.l_var_info in
 
   let t1 = Mpi_utils.tapp "getFirst" (tmp :: []) [] in
   let t2 = Mpi_utils.tapp "getNext" (tmp :: []) [] in
@@ -71,19 +70,17 @@ let continu_protocol f =
   let t4 = Mpi_utils.to_list t5 t4 in
 
   let p = Mpi_utils.papp "countiIntBroadcast" (t1 :: t2 :: t3 :: t4 :: []) [] in
-
   let pred = Logic_const.unamed p in
+
   let p = Plet (info, pred) in
 
   Normal, Mpi_utils.make_pred p "continu_protocol"
 
 let same_array f =
-  let t1 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
-  let t2 = Logic_const.tinteger 0 in
-  let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
-  let label = BuiltinLabel Pre :: BuiltinLabel Post :: [] in
+  let var1 = (List.nth f.sformals 0) in
+  let var2 = (List.nth f.sformals 1) in
 
-  let p = Mpi_utils.papp "same_array" (t1 :: t1 :: t2 :: t3 :: []) label in
+  let p = Mpi_utils.same_array var1 var2 in
   Normal, Mpi_utils.make_pred p "same_array"
 
 let generate_spec t _ f : Cil_types.funspec =

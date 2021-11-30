@@ -649,10 +649,6 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
  * Arrays to Lists
  */
 
-/*@ axiomatic same_array {
-  @ predicate same_array{L1,L2}(int *a, int *b, integer debut, integer fin) =
-      \forall integer k; debut <= k < fin ==> \at(a[k],L1) == \at(b[k],L2);}
-*/
 
 /*@ axiomatic to_list{
   @ logic \list<int> to_list{l} (int* a, integer i, integer n) reads a[i .. n-1];
@@ -791,7 +787,7 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, M
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling((char*)buf + i);
   @   assigns ((char *)buf)[0..count-1],\result,protocol;
 
-  //@   ensures same_array: same_array{Pre,Post}(buf, buf, 0, count);
+  //@   ensures same_array: \forall integer k; 0 <= k < count ==> \at(buf[k],Pre) == \at(buf[k],Post);;
 
   @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
