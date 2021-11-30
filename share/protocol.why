@@ -79,6 +79,12 @@ type protocol =
   | Seq protocol protocol
   | Skip
 
+(* -------------------------------------------------------------------- *)
+(* --- Notation                                                     --- *)
+(* -------------------------------------------------------------------- *)
+
+let function (++) (p1 p2 : protocol) : protocol = Seq p1 p2
+
 end
 
 module MPI_Protocol_Handler
@@ -110,7 +116,6 @@ let constant get_mpi_maxloc : mpi_op = MPI_maxloc
 let constant get_mpi_minloc : mpi_op = MPI_minloc
 let constant get_mpi_replace : mpi_op = MPI_replace
 let constant get_mpi_no_op : mpi_op = MPI_no_op
-
 
 (* -------------------------------------------------------------------- *)
 (* --- seq                                                          --- *)

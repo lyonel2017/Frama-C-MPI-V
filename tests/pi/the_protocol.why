@@ -5,7 +5,7 @@ use int.Int
 use frama_c_wp.vlist.Vlist
 
 constant the_protocol : protocol =
-  Seq (IntBroadcast 0 1 (fun l -> nth l 0 > 0) (fun _ -> Skip))
-      (Reduce 0 1 MPI_float MPI_sum)
+  (IntBroadcast 0 1 (fun l -> nth l 0 > 0) (fun _ -> Skip)) ++
+  (Reduce 0 1 MPI_float MPI_sum)
 
 end
