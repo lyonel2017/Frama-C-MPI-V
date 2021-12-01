@@ -18,8 +18,6 @@
 (*  for more details (enclosed in the file LICENSE).                      *)
 (**************************************************************************)
 
-(* open Wp *)
-
 let () =
   let add_mpi_v_lib () =
     let share = MPI_V_options.Self.Share.get_dir ~mode:`Must_exist "." in
@@ -30,10 +28,6 @@ let () =
       Dynamic.Parameter.Bool.on "-instantiate" ();
   in
   Cmdline.run_after_configuring_stage add_mpi_v_lib
-
-let run () =
-  File.pretty_ast ();
-  Filecheck.check_ast "MPI-V"
 
 let () =
   Instantiate.Transform.register (module Mpi_recv.M:Instantiate.Instantiator_builder.Generator_sig);
@@ -49,5 +43,22 @@ let () =
   Instantiate.Transform.register
     (module Mpi_reduce.M:Instantiate.Instantiator_builder.Generator_sig);
   Instantiate.Transform.register
-    (module Mpi_allreduce.M:Instantiate.Instantiator_builder.Generator_sig);
-  Db.Main.extend run
+    (module Mpi_allreduce.M:Instantiate.Instantiator_builder.Generator_sig)
+
+let category = File.register_code_transformation_category "mpi-v"
+
+let () =
+  let perform _file =
+    if MPI_V_options.Enabled.get () then
+      Mpi_main.add_priority_condition ()
+  in
+  File.add_code_transformation_after_cleanup category perform
+
+let run () =
+  if MPI_V_options.Enabled.get () then
+    begin
+      File.pretty_ast ();
+      Filecheck.check_ast "MPI-V"
+    end
+
+let () = Db.Main.extend run

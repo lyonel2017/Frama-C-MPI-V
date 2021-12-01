@@ -43,6 +43,7 @@ PLUGIN_CMO := MPI_V_options \
 	mpi_scatter \
 	mpi_reduce \
 	mpi_allreduce \
+	mpi_main \
 	MPI_V_register
 PLUGIN_TESTS_DIRS := test
 
@@ -70,6 +71,7 @@ MPI_V_DISTRIBUTED_FILES=MPI_V_options.ml MPI_V_options.mli \
 	mpi_scatter.ml mpi_scatter.mli \
 	mpi_reduce.ml mpi_reduce.mli \
 	mpi_allreduce.ml mpi_allreduce.mli \
+	mpi_main.ml mpi_main.mli \
 	MPI_V_register.ml MPI_V_register.mli\
 	Makefile \
 	MPI_V.mli \
