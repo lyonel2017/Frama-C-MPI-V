@@ -267,8 +267,7 @@ let reduce_protocol () =
   let t2 = Logic_const.told t2 in
   let t2 = tapp "getNext" (t2 :: []) [] in
 
-  let p = papp "set_type" (t1 :: t2 :: []) [] in
-  Normal, make_pred p "reduce_protocol"
+  papp "set_type" (t1 :: t2 :: []) []
 
 let same_array var1 var2 =
   let t1 = Logic_const.tvar (Cil.cvar_to_lvar var1) in

@@ -45,6 +45,10 @@ let pred_message f =
   let p = Mpi_utils.papp "predIntMessage" (t1 :: t2 :: []) [] in
   Normal, Mpi_utils.make_pred p "pred_message"
 
+let reduce_protocol () =
+  let p = Mpi_utils.reduce_protocol () in
+  Normal, Mpi_utils.make_pred p "reduce_protocol"
+
 let generate_spec t _ f : Cil_types.funspec =
   let kf = Globals.Functions.find_by_name function_name in
   let spec = Annotations.funspec kf in
@@ -52,7 +56,7 @@ let generate_spec t _ f : Cil_types.funspec =
 
   if String.equal (Mpi_utils.cil_typ_to_mpi_string t) "mpi_mpi_int" then
     let requires = [protocol_for_intrecv f] in
-    let ensures =  [Mpi_utils.reduce_protocol ()] in
+    let ensures =  [reduce_protocol()] in
     let ensures = pred_message f :: ensures in
     Mpi_utils.update_spec spec Cil.default_behavior_name requires ensures
   else spec

@@ -39,12 +39,9 @@ val tapp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_typ
 
 val papp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.predicate_node
 val same_array: Cil_types.varinfo -> Cil_types.varinfo -> Cil_types.predicate_node
+val reduce_protocol: unit -> Cil_types.predicate_node
 
 val make_pred: Cil_types.predicate_node -> string -> Cil_types.identified_predicate
-
-(*The return type is not good, must be predicate node *)
-
-val reduce_protocol: unit -> Cil_types.termination_kind * Cil_types.identified_predicate
 
 val update_spec: Cil_types.spec -> string -> Cil_types.identified_predicate list ->
   (Cil_types.termination_kind * Cil_types.identified_predicate) list -> Cil_types.spec
