@@ -24,6 +24,6 @@ let add_priority_condition () =
   let kf = Globals.Functions.find_by_name "main" in
   let t1 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "priority")) in
   let t2 = Logic_const.tinteger 2 in
-  let pred = Prel (Req, t1, t2) in
-  let post = Cil_types.Normal, Mpi_utils.make_pred pred "test" in
+  let p = Logic_const.prel (Req, t1, t2) in
+  let post = Cil_types.Normal, Mpi_utils.make_pred p "priority_check" in
   Annotations.add_ensures MPI_V_options.emitter kf [post]

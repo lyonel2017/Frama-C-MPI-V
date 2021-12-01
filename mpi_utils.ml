@@ -241,10 +241,10 @@ let tapp s p l =
 
 let papp s p l =
   let l_i = get_l_info s in
-  Papp (l_i, l, p)
+  Logic_const.papp (l_i, l, p)
 
 let make_pred p name =
-  let pred = {(Logic_const.unamed p) with pred_name = [name] } in
+  let pred = {p with pred_name = [name] } in
   Logic_const.new_predicate pred
 
 let getFirst_get_type_protocol () =
@@ -297,7 +297,7 @@ let same_array var1 var2 =
   let pred2 = Logic_const.prel (Req, tpre, tpost) in
 
   let pred = Logic_const.pimplies (pred1, pred2) in
-  Pforall([var],pred)
+  Logic_const.pforall([var],pred)
 
 let update_spec spec name requires ensures =
   let has_same_name b = b.b_name = name in

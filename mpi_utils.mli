@@ -37,11 +37,11 @@ val to_list: Cil_types.term -> Cil_types.term -> Cil_types.term
 val integer_var: Cil_types.varinfo -> Cil_types.term
 val tapp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.term
 
-val papp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.predicate_node
-val same_array: Cil_types.varinfo -> Cil_types.varinfo -> Cil_types.predicate_node
-val reduce_protocol: unit -> Cil_types.predicate_node
+val papp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.predicate
+val same_array: Cil_types.varinfo -> Cil_types.varinfo -> Cil_types.predicate
+val reduce_protocol: unit -> Cil_types.predicate
 
-val make_pred: Cil_types.predicate_node -> string -> Cil_types.identified_predicate
+val make_pred: Cil_types.predicate -> string -> Cil_types.identified_predicate
 
 val update_spec: Cil_types.spec -> string -> Cil_types.identified_predicate list ->
   (Cil_types.termination_kind * Cil_types.identified_predicate) list -> Cil_types.spec

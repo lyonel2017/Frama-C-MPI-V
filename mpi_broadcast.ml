@@ -70,9 +70,8 @@ let continu_protocol f =
   let t4 = Mpi_utils.to_list t5 t4 in
 
   let p = Mpi_utils.papp "countiIntBroadcast" (t1 :: t2 :: t3 :: t4 :: []) [] in
-  let pred = Logic_const.unamed p in
 
-  let p = Plet (info, pred) in
+  let p = Logic_const.plet info p in
 
   Normal, Mpi_utils.make_pred p "continu_protocol"
 
