@@ -48,15 +48,19 @@ let () =
 let category = File.register_code_transformation_category "mpi-v"
 
 let () =
-  let perform _file =
+  let perform _ =
     if MPI_V_options.Enabled.get () then
-      Mpi_main.add_priority_condition ()
+      begin
+        Mpi_main.add_priority_condition () ;
+        Mpi_ghostbroadcast.remove_danglingness_buf ()
+      end
   in
   File.add_code_transformation_after_cleanup category perform
 
 let run () =
   if MPI_V_options.Enabled.get () then
     begin
+      File.reorder_ast ();
       File.pretty_ast ();
       Filecheck.check_ast "MPI-V"
     end

@@ -812,14 +812,14 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
   @   requires valid_buf: ((\block_length(buf) == 0 && \offset(buf) == 0) && count == 0) ||
   @                                                    \valid((buf)+(0..count-1));
   @   requires initialization_buf: \initialized(buf + (0 .. count - 1));
-  @ //  requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling(buf + i);
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling(buf + i);
   @   ensures same_array: \forall integer k; 0 <= k < count ==> \at(buf[k],Pre) == \at(buf[k],Post);
   @   assigns buf[0..count-1], \result, protocol;
   @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
   @   requires valid_buf: ((\block_length(buf) == 0 && \offset(buf) == 0) && count == 0) ||
   @                                                    \valid_read((buf)+(0..count-1));
-  @ //  requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling(buf + i);
+  @   requires danglingness_buf: \forall integer i; 0 ≤ i < count ⇒ ¬\dangling(buf + i);
   @   assigns buf[0..count-1], \result, protocol;@/
   int MPI_GIntBcast(int \ghost * buf, int count, int root);
   @*/
