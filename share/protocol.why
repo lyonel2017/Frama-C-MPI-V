@@ -59,8 +59,7 @@ type protocol =
   | Reduce int int mpi_datatype mpi_op
   | Allgather int mpi_datatype
   | Allreduce int mpi_datatype mpi_op
-  | Foreach int int (int -> protocol)
-  | While int protocol
+  | Rec int int (int -> protocol)
 
 (* Wildcard (int -> bool) (int -> bool) int int int subprotocol
 	- only consume if the predicate is false for the rank of the source and false for any rank
@@ -187,13 +186,13 @@ axiom IsAllreduce: forall data_size: int, mt: mpi_datatype, op: mpi_op.
       isAllreduce(Allreduce data_size mt op)
 
 (* -------------------------------------------------------------------- *)
-(* --- isForeach                                                    --- *)
+(* --- isRec                                                        --- *)
 (* -------------------------------------------------------------------- *)
 
-predicate isForeach (p: protocol)
+predicate isRec (p: protocol)
 
-axiom IsForeach: forall low high: int, body: int -> protocol.
-      isForeach (Foreach low high body)
+axiom IsRec: forall low high: int, body: int -> protocol.
+      isRec (Rec low high body)
 
 (* -------------------------------------------------------------------- *)
 (* --- isSkip                                                       --- *)
@@ -390,21 +389,13 @@ axiom simpl_intmessage: forall source dest data_size tag: int, pre: (list int ->
       rank <> source /\ rank <> dest ->
       simpl(IntMessage source dest data_size tag pre) = Skip
 
-axiom simpl_foreach_1: forall low high: int, body: (int -> protocol).
+axiom simpl_rec_1: forall low high: int, body: (int -> protocol).
       low <= high ->
-      simpl(Foreach low high body) = Seq (body low) (Foreach (low + 1) high body)
+      simpl(Rec low high body) = Seq (body low) (Rec (low + 1) high body)
 
-axiom simpl_foreach_2: forall low high: int, body: (int -> protocol).
+axiom simpl_rec_2: forall low high: int, body: (int -> protocol).
       low > high ->
-      simpl(Foreach low high body) = Skip
-
-axiom simpl_while_1: forall n: int, body: protocol.
-      n > 0 ->
-      simpl(While n body) = Seq body (While (n-1) body)
-
-axiom simpl_while_2: forall n: int, body: protocol.
-      n <= 0 ->
-      simpl(While n body) = Skip
+      simpl(Rec low high body) = Skip
 
 axiom simpl_Skip: simpl(Skip) = Skip
 
@@ -414,29 +405,17 @@ axiom simpl_Skip: simpl(Skip) = Skip
 
 function split (p: protocol) (c : int): protocol
 
-axiom split_foreach1: forall low high c: int, body: (int -> protocol).
+axiom split_rec1: forall low high c: int, body: (int -> protocol).
       low <= c <= high ->
-      split (Foreach low high body) c = Seq (Foreach low (c-1) body) (Foreach c high body)
+      split (Rec low high body) c = Seq (Rec low (c-1) body) (Rec c high body)
 
-axiom split_foreach2: forall low high c: int, body: (int -> protocol).
+axiom split_rec2: forall low high c: int, body: (int -> protocol).
       low <= high < c ->
-      split (Foreach low high body) c = Seq (Foreach low high body) (Foreach c high body)
+      split (Rec low high body) c = Seq (Rec low high body) (Rec c high body)
 
-axiom split_foreach3: forall low high c: int, body: (int -> protocol).
+axiom split_rec3: forall low high c: int, body: (int -> protocol).
       c < low <= high ->
-      split (Foreach low high body) c = Seq (Foreach low c body) (Foreach low high body)
-
-axiom split_while1: forall n c: int, body: protocol.
-      0 <= c <= n ->
-      split (While n body) c = Seq (While c body) (While (n-c) body)
-
-axiom split_while2: forall n c: int, body: protocol.
-      0 <= n < c ->
-      split (While n body) c = Seq (While n body) (While (n-c) body)
-
-axiom split_while3: forall n c: int, body: protocol.
-      c < 0 <= n ->
-      split (While n body) c = Seq (While c body) (While n body)
+      split (Rec low high body) c = Seq (Rec low c body) (Rec low high body)
 
 (* -------------------------------------------------------------------- *)
 (* --- Assoc                                                        --- *)

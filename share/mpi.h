@@ -549,7 +549,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ logic logic_protocol the_protocol;
   @
   @ predicate isMessage(logic_protocol p);
-  @ predicate isForeach(logic_protocol p);
+  @ predicate isRec(logic_protocol p);
   @ predicate isSkip(logic_protocol p);
   @ predicate isBroadcast(logic_protocol p);
   @ predicate isGather(logic_protocol p);

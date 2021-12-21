@@ -56,7 +56,7 @@ logic integer "MPI_COMM_WORLD_rank_ACSL" = "rank";
 logic logic_protocol "seq" (logic_protocol,logical_protocol) = "seq";
 
 predicate "isMessage" (logic_protocol) = "isMessage";
-predicate "isForeach" (logic_protocol) = "isForeach";
+predicate "isRec" (logic_protocol) = "isRec";
 predicate "isSkip" (logic_protocol) = "isSkip";
 predicate "isBroadcast" (logic_protocol) = "isBroadcast";
 predicate "isGather" (logic_protocol) = "isGather";
