@@ -34,7 +34,7 @@
 */
 void init_array (int* t);
 
-//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver sum.c
+//frama-c-gui -mpi-v -wp-weak-int-model -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver sum.c
 
 int main(int argc, char **argv){
   int my_rank = 0, num_procs = 0, offset = 1, active_procs = 0;

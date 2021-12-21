@@ -488,9 +488,29 @@ Axiom rw_repeat_plus_one_box_unfold :
 (* Why3 assumption *)
 Inductive mpi_datatype :=
   | MPI_char : mpi_datatype
-  | MPI_int : mpi_datatype.
+  | MPI_int : mpi_datatype
+  | MPI_float : mpi_datatype.
 Axiom mpi_datatype_WhyType : WhyType mpi_datatype.
 Existing Instance mpi_datatype_WhyType.
+
+(* Why3 assumption *)
+Inductive mpi_op :=
+  | MPI_max : mpi_op
+  | MPI_min : mpi_op
+  | MPI_sum : mpi_op
+  | MPI_prod : mpi_op
+  | MPI_land : mpi_op
+  | MPI_band : mpi_op
+  | MPI_lor : mpi_op
+  | MPI_bor : mpi_op
+  | MPI_lxor : mpi_op
+  | MPI_bxor : mpi_op
+  | MPI_maxloc : mpi_op
+  | MPI_minloc : mpi_op
+  | MPI_replace : mpi_op
+  | MPI_no_op : mpi_op.
+Axiom mpi_op_WhyType : WhyType mpi_op.
+Existing Instance mpi_op_WhyType.
 
 Parameter size: Numbers.BinNums.Z.
 
@@ -509,9 +529,12 @@ Inductive protocol :=
       protocol
   | Scatter : Numbers.BinNums.Z -> Numbers.BinNums.Z -> mpi_datatype ->
       protocol
-  | Foreach : Numbers.BinNums.Z -> Numbers.BinNums.Z ->
+  | Reduce : Numbers.BinNums.Z -> Numbers.BinNums.Z -> mpi_datatype ->
+      mpi_op -> protocol
+  | Allgather : Numbers.BinNums.Z -> mpi_datatype -> protocol
+  | Allreduce : Numbers.BinNums.Z -> mpi_datatype -> mpi_op -> protocol
+  | Rec : Numbers.BinNums.Z -> Numbers.BinNums.Z ->
       (Numbers.BinNums.Z -> protocol) -> protocol
-  | While : Numbers.BinNums.Z -> protocol -> protocol
   | If : Init.Datatypes.bool -> protocol -> protocol -> protocol
   | Seq : protocol -> protocol -> protocol
   | Skip : protocol.
@@ -590,12 +613,31 @@ Axiom IsScatter :
     (mt:mpi_datatype),
   isScatter (Scatter r data_size mt).
 
-Parameter isForeach: protocol -> Prop.
+Parameter isReduce: protocol -> Prop.
 
-Axiom IsForeach :
+Axiom IsReduce :
+  forall (r:Numbers.BinNums.Z) (data_size:Numbers.BinNums.Z)
+    (mt:mpi_datatype) (op:mpi_op),
+  isReduce (Reduce r data_size mt op).
+
+Parameter isAllgather: protocol -> Prop.
+
+Axiom IsAllgather :
+  forall (data_size:Numbers.BinNums.Z) (mt:mpi_datatype),
+  isAllgather (Allgather data_size mt).
+
+Parameter isAllreduce: protocol -> Prop.
+
+Axiom IsAllreduce :
+  forall (data_size:Numbers.BinNums.Z) (mt:mpi_datatype) (op:mpi_op),
+  isAllreduce (Allreduce data_size mt op).
+
+Parameter isRec: protocol -> Prop.
+
+Axiom IsRec :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (body:Numbers.BinNums.Z -> protocol),
-  isForeach (Foreach low high body).
+  isRec (Rec low high body).
 
 Parameter isSkip: protocol -> Prop.
 
@@ -749,6 +791,37 @@ Axiom isScatter1 :
   (r < size)%Z /\ (root = r) /\ (data_size = count) /\ (datatype = mt) ->
   isforScatter (Scatter r data_size mt) root count datatype.
 
+Parameter isforReduce:
+  protocol -> Numbers.BinNums.Z -> Numbers.BinNums.Z -> mpi_datatype ->
+  mpi_op -> Prop.
+
+Axiom isReduce1 :
+  forall (root:Numbers.BinNums.Z) (r:Numbers.BinNums.Z)
+    (count:Numbers.BinNums.Z) (data_size:Numbers.BinNums.Z)
+    (datatype:mpi_datatype) (mt:mpi_datatype) (op:mpi_op) (opera:mpi_op),
+  (0%Z <= r)%Z /\
+  (r < size)%Z /\
+  (root = r) /\ (data_size = count) /\ (datatype = mt) /\ (opera = op) ->
+  isforReduce (Reduce r data_size mt op) root count datatype opera.
+
+Parameter isforAllgather:
+  protocol -> Numbers.BinNums.Z -> mpi_datatype -> Prop.
+
+Axiom isAllgather1 :
+  forall (data_size:Numbers.BinNums.Z) (count:Numbers.BinNums.Z)
+    (datatype:mpi_datatype) (mt:mpi_datatype),
+  (data_size = count) /\ (datatype = mt) ->
+  isforAllgather (Allgather data_size mt) count datatype.
+
+Parameter isforAllreduce:
+  protocol -> Numbers.BinNums.Z -> mpi_datatype -> mpi_op -> Prop.
+
+Axiom isAllreduce1 :
+  forall (data_size:Numbers.BinNums.Z) (count:Numbers.BinNums.Z)
+    (datatype:mpi_datatype) (mt:mpi_datatype) (op:mpi_op) (opera:mpi_op),
+  (data_size = count) /\ (datatype = mt) /\ (opera = op) ->
+  isforAllreduce (Allreduce data_size mt op) count datatype opera.
+
 Parameter simpl: protocol -> protocol.
 
 Axiom simpl_seq_1 : forall (p:protocol), ((simpl (Seq Skip p)) = p).
@@ -774,65 +847,42 @@ Axiom simpl_intmessage :
   ~ (dest = source) /\ ~ (rank = source) /\ ~ (rank = dest) ->
   ((simpl (IntMessage source dest data_size tag pre)) = Skip).
 
-Axiom simpl_foreach_1 :
+Axiom simpl_rec_1 :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (body:Numbers.BinNums.Z -> protocol),
   (low <= high)%Z ->
-  ((simpl (Foreach low high body)) =
-   (Seq (body low) (Foreach (low + 1%Z)%Z high body))).
+  ((simpl (Rec low high body)) =
+   (Seq (body low) (Rec (low + 1%Z)%Z high body))).
 
-Axiom simpl_foreach_2 :
+Axiom simpl_rec_2 :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (body:Numbers.BinNums.Z -> protocol),
-  (high < low)%Z -> ((simpl (Foreach low high body)) = Skip).
-
-Axiom simpl_while_1 :
-  forall (n:Numbers.BinNums.Z) (body:protocol), (0%Z < n)%Z ->
-  ((simpl (While n body)) = (Seq body (While (n - 1%Z)%Z body))).
-
-Axiom simpl_while_2 :
-  forall (n:Numbers.BinNums.Z) (body:protocol), (n <= 0%Z)%Z ->
-  ((simpl (While n body)) = Skip).
+  (high < low)%Z -> ((simpl (Rec low high body)) = Skip).
 
 Axiom simpl_Skip : ((simpl Skip) = Skip).
 
 Parameter split: protocol -> Numbers.BinNums.Z -> protocol.
 
-Axiom split_foreach1 :
+Axiom split_rec1 :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (c:Numbers.BinNums.Z) (body:Numbers.BinNums.Z -> protocol),
   (low <= c)%Z /\ (c <= high)%Z ->
-  ((split (Foreach low high body) c) =
-   (Seq (Foreach low (c - 1%Z)%Z body) (Foreach c high body))).
+  ((split (Rec low high body) c) =
+   (Seq (Rec low (c - 1%Z)%Z body) (Rec c high body))).
 
-Axiom split_foreach2 :
+Axiom split_rec2 :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (c:Numbers.BinNums.Z) (body:Numbers.BinNums.Z -> protocol),
   (low <= high)%Z /\ (high < c)%Z ->
-  ((split (Foreach low high body) c) =
-   (Seq (Foreach low high body) (Foreach c high body))).
+  ((split (Rec low high body) c) =
+   (Seq (Rec low high body) (Rec c high body))).
 
-Axiom split_foreach3 :
+Axiom split_rec3 :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (c:Numbers.BinNums.Z) (body:Numbers.BinNums.Z -> protocol),
   (c < low)%Z /\ (low <= high)%Z ->
-  ((split (Foreach low high body) c) =
-   (Seq (Foreach low c body) (Foreach low high body))).
-
-Axiom split_while1 :
-  forall (n:Numbers.BinNums.Z) (c:Numbers.BinNums.Z) (body:protocol),
-  (0%Z <= c)%Z /\ (c <= n)%Z ->
-  ((split (While n body) c) = (Seq (While c body) (While (n - c)%Z body))).
-
-Axiom split_while2 :
-  forall (n:Numbers.BinNums.Z) (c:Numbers.BinNums.Z) (body:protocol),
-  (0%Z <= n)%Z /\ (n < c)%Z ->
-  ((split (While n body) c) = (Seq (While n body) (While (n - c)%Z body))).
-
-Axiom split_while3 :
-  forall (n:Numbers.BinNums.Z) (c:Numbers.BinNums.Z) (body:protocol),
-  (c < 0%Z)%Z /\ (0%Z <= n)%Z ->
-  ((split (While n body) c) = (Seq (While c body) (While n body))).
+  ((split (Rec low high body) c) =
+   (Seq (Rec low c body) (Rec low high body))).
 
 Parameter assoc: protocol -> protocol.
 
@@ -906,6 +956,98 @@ Axiom test6 :
   forall (p1:protocol), isComposed p1 /\ isLineare p1 ->
   (p1 = (Seq (getFirst p1) (getNext p1))).
 
+Axiom Q_G_mpi_mpi_op_max_33_region : ((region 34%Z) = 0%Z).
+
+Axiom S6_mpi_op_t : Type.
+Parameter S6_mpi_op_t_WhyType : WhyType S6_mpi_op_t.
+Existing Instance S6_mpi_op_t_WhyType.
+
+Parameter Length_of_S6_mpi_op_t: Numbers.BinNums.Z.
+
+Axiom Q_Positive_Length_of_S6_mpi_op_t : (0%Z < Length_of_S6_mpi_op_t)%Z.
+
+Axiom Q_G_mpi_mpi_op_max_33_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 34%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_min_32_region : ((region 33%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_min_32_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 33%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_sum_34_region : ((region 35%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_sum_34_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 35%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_prod_35_region : ((region 36%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_prod_35_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 36%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_land_36_region : ((region 37%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_land_36_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 37%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_band_37_region : ((region 38%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_band_37_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 38%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_lor_38_region : ((region 39%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_lor_38_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 39%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_bor_39_region : ((region 40%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_bor_39_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 40%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_lxor_40_region : ((region 41%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_lxor_40_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 41%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_bxor_41_region : ((region 42%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_bxor_41_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 42%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_maxloc_42_region : ((region 43%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_maxloc_42_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 43%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_minloc_43_region : ((region 44%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_minloc_43_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 44%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_replace_44_region : ((region 45%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_replace_44_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 45%Z) = Length_of_S6_mpi_op_t).
+
+Axiom Q_G_mpi_mpi_op_no_op_45_region : ((region 46%Z) = 0%Z).
+
+Axiom Q_G_mpi_mpi_op_no_op_45_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 46%Z) = Length_of_S6_mpi_op_t).
+
 Axiom Q_G_mpi_mpi_int_51_region : ((region 52%Z) = 0%Z).
 
 Axiom S2_mpi_datatype_t : Type.
@@ -927,71 +1069,77 @@ Axiom Q_G_mpi_mpi_char_46_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
   ((t 47%Z) = Length_of_S2_mpi_datatype_t).
 
-Axiom Q_L_data_1926_region : ((region 1927%Z) = 2%Z).
+Axiom Q_G_mpi_mpi_float_57_region : ((region 58%Z) = 0%Z).
 
-Axiom Q_L_data_1926_linked :
+Axiom Q_G_mpi_mpi_float_57_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1927%Z) = 0%Z).
+  ((t 58%Z) = Length_of_S2_mpi_datatype_t).
 
-Axiom Q_L_g_1927_region : ((region 1928%Z) = 2%Z).
+Axiom Q_L_data_2043_region : ((region 2044%Z) = 2%Z).
 
-Axiom Q_L_g_1927_linked :
+Axiom Q_L_data_2043_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1928%Z) = 0%Z).
+  ((t 2044%Z) = 0%Z).
 
-Axiom Q_L_tmp_1937_region : ((region 1938%Z) = 2%Z).
+Axiom Q_L_g_2044_region : ((region 2045%Z) = 2%Z).
 
-Axiom Q_L_tmp_1937_linked :
+Axiom Q_L_g_2044_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1938%Z) = 0%Z).
+  ((t 2045%Z) = 0%Z).
 
-Axiom Q_L_sum_1939_region : ((region 1940%Z) = 2%Z).
+Axiom Q_L_tmp_2054_region : ((region 2055%Z) = 2%Z).
 
-Axiom Q_L_sum_1939_linked :
+Axiom Q_L_tmp_2054_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1940%Z) = 0%Z).
+  ((t 2055%Z) = 0%Z).
 
-Axiom Q_L_g_1941_region : ((region 1942%Z) = 2%Z).
+Axiom Q_L_sum_2056_region : ((region 2057%Z) = 2%Z).
 
-Axiom Q_L_g_1941_linked :
+Axiom Q_L_sum_2056_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1942%Z) = 0%Z).
+  ((t 2057%Z) = 0%Z).
 
-Axiom Q_L_g_1948_region : ((region 1949%Z) = 2%Z).
+Axiom Q_L_g_2058_region : ((region 2059%Z) = 2%Z).
 
-Axiom Q_L_g_1948_linked :
+Axiom Q_L_g_2058_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1949%Z) = 0%Z).
+  ((t 2059%Z) = 0%Z).
 
-Axiom Q_G___fc_fopen_603_region : ((region 604%Z) = 0%Z).
+Axiom Q_L_g_2065_region : ((region 2066%Z) = 2%Z).
 
-Axiom Q_G___fc_fopen_603_linked :
+Axiom Q_L_g_2065_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 604%Z) = 32%Z).
+  ((t 2066%Z) = 0%Z).
 
-Axiom Q_G___fc_fopen_603_init :
+Axiom Q_G___fc_fopen_719_region : ((region 720%Z) = 0%Z).
+
+Axiom Q_G___fc_fopen_719_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 720%Z) = 32%Z).
+
+Axiom Q_G___fc_fopen_719_init :
   forall (t:addr -> Init.Datatypes.bool), cinits t ->
-  is_init_range t (shift (global 604%Z) 0%Z) 32%Z.
+  is_init_range t (shift (global 720%Z) 0%Z) 32%Z.
 
-Axiom Q_G___fc_tmpnam_611_region : ((region 612%Z) = 0%Z).
+Axiom Q_G___fc_tmpnam_727_region : ((region 728%Z) = 0%Z).
 
-Axiom Q_G___fc_tmpnam_611_linked :
+Axiom Q_G___fc_tmpnam_727_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 612%Z) = 2048%Z).
+  ((t 728%Z) = 2048%Z).
 
-Axiom Q_G___fc_tmpnam_611_init :
+Axiom Q_G___fc_tmpnam_727_init :
   forall (t:addr -> Init.Datatypes.bool), cinits t ->
-  is_init_range t (shift (global 612%Z) 0%Z) 2048%Z.
+  is_init_range t (shift (global 728%Z) 0%Z) 2048%Z.
 
-Axiom Q_G___fc_random48_counter_1473_region : ((region 1474%Z) = 0%Z).
+Axiom Q_G___fc_random48_counter_1589_region : ((region 1590%Z) = 0%Z).
 
-Axiom Q_G___fc_random48_counter_1473_linked :
+Axiom Q_G___fc_random48_counter_1589_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1474%Z) = 3%Z).
+  ((t 1590%Z) = 3%Z).
 
-Axiom Q_G___fc_random48_counter_1473_init :
+Axiom Q_G___fc_random48_counter_1589_init :
   forall (t:addr -> Init.Datatypes.bool), cinits t ->
-  is_init_range t (shift (global 1474%Z) 0%Z) 3%Z.
+  is_init_range t (shift (global 1590%Z) 0%Z) 3%Z.
 
 Parameter P_set_type: S15_c_protocol -> protocol -> Prop.
 
@@ -1106,10 +1254,10 @@ Axiom p2_closure_def :
 (* Why3 assumption *)
 Definition f (l1:list Numbers.BinNums.Z) : protocol :=
   Seq
-  (Foreach 1%Z (active - 1%Z)%Z
+  (Rec 1%Z (active - 1%Z)%Z
    (fun (i:Numbers.BinNums.Z) =>
     IntMessage 0%Z i offset1 1%Z (p1_closure l1 i)))
-  (Foreach 1%Z (active - 1%Z)%Z
+  (Rec 1%Z (active - 1%Z)%Z
    (fun (i:Numbers.BinNums.Z) => IntMessage i 0%Z 1%Z 1%Z (p2_closure l1 i))).
 
 (* Why3 assumption *)
@@ -1424,9 +1572,9 @@ Axiom incl_int :
 
 (* Why3 goal *)
 Theorem wp_goal :
-  let a := global 1942%Z in
+  let a := global 2059%Z in
   let a1 := shift a 0%Z in
-  let a2 := global 1927%Z in
+  let a2 := global 2044%Z in
   let a3 := shift a2 0%Z in
   forall (t:addr -> Numbers.BinNums.Z) (t1:addr -> Numbers.BinNums.Z)
     (t2:addr -> Numbers.BinNums.Z) (i:Numbers.BinNums.Z)
@@ -1446,7 +1594,7 @@ Theorem wp_goal :
   let a13 := L_get_type c6 in
   let a14 := getFirst a13 in
   let a15 := havoc t1 a8 a3 i3 in
-  ~ (rank = 0%Z) -> ((t (global 1940%Z)) = 0%Z) -> (a5 = (getNext a6)) ->
+  ~ (rank = 0%Z) -> ((t (global 2057%Z)) = 0%Z) -> (a5 = (getNext a6)) ->
   ((getNext (split (getFirst a6) i2)) = a7) -> ((f a9) = a6) ->
   (0%Z < i2)%Z -> (0%Z < size)%Z -> (0%Z <= i3)%Z -> (rank <= i2)%Z ->
   (0%Z <= i1)%Z -> (i1 < i3)%Z -> (0%Z <= rank)%Z -> (i2 <= rank)%Z ->
@@ -1487,9 +1635,9 @@ destruct h32.
   subst.
   specialize (active'def).
   intros H2; destruct H2 as (H2 & _).
-  rewrite split_foreach1 in h31 by Lia.lia.
+  rewrite split_rec1 in h31 by Lia.lia.
   rewrite test1 in  h31;[ | simpl ; auto].
-  rewrite simpl_foreach_1 in h31 by Lia.lia.
+  rewrite simpl_rec_1 in h31 by Lia.lia.
   rewrite Assoc in h31.
   simpl in h31.
   specialize offset'def.
@@ -1541,9 +1689,9 @@ destruct h32.
   subst.
   specialize (active'def).
   intros H2; destruct H2 as (_ & H2).
-  rewrite split_foreach1 in h31 by Lia.lia.
+  rewrite split_rec1 in h31 by Lia.lia.
   rewrite test1 in  h31;[ | simpl ; auto].
-  rewrite simpl_foreach_1 in h31 by Lia.lia.
+  rewrite simpl_rec_1 in h31 by Lia.lia.
   rewrite Assoc in h31.
   simpl in h31.
   specialize offset'def.

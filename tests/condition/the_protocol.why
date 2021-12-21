@@ -4,6 +4,6 @@ use protocol.MPI_Protocol
 use int.Int
 
 constant the_protocol : protocol =
-     Foreach 0 9 (fun i -> IntMessage i (i+10) 1 1 (fun l -> true))
+     Rec 0 9 (fun i -> IntMessage i (i+10) 1 1 (fun l -> true))
 
 end

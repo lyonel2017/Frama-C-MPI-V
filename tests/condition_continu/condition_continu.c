@@ -2,10 +2,6 @@
 
 //frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver condition_continu.c
 
-/*@ axiomatic aux{
-  @ logic logic_protocol f(\list<int> l);
-}*/
-
 int main(int argc, char **argv){
   int data = -1;
   int my_rank = 0, num_procs = 0;
@@ -28,7 +24,6 @@ int main(int argc, char **argv){
     /*@ ghost
       @ int g = data;
       @ MPI_GIntBcast(&g, 1, 0);*/
-
     /*@ ghost assoc();*/
     /* Send messages to processes 1*/
     MPI_Ssend(&data, 1, MPI_INT, 1, 1, MPI_COMM_WORLD);

@@ -4,7 +4,7 @@ use protocol.MPI_Protocol
 use int.Int
 
 constant the_protocol : protocol =
-    Seq (Foreach 1 (size-1) (fun i -> IntMessage 0 i 1 0 (fun l -> true)))
-        (Foreach 1 (size-1) (fun i -> IntMessage i 0 1 0 (fun l -> true)))
+    Seq (Rec 1 (size-1) (fun i -> IntMessage 0 i 1 0 (fun l -> true)))
+        (Rec 1 (size-1) (fun i -> IntMessage i 0 1 0 (fun l -> true)))
 
 end

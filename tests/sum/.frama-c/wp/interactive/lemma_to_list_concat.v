@@ -489,14 +489,236 @@ Axiom Q_to_list_length :
     (n:Numbers.BinNums.Z),
   (i <= n)%Z -> ((i + (length (L_to_list Mint a i n)))%Z = n).
 
+(* Why3 assumption *)
+Definition is_bool (x:Numbers.BinNums.Z) : Prop := (x = 0%Z) \/ (x = 1%Z).
+
+(* Why3 assumption *)
+Definition is_uint8 (x:Numbers.BinNums.Z) : Prop :=
+  (0%Z <= x)%Z /\ (x < 256%Z)%Z.
+
+(* Why3 assumption *)
+Definition is_sint8 (x:Numbers.BinNums.Z) : Prop :=
+  ((-128%Z)%Z <= x)%Z /\ (x < 128%Z)%Z.
+
+(* Why3 assumption *)
+Definition is_uint16 (x:Numbers.BinNums.Z) : Prop :=
+  (0%Z <= x)%Z /\ (x < 65536%Z)%Z.
+
+(* Why3 assumption *)
+Definition is_sint16 (x:Numbers.BinNums.Z) : Prop :=
+  ((-32768%Z)%Z <= x)%Z /\ (x < 32768%Z)%Z.
+
+(* Why3 assumption *)
+Definition is_uint32 (x:Numbers.BinNums.Z) : Prop :=
+  (0%Z <= x)%Z /\ (x < 4294967296%Z)%Z.
+
+(* Why3 assumption *)
+Definition is_sint32 (x:Numbers.BinNums.Z) : Prop :=
+  ((-2147483648%Z)%Z <= x)%Z /\ (x < 2147483648%Z)%Z.
+
+(* Why3 assumption *)
+Definition is_uint64 (x:Numbers.BinNums.Z) : Prop :=
+  (0%Z <= x)%Z /\ (x < 18446744073709551616%Z)%Z.
+
+(* Why3 assumption *)
+Definition is_sint64 (x:Numbers.BinNums.Z) : Prop :=
+  ((-9223372036854775808%Z)%Z <= x)%Z /\ (x < 9223372036854775808%Z)%Z.
+
+Axiom is_bool0 : is_bool 0%Z.
+
+Axiom is_bool1 : is_bool 1%Z.
+
+Parameter to_bool: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Axiom to_bool'def :
+  forall (x:Numbers.BinNums.Z),
+  ((x = 0%Z) -> ((to_bool x) = 0%Z)) /\ (~ (x = 0%Z) -> ((to_bool x) = 1%Z)).
+
+Parameter to_uint8: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_sint8: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_uint16: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_sint16: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_uint32: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_sint32: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_uint64: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_sint64: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter two_power_abs: Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Axiom two_power_abs_is_positive :
+  forall (n:Numbers.BinNums.Z), (0%Z < (two_power_abs n))%Z.
+
+Axiom two_power_abs_plus_pos :
+  forall (n:Numbers.BinNums.Z) (m:Numbers.BinNums.Z), (0%Z <= n)%Z ->
+  (0%Z <= m)%Z ->
+  ((two_power_abs (n + m)%Z) = ((two_power_abs n) * (two_power_abs m))%Z).
+
+Axiom two_power_abs_plus_one :
+  forall (n:Numbers.BinNums.Z), (0%Z <= n)%Z ->
+  ((two_power_abs (n + 1%Z)%Z) = (2%Z * (two_power_abs n))%Z).
+
+(* Why3 assumption *)
+Definition is_uint (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z) : Prop :=
+  (0%Z <= x)%Z /\ (x < (two_power_abs n))%Z.
+
+(* Why3 assumption *)
+Definition is_sint (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z) : Prop :=
+  ((-(two_power_abs n))%Z <= x)%Z /\ (x < (two_power_abs n))%Z.
+
+Parameter to_uint:
+  Numbers.BinNums.Z -> Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Parameter to_sint:
+  Numbers.BinNums.Z -> Numbers.BinNums.Z -> Numbers.BinNums.Z.
+
+Axiom is_to_uint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z), is_uint n (to_uint n x).
+
+Axiom is_to_sint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z), is_sint n (to_sint n x).
+
+Axiom is_to_uint8 : forall (x:Numbers.BinNums.Z), is_uint8 (to_uint8 x).
+
+Axiom is_to_sint8 : forall (x:Numbers.BinNums.Z), is_sint8 (to_sint8 x).
+
+Axiom is_to_uint16 : forall (x:Numbers.BinNums.Z), is_uint16 (to_uint16 x).
+
+Axiom is_to_sint16 : forall (x:Numbers.BinNums.Z), is_sint16 (to_sint16 x).
+
+Axiom is_to_uint32 : forall (x:Numbers.BinNums.Z), is_uint32 (to_uint32 x).
+
+Axiom is_to_sint32 : forall (x:Numbers.BinNums.Z), is_sint32 (to_sint32 x).
+
+Axiom is_to_uint64 : forall (x:Numbers.BinNums.Z), is_uint64 (to_uint64 x).
+
+Axiom is_to_sint64 : forall (x:Numbers.BinNums.Z), is_sint64 (to_sint64 x).
+
+Axiom id_uint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  is_uint n x <-> ((to_uint n x) = x).
+
+Axiom id_sint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  is_sint n x <-> ((to_sint n x) = x).
+
+Axiom id_uint8 :
+  forall (x:Numbers.BinNums.Z), is_uint8 x -> ((to_uint8 x) = x).
+
+Axiom id_sint8 :
+  forall (x:Numbers.BinNums.Z), is_sint8 x -> ((to_sint8 x) = x).
+
+Axiom id_uint16 :
+  forall (x:Numbers.BinNums.Z), is_uint16 x -> ((to_uint16 x) = x).
+
+Axiom id_sint16 :
+  forall (x:Numbers.BinNums.Z), is_sint16 x -> ((to_sint16 x) = x).
+
+Axiom id_uint32 :
+  forall (x:Numbers.BinNums.Z), is_uint32 x -> ((to_uint32 x) = x).
+
+Axiom id_sint32 :
+  forall (x:Numbers.BinNums.Z), is_sint32 x -> ((to_sint32 x) = x).
+
+Axiom id_uint64 :
+  forall (x:Numbers.BinNums.Z), is_uint64 x -> ((to_uint64 x) = x).
+
+Axiom id_sint64 :
+  forall (x:Numbers.BinNums.Z), is_sint64 x -> ((to_sint64 x) = x).
+
+Axiom proj_uint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  ((to_uint n (to_uint n x)) = (to_uint n x)).
+
+Axiom proj_sint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  ((to_sint n (to_sint n x)) = (to_sint n x)).
+
+Axiom proj_uint8 :
+  forall (x:Numbers.BinNums.Z), ((to_uint8 (to_uint8 x)) = (to_uint8 x)).
+
+Axiom proj_sint8 :
+  forall (x:Numbers.BinNums.Z), ((to_sint8 (to_sint8 x)) = (to_sint8 x)).
+
+Axiom proj_uint16 :
+  forall (x:Numbers.BinNums.Z), ((to_uint16 (to_uint16 x)) = (to_uint16 x)).
+
+Axiom proj_sint16 :
+  forall (x:Numbers.BinNums.Z), ((to_sint16 (to_sint16 x)) = (to_sint16 x)).
+
+Axiom proj_uint32 :
+  forall (x:Numbers.BinNums.Z), ((to_uint32 (to_uint32 x)) = (to_uint32 x)).
+
+Axiom proj_sint32 :
+  forall (x:Numbers.BinNums.Z), ((to_sint32 (to_sint32 x)) = (to_sint32 x)).
+
+Axiom proj_uint64 :
+  forall (x:Numbers.BinNums.Z), ((to_uint64 (to_uint64 x)) = (to_uint64 x)).
+
+Axiom proj_sint64 :
+  forall (x:Numbers.BinNums.Z), ((to_sint64 (to_sint64 x)) = (to_sint64 x)).
+
+Axiom proj_su :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  ((to_sint n (to_uint n x)) = (to_uint n x)).
+
+Axiom incl_su :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z), is_uint n x ->
+  is_sint n x.
+
+Axiom proj_su_uint :
+  forall (n:Numbers.BinNums.Z) (m:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  (0%Z <= n)%Z -> (0%Z <= m)%Z ->
+  ((to_sint (m + n)%Z (to_uint n x)) = (to_uint n x)).
+
+Axiom proj_su_sint :
+  forall (n:Numbers.BinNums.Z) (m:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  (0%Z <= n)%Z -> (0%Z <= m)%Z ->
+  ((to_sint n (to_uint (m + (n + 1%Z)%Z)%Z x)) = (to_sint n x)).
+
+Axiom proj_int8 :
+  forall (x:Numbers.BinNums.Z), ((to_sint8 (to_uint8 x)) = (to_sint8 x)).
+
+Axiom proj_int16 :
+  forall (x:Numbers.BinNums.Z), ((to_sint16 (to_uint16 x)) = (to_sint16 x)).
+
+Axiom proj_int32 :
+  forall (x:Numbers.BinNums.Z), ((to_sint32 (to_uint32 x)) = (to_sint32 x)).
+
+Axiom proj_int64 :
+  forall (x:Numbers.BinNums.Z), ((to_sint64 (to_uint64 x)) = (to_sint64 x)).
+
+Axiom proj_us_uint :
+  forall (n:Numbers.BinNums.Z) (m:Numbers.BinNums.Z) (x:Numbers.BinNums.Z),
+  (0%Z <= n)%Z -> (0%Z <= m)%Z ->
+  ((to_uint (n + 1%Z)%Z (to_sint (m + n)%Z x)) = (to_uint (n + 1%Z)%Z x)).
+
+Axiom incl_uint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z) (i:Numbers.BinNums.Z),
+  (0%Z <= n)%Z -> (0%Z <= i)%Z -> is_uint n x -> is_uint (n + i)%Z x.
+
+Axiom incl_sint :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z) (i:Numbers.BinNums.Z),
+  (0%Z <= n)%Z -> (0%Z <= i)%Z -> is_sint n x -> is_sint (n + i)%Z x.
+
+Axiom incl_int :
+  forall (n:Numbers.BinNums.Z) (x:Numbers.BinNums.Z) (i:Numbers.BinNums.Z),
+  (0%Z <= n)%Z -> (0%Z <= i)%Z -> is_uint n x -> is_sint (n + i)%Z x.
+
 Axiom Q_to_list_cons :
   forall (Mint:addr -> Numbers.BinNums.Z) (a:addr) (i:Numbers.BinNums.Z)
     (n:Numbers.BinNums.Z),
   let x := ((-1%Z)%Z + n)%Z in
-  (i < n)%Z ->
+  let x1 := Mint (shift a x) in
+  (i < n)%Z -> is_sint32 x1 ->
   ((L_to_list Mint a i n) =
-   (concat (L_to_list Mint a i x)
-    (cons (Mint (shift a x)) (nil : list Numbers.BinNums.Z)))).
+   (concat (L_to_list Mint a i x) (cons x1 (nil : list Numbers.BinNums.Z)))).
 
 Axiom Q_to_list_empty :
   forall (Mint:addr -> Numbers.BinNums.Z) (a:addr) (i:Numbers.BinNums.Z)

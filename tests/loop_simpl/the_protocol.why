@@ -3,6 +3,6 @@ module MPI_the_protocol
 use protocol.MPI_Protocol
 use int.Int
 
-constant the_protocol : protocol = While 10 (IntMessage 0 1 1 0 (fun l -> true))
+constant the_protocol : protocol = Rec 0 9 (fun _ -> IntMessage 0 1 1 0 (fun l -> true))
 
 end

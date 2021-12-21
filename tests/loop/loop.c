@@ -78,9 +78,9 @@ int main(int argc, char **argv)
 
     /*@ ghost
     i++;
-    /@ loop invariant my_rank + 1 <= i <= num_procs;
+     /@ loop invariant my_rank + 1 <= i <= num_procs;
       @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
+      @    getNext(split (getFirst(\at(get_type(protocol),l1)),i));
       @ loop invariant getNext(get_type(protocol)) ==
       @    getNext(\at(get_type(protocol),l1));
       @ loop assigns protocol,i;
@@ -95,10 +95,12 @@ int main(int argc, char **argv)
     toskip();
     @*/
 
+    /*@ assert \at(get_type(protocol),Here) == getNext(\at(get_type(protocol),l1));*/
+
     /*@ ghost
   l2:;
      i = 1;
-    /@ loop invariant 1 <= i <= my_rank;
+     /@ loop invariant 1 <= i <= my_rank;
       @ loop invariant getFirst(get_type(protocol)) ==
       @  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
       @ loop invariant getNext(get_type(protocol)) ==
@@ -112,6 +114,7 @@ int main(int argc, char **argv)
       toskip();
       i++;
     }
+
     unroll();
     assoc();
     @*/
@@ -123,7 +126,7 @@ int main(int argc, char **argv)
     i++;
      /@ loop invariant my_rank + 1 <= i <= num_procs;
       @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
+      @    getNext(split (getFirst(\at(get_type(protocol),l2)),i));
       @ loop invariant getNext(get_type(protocol)) ==
       @    getNext(\at(get_type(protocol),l2));
       @ loop assigns protocol,i;
@@ -139,7 +142,6 @@ int main(int argc, char **argv)
     @*/
 
     }
-
     /* Tear down the communication infrastructure */
     MPI_Finalize();
     return 0;

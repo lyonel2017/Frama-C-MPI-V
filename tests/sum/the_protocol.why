@@ -16,8 +16,8 @@ predicate p2 (l1: list int) (i: int) (l2: list int) =
   sum (nth l1) (i*offset) ((i+1)*offset) = (nth l2 0)
 
 function f (l1: list int) : protocol =
-  Seq (Foreach 1 (active-1) (fun i -> IntMessage 0 i offset 1 (p1 l1 i)))
-      (Foreach 1 (active-1) (fun i -> IntMessage i 0 1 1 (p2 l1 i)))
+  Seq (Rec 1 (active-1) (fun i -> IntMessage 0 i offset 1 (p1 l1 i)))
+      (Rec 1 (active-1) (fun i -> IntMessage i 0 1 1 (p2 l1 i)))
 
 constant the_protocol : protocol = IntGhostBroadcast 0 1000 (fun _ -> true) f
 
