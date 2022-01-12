@@ -1,0 +1,20 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.EuclideanDivision
+
+constant protocol_4 : protocol =  Foreach 1 (size-1) (fun i -> IntMessage i 0 1 0 (fun _ -> true))
+
+constant protocol_3 : protocol = (Allreduce 1 MPI_INT MPI_sum) :: protocol_4
+
+function protocol_2 (l: list int) : protocol =
+    (Foreach 1 (size-1) (fun i -> IntMessage 0 i (nth 0 l) 0 (fun _ -> true)))
+
+function protocol_1 (l: list int) : protocol =
+    (Foreach 1 (size-1) (fun i -> IntMessage 0 i (nth 0 l) 0 (fun _ -> true))) :: (protocol_2 l)
+
+constant the_protocol : protocol =
+    (IntBroadcast 0 1 (fun l -> 0 <= nth 0 l < 1000000) protocol_1) :: protocol_3
+
+end

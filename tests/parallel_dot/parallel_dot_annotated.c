@@ -32,17 +32,18 @@ float Serial_dot(float *x, float *y, int n);
 int getProblemSize(int procs);
 
 /*@ axiomatic MPI_aux_driver{
-  @ logic logic_protocol protocol_1;
-  @ logic logic_protocol protocol_2;
+  @ logic logic_protocol protocol_1 (\list<int> l);
+  @ logic logic_protocol protocol_2 (\list<int> l);
   @ logic logic_protocol protocol_3;
   @ logic logic_protocol protocol_4;
 }*/
 
+//frama-c-gui -mpi-v -wp-weak-int-model -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver parallel_dot_annotated.c
+
 /**
  * CHANGES:
  * 1. Send -> Ssend
- * 2. n -> 1000000 (static problem size)
- * 3. status -> MPI_STATUS_IGNORE
+ * 2. status -> MPI_STATUS_IGNORE
  **/
 int main(int argc, char** argv)
 {
@@ -62,9 +63,9 @@ int main(int argc, char** argv)
 
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  /*@ requires get_type(protocol) == protocol_1;
+  /*@ requires get_type(protocol) == protocol_1(to_list(&n, 0, 1));
     @ assigns protocol, temp[0.. MAXLEN - 1], local_x[0.. MAXLEN - 1],i;
-    @ ensures get_type(protocol) == protocol_2;*/
+    @ ensures get_type(protocol) == protocol_2(to_list(&n, 0, 1));*/
   if (rank == 0) {
     Scan_vector (local_x, n);
     /*@ loop invariant 1 <= i <= procs;
@@ -80,7 +81,7 @@ int main(int argc, char** argv)
       Scan_vector(temp, n);
       //@ ghost unroll();
       //@ ghost assoc();
-      MPI_Ssend(temp, n, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+      MPI_Ssend(temp, n, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
   }
@@ -106,7 +107,7 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
-    MPI_Recv(local_x, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(local_x, n, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost
       j++;
       /@ loop invariant rank + 1 <= j <= procs;
@@ -127,7 +128,7 @@ int main(int argc, char** argv)
       @*/
   }
 
-  /*@ requires get_type(protocol) == protocol_2;
+  /*@ requires get_type(protocol) == protocol_2(to_list(&n, 0, 1));
     @ assigns protocol, temp[0.. MAXLEN - 1], local_y[0.. MAXLEN - 1],i;
     @ ensures get_type(protocol) == protocol_3;*/
   if (rank == 0) {
@@ -145,7 +146,7 @@ int main(int argc, char** argv)
         Scan_vector (temp, n);
         //@ ghost unroll();
         //@ ghost assoc();
-        MPI_Ssend(temp, n, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+        MPI_Ssend(temp, n, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
     //@ ghost toskip();
   }
@@ -170,7 +171,7 @@ int main(int argc, char** argv)
       unroll();
       assoc();
       @*/
-    MPI_Recv(local_y, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(local_y, n, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost
       j++;
       /@ loop invariant rank + 1 <= j <= procs;
@@ -193,7 +194,7 @@ int main(int argc, char** argv)
 
   // Local computation followed by reduction
   local_dot = Serial_dot(local_x, local_y, n);
-  MPI_Allreduce(&local_dot, &dot, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&local_dot, &dot, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   // REMOVED: no I/O
   // Print result
@@ -217,7 +218,7 @@ int main(int argc, char** argv)
     for (i = 1; i < procs; i++) {
       //@ ghost unroll();
       //@ ghost assoc();
-      MPI_Recv(&remote_dot, 1, MPI_FLOAT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      MPI_Recv(&remote_dot, 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       // REMOVED: no I/O
       // printf("Result at process %d : %f\n", i, remote_dot);
@@ -246,7 +247,7 @@ int main(int argc, char** argv)
       assoc();
       @*/
 
-    MPI_Ssend(&local_dot, 1, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
+    MPI_Ssend(&local_dot, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     /*@ ghost
       j++;
       /@ loop invariant rank + 1 <= j <= procs;

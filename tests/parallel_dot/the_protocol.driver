@@ -1,7 +1,8 @@
 library the_protocol:
 
-logic logic_protocol "protocol_1" = "protocol_1";
-logic logic_protocol "protocol_2" = "protocol_2";
+type list = "\\list <int>";
+logic logic_protocol "protocol_1" (list) = "protocol_1";
+logic logic_protocol "protocol_2" (list) = "protocol_2";
 logic logic_protocol "protocol_3" = "protocol_3";
 logic logic_protocol "protocol_4" = "protocol_4";
 logic logic_protocol "the_protocol" = "the_protocol";
