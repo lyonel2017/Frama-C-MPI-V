@@ -20,7 +20,6 @@ int main(int argc, char **argv){
   if (my_rank == 0) {
 
     data = my_rank;
-  l1:;
     /*@ ghost
       @ g = data;
       @ MPI_GIntBcast(&g, 1, 0);*/
@@ -31,12 +30,12 @@ int main(int argc, char **argv){
     /*@ assert data == my_rank + 1;*/
   } else{
     if (my_rank == 1){
-    l2:;
       /*@ ghost
         @ MPI_GIntBcast(&g, 1, 0);*/
       /*@ ghost assoc();*/
       /* Receive message from process 0 */
       MPI_Recv(&data, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      /*@ check data == g;*/
       data = data + 1;
       MPI_Ssend(&data, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
     }
