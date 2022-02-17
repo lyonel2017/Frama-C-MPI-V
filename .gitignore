@@ -72,6 +72,9 @@ frama-c-*.tar.gz
 ##############
 
 /.merlin
-/.frama-c/*
+*/.frama-c/*
+*.frama-c/*
 /tests/*/.frama-c/*
 /tests/*/*/.frama-c/*
+*.lia.cache
+*.why.bak
