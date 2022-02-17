@@ -197,6 +197,5 @@ int main(int argc, char **argv){
     }
   }
   MPI_Finalize();
-  // assert \false;
   return 0;
 }

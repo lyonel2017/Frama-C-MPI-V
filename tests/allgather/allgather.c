@@ -32,5 +32,4 @@ int main(int argc, char **argv) {
   }
   // printf("my rank: %i, sum: %i\n", my_rank, sum);
   MPI_Finalize();
-  // assert \false;
 }

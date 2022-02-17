@@ -21,5 +21,4 @@ int main(int argc, char **argv) {
   // printf("my rank: %i, sum_1: %i, sum_2: %i\n", my_rank, sum[0], sum[1]);
 
   MPI_Finalize();
-  // assert \false;
 }

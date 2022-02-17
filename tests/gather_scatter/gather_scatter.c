@@ -23,8 +23,6 @@ int main(int argc, char **argv){
     /* Gather messages for all processes*/
     MPI_Gather(&senddata, 1, MPI_INT,recvdata, 1, MPI_INT,0, MPI_COMM_WORLD);
 
-    /*@ assert \false;*/
-
     int senddata2[100];
     int recvdata2 = my_rank;
     /* Gather messages for all processes*/

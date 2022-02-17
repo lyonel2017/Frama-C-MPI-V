@@ -20,5 +20,4 @@ int main(int argc, char argv){
         // printf("sum: %f\n", global);
     }
     MPI_Finalize();
-    // assert \false;
 }

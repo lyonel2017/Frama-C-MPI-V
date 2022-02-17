@@ -59,6 +59,5 @@ int main(int argc, char **argv)
     do_pi(pi,PI25DT);
   }
   MPI_Finalize();
-  // assert \false;
   return 0;
 }
