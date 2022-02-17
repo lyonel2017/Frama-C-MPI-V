@@ -1574,26 +1574,23 @@ Theorem wp_goal :
     (c1:S15_c_protocol) (c2:S15_c_protocol) (c3:S15_c_protocol)
     (c4:S15_c_protocol) (c5:S15_c_protocol) (c6:S15_c_protocol)
     (c7:S15_c_protocol) (c8:S15_c_protocol) (c9:S15_c_protocol)
-    (c10:S15_c_protocol) (c11:S15_c_protocol) (c12:S15_c_protocol)
-    (c13:S15_c_protocol) (c14:S15_c_protocol) (i3:Numbers.BinNums.Z),
-  let a5 := L_get_type c12 in
+    (c10:S15_c_protocol) (c11:S15_c_protocol) (i3:Numbers.BinNums.Z),
+  let a5 := L_get_type c9 in
   let a6 := getNext a5 in
-  let a7 := L_get_type c5 in
+  let a7 := L_get_type c2 in
   let a8 := havoc t2 t a2 1000%Z in
   let a9 := L_to_list a8 a2 0%Z 1000%Z in
   let a10 := havoc t1 a8 a4 i2 in
   let x := (i2 * rank)%Z in
   let a11 := map.Map.set a10 a i3 in
-  let a12 := L_get_type c13 in
-  let a13 := L_get_type c10 in
-  let a14 := L_get_type c7 in
-  let a15 := L_get_type c6 in
-  let a16 := L_get_type c3 in
-  let a17 := getFirst a14 in
-  let a18 := L_get_type c9 in
-  let a19 := L_get_type c2 in
-  let a20 := L_get_type c14 in
-  let a21 := getFirst a20 in
+  let a12 := L_get_type c10 in
+  let a13 := L_get_type c7 in
+  let a14 := L_get_type c4 in
+  let a15 := L_get_type c3 in
+  let a16 := getFirst a14 in
+  let a17 := L_get_type c6 in
+  let a18 := L_get_type c11 in
+  let a19 := getFirst a18 in
   ~ (rank = 0%Z) -> ((t a) = 0%Z) -> (a6 = a7) -> ((f a9) = a5) ->
   ((L_sum a10 a4 0%Z 0%Z) = 0%Z) -> ((L_sum a10 a2 x x) = 0%Z) ->
   ((L_sum a11 a4 0%Z i1) = i3) -> ((L_sum a11 a2 x (i1 + x)%Z) = i3) ->
@@ -1601,20 +1598,18 @@ Theorem wp_goal :
   (i2 <= i1)%Z -> (0%Z <= rank)%Z -> (rank < i)%Z -> (rank < size)%Z ->
   size_constrain size -> is_sint32 i3 -> is_sint32 i2 -> is_sint32 i1 ->
   is_sint32 i -> is_sint32 size -> is_sint32 rank ->
-  P_set_type c14 the_protocol -> P_set_type c12 (simpl a12) ->
-  P_set_type c10 (assoc (L_get_type c11)) -> P_set_type c9 (getNext a13) ->
-  P_set_type c7 (assoc (L_get_type c8)) -> P_set_type c6 (getNext a14) ->
-  P_set_type c5 (getNext a15) -> P_set_type c3 (assoc (L_get_type c4)) ->
-  P_set_type c2 (getNext a16) -> P_set_type c (assoc (L_get_type c1)) ->
+  P_set_type c11 the_protocol -> P_set_type c9 (simpl a12) ->
+  P_set_type c7 (assoc (L_get_type c8)) -> P_set_type c6 (getNext a13) ->
+  P_set_type c4 (assoc (L_get_type c5)) -> P_set_type c3 (getNext a14) ->
+  P_set_type c2 (getNext a15) -> P_set_type c (assoc (L_get_type c1)) ->
   isSkip (fsimpl (getFirst a13)) -> isSkip (fsimpl (getFirst a15)) ->
-  isSkip (fsimpl (getFirst a16)) -> isMessageforIntRecv a17 0%Z i2 1%Z ->
-  P_set_type c8 (Seq (simpl (getFirst a18)) (getNext a18)) ->
-  P_set_type c1 (Seq (simpl (getFirst a19)) (getNext a19)) ->
-  P_set_type c11 (Seq (split (getFirst a5) rank) a6) ->
-  P_set_type c4 (Seq (split (getFirst a7) rank) (getNext a7)) ->
-  isforIntGhostBroadcast a21 0%Z 1000%Z (L_to_list t a2 0%Z 1000%Z) ->
-  predIntBroadcast a21 a9 -> countiIntBroadcast a21 (getNext a20) a12 a9 ->
-  predIntMessage a17 (L_to_list a10 a4 0%Z i2) ->
+  isMessageforIntRecv a16 0%Z i2 1%Z ->
+  P_set_type c5 (Seq (simpl (getFirst a17)) (getNext a17)) ->
+  P_set_type c8 (Seq (split (getFirst a5) rank) a6) ->
+  P_set_type c1 (Seq (split (getFirst a7) rank) (getNext a7)) ->
+  isforIntGhostBroadcast a19 0%Z 1000%Z (L_to_list t a2 0%Z 1000%Z) ->
+  predIntBroadcast a19 a9 -> countiIntBroadcast a19 (getNext a18) a12 a9 ->
+  predIntMessage a16 (L_to_list a10 a4 0%Z i2) ->
   (size <= 1000%Z)%Z /\ (size = i) /\ ((ZArith.BinInt.Z.quot 1000%Z i) = i2) \/
   ~ (size <= 1000%Z)%Z /\ (i2 = 1%Z) /\ (i = 1000%Z) ->
   ((0%Z < i2)%Z -> (i2 <= 1000%Z)%Z) ->
@@ -1625,154 +1620,32 @@ Theorem wp_goal :
    ((i4 + (i2 * i5)%Z)%Z <= 999%Z)%Z) ->
   (forall (i4:Numbers.BinNums.Z), (0%Z <= i4)%Z -> (i4 < i2)%Z ->
    ((a10 (shift a3 i4)) = (a8 (shift a1 (i4 + x)%Z)))) ->
-  isPredIntMessage (getFirst (L_get_type c))
-  (L_to_list (map.Map.set (havoc t1 a8 a4 i1) a i3) a 0%Z 1%Z).
+  isSkip (fsimpl (getFirst (L_get_type c))).
 (* Why3 intros a a1 a2 a3 a4 t t1 t2 i i1 i2 c c1 c2 c3 c4 c5 c6 c7 c8 c9 c10
-        c11 c12 c13 c14 i3 a5 a6 a7 a8 a9 a10 x a11 a12 a13 a14 a15 a16 a17
-        a18 a19 a20 a21 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15
-        h16 h17 h18 h19 h20 h21 h22 h23 h24 h25 h26 h27 h28 h29 h30 h31 h32
-        h33 h34 h35 h36 h37 h38 h39 h40 h41 h42 h43 h44 h45 h46 h47 h48 h49
-        h50. *)
+        c11 i3 a5 a6 a7 a8 a9 a10 x a11 a12 a13 a14 a15 a16 a17 a18 a19 h1 h2
+        h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 h16 h17 h18 h19 h20 h21
+        h22 h23 h24 h25 h26 h27 h28 h29 h30 h31 h32 h33 h34 h35 h36 h37 h38
+        h39 h40 h41 h42 h43 h44 h45 h46. *)
 Proof.
 intros.
-erewrite Q_link by apply H31.
-erewrite Q_link by apply H37.
-unfold a19.
-erewrite Q_link by apply H30.
-unfold a16.
-erewrite Q_link by apply H29.
-erewrite Q_link by apply H39.
+erewrite (Q_link) by apply H29.
+erewrite (Q_link) by apply H35.
 rewrite <- H1.
 unfold a6.
 rewrite <- H2.
 unfold f.
-simpl.
+unfold getNext.
+unfold aux.
+unfold getFirst.
+rewrite split_foreach.
+rewrite Assoc.
+rewrite fsimpl_foreach.
+apply IsSkip.
+intros.
+rewrite simpl_intmessage.
+reflexivity.
+Lia.lia.
 destruct active'def.
-rewrite split_foreach  by Lia.lia.
-rewrite Assoc.
-simpl.
-rewrite simpl_foreach_1 by Lia.lia.
-rewrite Assoc.
-simpl.
-apply isPredIntMessage1.
-apply p2_closure_def.
-unfold p2.
-rewrite <- Q_to_list_nth by Lia.lia.
-simpl.
-assert (H51: shift a 0 = a).
-{ unfold shift.
-  simpl.
-  unfold a.
-  unfold global.
-  reflexivity. }
-rewrite H51.
-destruct (Map.set'def (havoc t1 a8 a4 i1) a i3 a) as (H52 & _).
-rewrite H52 by reflexivity.
-rewrite <- H6.
-unfold a9.
-unfold a11.
-
-assert (H53 : forall i j,  
-    (i <= j)%Z -> (0 <= i)%Z  -> (i <= j <= 1000)%Z -> 
-     sum (fun y1 : int => nth (L_to_list a8 a2 0 1000) y1) i j = 
-     L_sum (Map.set a10 a i3) a2 i j).
-{ intros i0 j H53.
-  apply Zlt_lower_bound_ind with
-  (P:= fun k =>(0 <= i0)%Z -> (i0 <= k <= 1000)%Z -> 
-   sum (fun y1 : int => nth (L_to_list a8 a2 0 1000) y1) i0 k = 
-   L_sum (Map.set a10 a i3) a2 i0 k)
-  ( z:= i0).
-  intros.
-  assert ( H58: (i0 = x0 \/ i0 < x0)%Z) by Lia.lia.
-  destruct H58.
-  * rewrite H58.
-    destruct (sum'def (fun y1 : int => nth (L_to_list a8 a2 0 1000) y1)
-                                            x0 x0) as (H59 & _).
-    rewrite H59 by Lia.lia.
-    rewrite Q_sum1 by Lia.lia.
-    reflexivity.
-  * destruct (sum'def (fun y1 : int => nth (L_to_list a8 a2 0 1000) y1)
-                                            i0 x0 ) as (_ & H59).
-    rewrite H59 by Lia.lia.
-    rewrite <- Q_sum2 by Lia.lia.
-    replace (- (1) + x0)%Z with (x0 - 1)%Z by Lia.lia.
-    rewrite H54 ;[  | Lia.lia | Lia.lia | Lia.lia].
-    rewrite <- Q_to_list_nth;[ | Lia.lia | Lia.lia | Lia.lia].
-    replace (- (1) + x)%Z with (x-1)%Z by Lia.lia.
-    unfold a10.
-    destruct (Map.set'def (havoc t1 a8 a4 i2) a i3 
-                              (shift a2 (x0-1)))
-    as (_ & H60).
-    rewrite H60.
-    destruct (havoc_access t1 a8 (shift a2 (x0-1)) a4 i2) 
-    as ( H61 & _).
-    rewrite H61.
-    rewrite Z.add_0_l.
-    reflexivity.
-    unfold separated.
-    right.
-    right.
-    left.
-    simpl.
-    Lia.lia.
-    unfold shift.
-    unfold a.
-    unfold global.
-    apply (separated_1 a2 a 1000 1 (x0-1) 0).
-    unfold separated.
-    right.
-    right.
-    left.
-    simpl.
-    Lia.lia.
-    simpl.
-    Lia.lia.
-    simpl.
-    Lia.lia.
- * Lia.lia.
- }
-
-destruct H44.
-* decompose [and] H44;clear H44.
-  destruct offset'def as (H58 & _).
-  rewrite H58 by assumption.
-  clear H5 H6.
-  subst.
-  rewrite H53.
-  unfold x.
-  assert(H59: i1 = (1000 ÷ size )%Z) by Lia.lia.
-  rewrite H59.
-  replace (1000 ÷ size + 1000 ÷ size * rank)%Z with
-   ((rank + 1) * (1000 ÷ size))%Z by Lia.lia.
-  replace (1000 ÷ size * rank)%Z with (rank * (1000 ÷ size))%Z 
-  by Lia.lia.
-  reflexivity.
-
-  apply Z.mul_le_mono_nonneg_r; [| Lia.lia].
-  apply Zquot.Z_quot_pos; [Lia.lia | Lia.lia].
- 
-  apply Z.mul_nonneg_nonneg; [Lia.lia | ].
-  apply Zquot.Z_quot_pos; [Lia.lia | Lia.lia].
-
-  split.
-  apply Z.mul_le_mono_nonneg_r; [| Lia.lia].
-  apply Zquot.Z_quot_pos; [Lia.lia | Lia.lia].
-
-  rewrite Z.mul_comm.
-  rewrite Z.add_comm.
-  apply H46; [Lia.lia | Lia.lia].
-
-* decompose [and] H44;clear H44.
-  destruct offset'def as (_ & H58).
-  rewrite H58 by assumption.
-  clear H5 H6.
-  subst.
-  rewrite H53 by Lia.lia.
-  unfold x.
-    rewrite Z.mul_comm.
-  replace i1 with 1%Z by Lia.lia.
-  replace ((rank + 1) * 1)%Z with (1 + 1 * rank)%Z 
-  by Lia.lia.
-  reflexivity.
+Lia.lia.
 Qed.
 

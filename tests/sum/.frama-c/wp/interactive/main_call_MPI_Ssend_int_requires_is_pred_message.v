@@ -533,7 +533,7 @@ Inductive protocol :=
       mpi_op -> protocol
   | Allgather : Numbers.BinNums.Z -> mpi_datatype -> protocol
   | Allreduce : Numbers.BinNums.Z -> mpi_datatype -> mpi_op -> protocol
-  | Rec : Numbers.BinNums.Z -> Numbers.BinNums.Z ->
+  | Foreach : Numbers.BinNums.Z -> Numbers.BinNums.Z ->
       (Numbers.BinNums.Z -> protocol) -> protocol
   | If : Init.Datatypes.bool -> protocol -> protocol -> protocol
   | Seq : protocol -> protocol -> protocol
@@ -632,12 +632,12 @@ Axiom IsAllreduce :
   forall (data_size:Numbers.BinNums.Z) (mt:mpi_datatype) (op:mpi_op),
   isAllreduce (Allreduce data_size mt op).
 
-Parameter isRec: protocol -> Prop.
+Parameter isForeach: protocol -> Prop.
 
-Axiom IsRec :
+Axiom IsForeach :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (body:Numbers.BinNums.Z -> protocol),
-  isRec (Rec low high body).
+  isForeach (Foreach low high body).
 
 Parameter isSkip: protocol -> Prop.
 
@@ -847,42 +847,45 @@ Axiom simpl_intmessage :
   ~ (dest = source) /\ ~ (rank = source) /\ ~ (rank = dest) ->
   ((simpl (IntMessage source dest data_size tag pre)) = Skip).
 
-Axiom simpl_rec_1 :
+Axiom simpl_foreach_1 :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (body:Numbers.BinNums.Z -> protocol),
   (low <= high)%Z ->
-  ((simpl (Rec low high body)) =
-   (Seq (body low) (Rec (low + 1%Z)%Z high body))).
+  ((simpl (Foreach low high body)) =
+   (Seq (body low) (Foreach (low + 1%Z)%Z high body))).
 
-Axiom simpl_rec_2 :
+Axiom simpl_foreach_2 :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (body:Numbers.BinNums.Z -> protocol),
-  (high < low)%Z -> ((simpl (Rec low high body)) = Skip).
+  (high < low)%Z -> ((simpl (Foreach low high body)) = Skip).
 
 Axiom simpl_Skip : ((simpl Skip) = Skip).
 
+Parameter fsimpl: protocol -> protocol.
+
+Axiom fsimpl_foreach :
+  forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
+    (body:Numbers.BinNums.Z -> protocol),
+  (forall (i:Numbers.BinNums.Z), (low <= i)%Z /\ (i <= high)%Z ->
+   ((simpl (body i)) = Skip)) ->
+  ((fsimpl (Foreach low high body)) = Skip).
+
 Parameter split: protocol -> Numbers.BinNums.Z -> protocol.
 
-Axiom split_rec1 :
+Axiom split_foreach :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (c:Numbers.BinNums.Z) (body:Numbers.BinNums.Z -> protocol),
   (low <= c)%Z /\ (c <= high)%Z ->
-  ((split (Rec low high body) c) =
-   (Seq (Rec low (c - 1%Z)%Z body) (Rec c high body))).
+  ((split (Foreach low high body) c) =
+   (Seq (Foreach low (c - 1%Z)%Z body) (Foreach c high body))).
 
-Axiom split_rec2 :
+Parameter split_right: protocol -> Numbers.BinNums.Z -> protocol.
+
+Axiom split_right_foreach :
   forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
     (c:Numbers.BinNums.Z) (body:Numbers.BinNums.Z -> protocol),
-  (low <= high)%Z /\ (high < c)%Z ->
-  ((split (Rec low high body) c) =
-   (Seq (Rec low high body) (Rec c high body))).
-
-Axiom split_rec3 :
-  forall (low:Numbers.BinNums.Z) (high:Numbers.BinNums.Z)
-    (c:Numbers.BinNums.Z) (body:Numbers.BinNums.Z -> protocol),
-  (c < low)%Z /\ (low <= high)%Z ->
-  ((split (Rec low high body) c) =
-   (Seq (Rec low c body) (Rec low high body))).
+  (low <= high)%Z ->
+  ((split_right (Foreach low high body) c) = (Foreach c high body)).
 
 Parameter assoc: protocol -> protocol.
 
@@ -914,47 +917,6 @@ Definition getNext (p:protocol) : protocol :=
   | Init.Datatypes.None => Skip
   | Init.Datatypes.Some p1 => p1
   end.
-
-(* Why3 assumption *)
-Definition isLineare (p:protocol) : Prop :=
-  match p with
-  | Seq (Seq _ _) _ => False
-  | _ => True
-  end.
-
-(* Why3 assumption *)
-Definition isBasic (p:protocol) : Prop :=
-  match p with
-  | Seq _ _ => False
-  | _ => True
-  end.
-
-(* Why3 assumption *)
-Definition isComposed (p:protocol) : Prop :=
-  match p with
-  | Seq _ _ => True
-  | _ => False
-  end.
-
-Axiom test1 :
-  forall (p1:protocol) (p2:protocol), isLineare (Seq p1 p2) ->
-  ((getNext (Seq p1 p2)) = p2).
-
-Axiom test2 : forall (p1:protocol), isBasic p1 -> ((getNext p1) = Skip).
-
-Axiom test3 :
-  forall (p1:protocol) (p2:protocol), isLineare (Seq p1 p2) ->
-  ((getFirst (Seq p1 p2)) = p1).
-
-Axiom test4 : forall (p1:protocol), isBasic p1 -> ((getFirst p1) = p1).
-
-Axiom test5 :
-  forall (p1:protocol), isBasic p1 ->
-  (p1 = (simpl (Seq (getFirst p1) (getNext p1)))).
-
-Axiom test6 :
-  forall (p1:protocol), isComposed p1 /\ isLineare p1 ->
-  (p1 = (Seq (getFirst p1) (getNext p1))).
 
 Parameter P_set_type: S15_c_protocol -> protocol -> Prop.
 
@@ -1069,10 +1031,10 @@ Axiom p2_closure_def :
 (* Why3 assumption *)
 Definition f (l1:list Numbers.BinNums.Z) : protocol :=
   Seq
-  (Rec 1%Z (active - 1%Z)%Z
+  (Foreach 1%Z (active - 1%Z)%Z
    (fun (i:Numbers.BinNums.Z) =>
     IntMessage 0%Z i offset1 1%Z (p1_closure l1 i)))
-  (Rec 1%Z (active - 1%Z)%Z
+  (Foreach 1%Z (active - 1%Z)%Z
    (fun (i:Numbers.BinNums.Z) => IntMessage i 0%Z 1%Z 1%Z (p2_closure l1 i))).
 
 (* Why3 assumption *)
@@ -1278,71 +1240,71 @@ Axiom Q_G_mpi_mpi_float_57_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
   ((t 58%Z) = Length_of_S2_mpi_datatype_t).
 
-Axiom Q_L_data_2043_region : ((region 2044%Z) = 2%Z).
+Axiom Q_L_g_2060_region : ((region 2061%Z) = 2%Z).
 
-Axiom Q_L_data_2043_linked :
+Axiom Q_L_g_2060_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 2044%Z) = 0%Z).
+  ((t 2061%Z) = 0%Z).
 
-Axiom Q_L_g_2044_region : ((region 2045%Z) = 2%Z).
+Axiom Q_L_data_2056_region : ((region 2057%Z) = 2%Z).
 
-Axiom Q_L_g_2044_linked :
-  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 2045%Z) = 0%Z).
-
-Axiom Q_L_tmp_2054_region : ((region 2055%Z) = 2%Z).
-
-Axiom Q_L_tmp_2054_linked :
-  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 2055%Z) = 0%Z).
-
-Axiom Q_L_sum_2056_region : ((region 2057%Z) = 2%Z).
-
-Axiom Q_L_sum_2056_linked :
+Axiom Q_L_data_2056_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
   ((t 2057%Z) = 0%Z).
 
-Axiom Q_L_g_2058_region : ((region 2059%Z) = 2%Z).
+Axiom Q_L_tmp_2069_region : ((region 2070%Z) = 2%Z).
 
-Axiom Q_L_g_2058_linked :
+Axiom Q_L_tmp_2069_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 2059%Z) = 0%Z).
+  ((t 2070%Z) = 0%Z).
 
-Axiom Q_L_g_2065_region : ((region 2066%Z) = 2%Z).
+Axiom Q_L_g_2073_region : ((region 2074%Z) = 2%Z).
 
-Axiom Q_L_g_2065_linked :
+Axiom Q_L_g_2073_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 2066%Z) = 0%Z).
+  ((t 2074%Z) = 0%Z).
 
-Axiom Q_G___fc_fopen_719_region : ((region 720%Z) = 0%Z).
+Axiom Q_L_sum_2071_region : ((region 2072%Z) = 2%Z).
 
-Axiom Q_G___fc_fopen_719_linked :
+Axiom Q_L_sum_2071_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 720%Z) = 32%Z).
+  ((t 2072%Z) = 0%Z).
 
-Axiom Q_G___fc_fopen_719_init :
+Axiom Q_L_g_2078_region : ((region 2079%Z) = 2%Z).
+
+Axiom Q_L_g_2078_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 2079%Z) = 0%Z).
+
+Axiom Q_G___fc_fopen_732_region : ((region 733%Z) = 0%Z).
+
+Axiom Q_G___fc_fopen_732_linked :
+  forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
+  ((t 733%Z) = 32%Z).
+
+Axiom Q_G___fc_fopen_732_init :
   forall (t:addr -> Init.Datatypes.bool), cinits t ->
-  is_init_range t (shift (global 720%Z) 0%Z) 32%Z.
+  is_init_range t (shift (global 733%Z) 0%Z) 32%Z.
 
-Axiom Q_G___fc_tmpnam_727_region : ((region 728%Z) = 0%Z).
+Axiom Q_G___fc_tmpnam_740_region : ((region 741%Z) = 0%Z).
 
-Axiom Q_G___fc_tmpnam_727_linked :
+Axiom Q_G___fc_tmpnam_740_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 728%Z) = 2048%Z).
+  ((t 741%Z) = 2048%Z).
 
-Axiom Q_G___fc_tmpnam_727_init :
+Axiom Q_G___fc_tmpnam_740_init :
   forall (t:addr -> Init.Datatypes.bool), cinits t ->
-  is_init_range t (shift (global 728%Z) 0%Z) 2048%Z.
+  is_init_range t (shift (global 741%Z) 0%Z) 2048%Z.
 
-Axiom Q_G___fc_random48_counter_1589_region : ((region 1590%Z) = 0%Z).
+Axiom Q_G___fc_random48_counter_1602_region : ((region 1603%Z) = 0%Z).
 
-Axiom Q_G___fc_random48_counter_1589_linked :
+Axiom Q_G___fc_random48_counter_1602_linked :
   forall (t:Numbers.BinNums.Z -> Numbers.BinNums.Z), linked t ->
-  ((t 1590%Z) = 3%Z).
+  ((t 1603%Z) = 3%Z).
 
-Axiom Q_G___fc_random48_counter_1589_init :
+Axiom Q_G___fc_random48_counter_1602_init :
   forall (t:addr -> Init.Datatypes.bool), cinits t ->
-  is_init_range t (shift (global 1590%Z) 0%Z) 3%Z.
+  is_init_range t (shift (global 1603%Z) 0%Z) 3%Z.
 
 (* Why3 assumption *)
 Definition size_constrain (s:Numbers.BinNums.Z) : Prop :=
@@ -1572,8 +1534,8 @@ Axiom incl_int :
 
 (* Why3 goal *)
 Theorem wp_goal :
-  let a := global 2044%Z in
-  let a1 := global 2045%Z in
+  let a := global 2057%Z in
+  let a1 := global 2061%Z in
   let a2 := shift a1 0%Z in
   forall (t:addr -> Numbers.BinNums.Z) (t1:addr -> Numbers.BinNums.Z)
     (t2:addr -> Numbers.BinNums.Z) (t3:addr -> Numbers.BinNums.Z)
@@ -1584,159 +1546,171 @@ Theorem wp_goal :
   let a3 := L_get_type c3 in
   let a4 := getNext a3 in
   let a5 := L_get_type c in
-  let a6 := getFirst a3 in
-  let a7 := havoc t3 t (shift a 0%Z) 1000%Z in
-  let a8 := havoc t1 a7 a2 1000%Z in
-  let a9 := L_to_list a8 a2 0%Z 1000%Z in
-  let a10 := L_get_type c4 in
-  let a11 := L_get_type c5 in
-  let a12 := getFirst a11 in
-  let a13 := havoc t2 a7 a2 1000%Z in
-  let x := (i2 * i3)%Z in
-  (rank = 0%Z) -> (a4 = (getNext a5)) ->
-  ((getNext (split (getFirst a5) i2)) = a6) -> ((f a9) = a5) ->
-  (0%Z < i2)%Z -> (0%Z < size)%Z -> (i2 < i)%Z -> (0%Z <= i1)%Z ->
+  let a6 := getFirst a5 in
+  let a7 := getFirst a3 in
+  let a8 := havoc t3 t (shift a 0%Z) 1000%Z in
+  let a9 := havoc t1 a8 a2 1000%Z in
+  let a10 := L_to_list a9 a2 0%Z 1000%Z in
+  let a11 := L_get_type c4 in
+  let a12 := L_get_type c5 in
+  let a13 := getFirst a12 in
+  let a14 := havoc t2 a8 a2 1000%Z in
+  (rank = 0%Z) -> (a4 = (getNext a5)) -> ((split_right a6 1%Z) = a6) ->
+  ((split_right a6 i2) = a7) -> ((f a10) = a5) -> (0%Z < i2)%Z ->
+  (0%Z < i)%Z -> (0%Z < size)%Z -> (i2 < i)%Z -> (0%Z <= i1)%Z ->
   (i2 <= i)%Z -> (1000%Z <= i1)%Z -> (i1 <= 1000%Z)%Z ->
   size_constrain size -> is_sint32 i3 -> is_sint32 i2 -> is_sint32 i1 ->
   is_sint32 i -> is_sint32 size -> P_set_type c5 the_protocol ->
-  P_set_type c1 (assoc (L_get_type c2)) -> P_set_type c (simpl a10) ->
-  P_set_type c2 (Seq (simpl a6) a4) -> predIntBroadcast a12 a9 ->
-  isforIntGhostBroadcast a12 0%Z 1000%Z (L_to_list a13 a2 0%Z 1000%Z) ->
-  countiIntBroadcast a12 (getNext a11) a10 a9 ->
+  P_set_type c1 (assoc (L_get_type c2)) -> P_set_type c (simpl a11) ->
+  P_set_type c2 (Seq (simpl a7) a4) -> predIntBroadcast a13 a10 ->
+  isforIntGhostBroadcast a13 0%Z 1000%Z (L_to_list a14 a2 0%Z 1000%Z) ->
+  countiIntBroadcast a13 (getNext a12) a11 a10 ->
   (size <= 1000%Z)%Z /\ (size = i) /\ ((ZArith.BinInt.Z.quot 1000%Z i) = i3) \/
   ~ (size <= 1000%Z)%Z /\ (i3 = 1%Z) /\ (i = 1000%Z) ->
-  (forall (i4:Numbers.BinNums.Z), ~ (i2 = i) -> (0%Z <= i4)%Z ->
-   (i4 < i3)%Z -> ((i4 + x)%Z <= 999%Z)%Z) ->
+  (forall (i4:Numbers.BinNums.Z), (0%Z < i4)%Z -> (i4 < i)%Z ->
+   ((i3 * (1%Z + i4)%Z)%Z <= 1000%Z)%Z) ->
+  (forall (i4:Numbers.BinNums.Z) (i5:Numbers.BinNums.Z), (0%Z < i5)%Z ->
+   (i5 < i)%Z -> (0%Z <= i4)%Z -> (i4 < i3)%Z ->
+   ((i4 + (i3 * i5)%Z)%Z <= 999%Z)%Z) ->
   (forall (i4:Numbers.BinNums.Z), (0%Z <= i4)%Z -> (i4 < i1)%Z ->
-   ((a13 (shift a1 i4)) = (a7 (shift a i4)))) ->
+   ((a14 (shift a1 i4)) = (a8 (shift a i4)))) ->
   (forall (i4:Numbers.BinNums.Z),
-   let a14 := shift a1 i4 in
-   (0%Z <= i4)%Z -> (i4 <= 999%Z)%Z -> ((a13 a14) = (a8 a14))) ->
+   let a15 := shift a1 i4 in
+   (0%Z <= i4)%Z -> (i4 <= 999%Z)%Z -> ((a14 a15) = (a9 a15))) ->
   isPredIntMessage (getFirst (L_get_type c1))
-  (L_to_list a8 (shift a x) 0%Z i3).
+  (L_to_list a9 (shift a (i2 * i3)%Z) 0%Z i3).
 (* Why3 intros a a1 a2 t t1 t2 t3 i i1 i2 i3 c c1 c2 c3 c4 c5 a3 a4 a5 a6 a7
-        a8 a9 a10 a11 a12 a13 x h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13
-        h14 h15 h16 h17 h18 h19 h20 h21 h22 h23 h24 h25 h26 h27 h28. *)
+        a8 a9 a10 a11 a12 a13 a14 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13
+        h14 h15 h16 h17 h18 h19 h20 h21 h22 h23 h24 h25 h26 h27 h28 h29 h30
+        h31. *)
 Proof.
-intros a a1 a2 t t1 t2 t3 t4 i i1 i2 i3 c c1 c2 c3 c4 a3 a4 a5 a6 x a7 a8 a9
-a10 a11 a12 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 h16 h17 h18
-h19 h20 h21 h22 h23 h24 h25 h26 h27 h28 h29.
-erewrite Q_link by apply h20.
-erewrite Q_link by apply h22.
-rewrite <- h4.
-rewrite <- h5.
+intros.
+erewrite Q_link by apply H19.
+erewrite Q_link by apply H21.
+rewrite <- H2.
+unfold a6.
+rewrite <- H3.
 unfold f.
 simpl.
-assert (H7: (i = 1000)%Z) by Lia.lia.
+assert (H30: (i1 = 1000)%Z) by Lia.lia.
 subst.
-destruct h26.
-* decompose [and] H;clear H.
+destruct active'def.
+rewrite split_right_foreach by Lia.lia.
+rewrite simpl_foreach_1 by Lia.lia.
+rewrite Assoc.
+simpl.
+apply isPredIntMessage1.
+apply p1_closure_def.
+unfold p1.
+intros.
+unfold a10.
+specialize(Q_to_list_nth a9 a2 0 1000 (i2*offset1 + k)).
+simpl.
+intros.
+specialize(Q_to_list_nth_shift a9 a 0 i3 k (i2 * i3)).
+simpl.
+intros.
+rewrite <- H33.
+rewrite <- H34.
+rewrite <- H29.
+unfold a9.
+destruct (havoc_access t1 a8 (shift a ((i2 * i3) + k)) a2 1000)
+  as (H35 & _).
+rewrite H35.
+destruct H25.
+* decompose [and] H25;clear H25.
   subst.
-  specialize (active'def).
-  intros H2; destruct H2 as (H2 & _).
-  rewrite split_rec1 by Lia.lia.
-  rewrite test1;[ | simpl ; auto].
-  rewrite simpl_rec_1 by Lia.lia.
-  rewrite Assoc.
-  simpl.
-  specialize offset'def.
-  intros H3; destruct H3 as ( H3 & _).
-  specialize (H2 H0).
-  specialize (H3 H0).
-  apply isPredIntMessage1.
-  apply p1_closure_def.
-  unfold p1.
-  intros.
-  unfold a8.
-  specialize(Q_to_list_nth a7 a2 0 1000 (i1*offset1 + k)).
-  simpl.
-  intros.
-  specialize(Q_to_list_nth_shift a7 a 0 (1000 ÷ size) k h1).
-  simpl.
-  intros.
-  rewrite <- H4.
-  rewrite <- H1.
-  rewrite H3 by Lia.lia.
-  rewrite <- h29.
-  unfold a7.
-  specialize (havoc_access t1 x (shift a (h1 + k)) a2 1000).
-  intros H6; destruct H6 as (H6 & _).
-  rewrite H6.
-  apply h28.
+  destruct offset'def as (H37 & _).
+  rewrite H37 by assumption.
+  apply H28.
 
-  all: try   Lia.lia.
-
-  unfold x.
   apply Z.add_nonneg_nonneg;[ | Lia.lia].
   apply Ztac.mul_le; [ Lia.lia | Lia.lia].
-
+  
   rewrite Z.add_comm.
+  rewrite Z.mul_comm.
   apply Z.lt_le_pred.
-  apply h27; [ Lia.lia | Lia.lia| Lia.lia].
+  apply H27; [ Lia.lia | Lia.lia | Lia.lia | Lia.lia].
+  
+* decompose [and] H25;clear H25.
+  subst.
+  destruct offset'def as (_ & H37 ).
+  rewrite H37 by assumption.
+  apply H28.
 
-  unfold separated.
+  apply Z.add_nonneg_nonneg;[ | Lia.lia].
+  apply Ztac.mul_le; [ Lia.lia | Lia.lia].
+  
+  rewrite Z.add_comm.
+  rewrite Z.mul_comm.
+  apply Z.lt_le_pred.
+  apply H27; [ Lia.lia | Lia.lia | Lia.lia | Lia.lia].
+
+* unfold separated.
   right.
   right.
   left.
   simpl.
   Lia.lia.
 
-  apply Z.add_nonneg_nonneg;[ | Lia.lia].
-  apply Ztac.mul_le; [ Lia.lia | Lia.lia].
+*  apply Z.add_nonneg_nonneg;[ | Lia.lia].
+   apply Ztac.mul_le; [ Lia.lia | Lia.lia].
 
-  rewrite Z.add_comm.
-  apply h27; [ Lia.lia | Lia.lia| Lia.lia].
+* rewrite Z.add_comm.
+  rewrite Z.mul_comm.
+  destruct H25.
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (H37 &_ ).
+    rewrite H37 by assumption.
+    apply H27;[ Lia.lia | Lia.lia | Lia.lia | Lia.lia].
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (_ &H37).
+    rewrite H37 by assumption.
+    apply H27;[ Lia.lia | Lia.lia | Lia.lia | Lia.lia].
+* destruct H25.
+  - decompose [and] H25;clear H25.
+    subst.
+    apply Z.quot_str_pos.
+    Lia.lia.
+  - decompose [and] H25;clear H25.
+    subst.
+    Lia.lia.
 
-  apply Z.add_nonneg_nonneg;[ | Lia.lia].
-  apply Ztac.mul_le; [ Lia.lia | Lia.lia].
-
-  rewrite Z.add_comm.
-  apply Z.lt_le_pred.
-  unfold x in h27.
-  rewrite H3.
-  apply h27; [ Lia.lia | Lia.lia| Lia.lia].
-
-* decompose [and] H;clear H.
-  subst.
-  specialize (active'def).
-  intros H2; destruct H2 as (_ &  H2).
-  rewrite split_rec1 by Lia.lia.
-  rewrite test1;[ | simpl ; auto].
-  rewrite simpl_rec_1 by Lia.lia.
-  rewrite Assoc.
-  simpl.
-  specialize offset'def.
-  intros H3; destruct H3 as ( _ & H3).
-  specialize (H2 H0).
-  specialize (H3 H0).
-  apply isPredIntMessage1.
-  apply p1_closure_def.
-  unfold p1.
-  intros.
-  unfold a8.
-  specialize(Q_to_list_nth a7 a2 0 1000 (i1*offset1 + k)).
-  simpl.
-  intros.
-  specialize(Q_to_list_nth_shift a7 a 0 1 k h1).
-  simpl.
-  intros.
-  rewrite <- H4.
-  rewrite <- H1.
-  rewrite H3 by Lia.lia.
-  rewrite <- h29.
-  unfold a7.
-  specialize (havoc_access t1 x (shift a (h1 + k)) a2 1000).
-  intros H6; destruct H6 as (H6 & _).
-  rewrite H6.
-  apply h28.
-
-  all: try   Lia.lia.
-
-  unfold separated.
-  right.
-  right.
-  left.
-  simpl.
-  Lia.lia.
+* Lia.lia.
+* destruct H25.
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (H37 &_ ).
+    Lia.lia.
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (_ & H37 ).
+    Lia.lia.
+* Lia.lia.
+* destruct H25.
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (H37 &_ ).
+    apply Z.add_nonneg_nonneg;[ | Lia.lia].
+    apply Ztac.mul_le; [ Lia.lia | Lia.lia].
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (_ & H37 ).
+    Lia.lia.
+* destruct H25.
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (H37 &_ ).
+    rewrite Z.add_comm.
+    apply Z.lt_le_pred.
+    rewrite H37 by assumption.
+    rewrite Z.mul_comm.
+    apply H27; [ Lia.lia | Lia.lia| Lia.lia | Lia.lia].
+  - decompose [and] H25;clear H25.
+    subst.
+    destruct offset'def as (_ & H37 ).
+    Lia.lia.
 Qed.
 

@@ -52,6 +52,11 @@ int main(int argc, char **argv){
     active_procs = MAX_LENGTH;
   }
 
+  /*@ assert \forall integer i,j; 1 <= j < active_procs ==>
+                                  0 <= i < offset  ==>
+                                 (j * offset) + i < MAX_LENGTH;*/
+  /*@ assert \forall integer j; 1 <= j < active_procs ==>
+                               (j+1) * offset <= MAX_LENGTH;*/
   if (my_rank == 0) {
     // initialize array
     init_array(data);
@@ -67,38 +72,32 @@ int main(int argc, char **argv){
       @ for (int i = 0; i < MAX_LENGTH; i++) {
       @ g[i] = data[i];
       @ }
-      @ MPI_GIntBcast(g, MAX_LENGTH, 0);*/
+      @ MPI_GIntBcast(g, MAX_LENGTH, 0);
+      @ simpl();*/
 
-    //@ ghost simpl();
     /*@ assert get_type(protocol) == f(to_list(&g[0], 0, MAX_LENGTH));*/
 
-    // distribute array to other processes by mpi_ssend
     int i = 1;
     /*@ loop invariant 1 <= i <= active_procs;
       @ loop invariant getFirst(get_type(protocol)) ==
-      @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),i));
+      @   split_right (getFirst(\at(get_type(protocol),LoopEntry)),i);
       @ loop invariant getNext(get_type(protocol)) ==
       @   getNext(\at(get_type(protocol),LoopEntry));
-      @ loop invariant \forall integer j; i != active_procs ==> 0 <= j < offset
-                                          ==> (i * offset) + j < MAX_LENGTH;
       @ loop assigns protocol, i;
       @ loop variant active_procs - i;
       @ */
     while (i < active_procs) {
       /*@ ghost
         unroll();
-        assoc();
-      */
+        assoc(); */
       MPI_Ssend(&data[i*offset], offset, MPI_INT, i, 1, MPI_COMM_WORLD);
       i++;
     }
 
-    //@ ghost toskip();
+    //@ ghost next();
 
-    // sum up the part of array belonging to process 0
     int sum = 0;
-    /*@
-      @ loop invariant 0 <= i <= offset;
+    /*@ loop invariant 0 <= i <= offset;
       @ loop invariant sum == sum(&data[0],0,i);
       @ loop assigns i, sum;
       @ loop variant offset - i;
@@ -107,15 +106,12 @@ int main(int argc, char **argv){
       sum += data[i];
     }
 
-    // receive, add up & print sums of all other process by mpi_recv
     i = 1;
-    /*@
-      @ loop invariant 1 <= i <= active_procs;
+    /*@ loop invariant 1 <= i <= active_procs;
       @ loop invariant getFirst(get_type(protocol)) ==
-      @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),i));
+      @      split_right (getFirst(\at(get_type(protocol),LoopEntry)),i);
       @ loop invariant isSkip(getNext(get_type(protocol)));
       @ loop invariant sum == sum(&data[0],0,i*offset);
-      @ loop invariant i < active_procs  ==> (i+1) * offset <= MAX_LENGTH;
       @ loop assigns i, protocol, sum;
       @ loop variant active_procs - i;
       @ */
@@ -132,7 +128,7 @@ int main(int argc, char **argv){
       i ++;
     }
     /*@ assert sum == sum(&data[0],0,MAX_LENGTH);*/
-    //@ ghost toskip();
+    //@ ghost next();
 
   } else {
     if (my_rank < active_procs){
@@ -140,54 +136,27 @@ int main(int argc, char **argv){
 
       /*@ ghost
         @ int g[MAX_LENGTH];
-        @ MPI_GIntBcast(g, MAX_LENGTH, 0);*/
+        @ MPI_GIntBcast(g, MAX_LENGTH, 0);
+        @ simpl();*/
 
-      //@ ghost simpl();
       /*@ assert get_type(protocol) == f(to_list(&g[0], 0, MAX_LENGTH));*/
 
-      // receive & add up elements from process 0 by mpi_recv
       /*@ ghost
-          l1:;
-          int j = 1;
-          /@ loop invariant 1 <= j <= my_rank;
-           @ loop invariant getFirst(get_type(protocol)) ==
-           @   getNext(split(getFirst(\at(get_type(protocol),l1)),j));
-           @ loop invariant getNext(get_type(protocol)) ==
-           @   getNext(\at(get_type(protocol),l1));
-           @ loop invariant \forall integer i; j != active_procs ==> 0 <= i < offset
-           @   ==> (j * offset) + i < MAX_LENGTH;
-           @ loop assigns protocol, j;
-           @ loop variant my_rank - j;
-           @/
-          while (j < my_rank) {
-             unroll();
-             assoc();
-             toskip();
-             j++;
-          }
-          unroll();
-          assoc();
-      */
+        l1:;
+         split(my_rank);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();
+    @*/
+
       MPI_Recv(data, offset, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       /*@ assert \forall integer k; 0 <= k < offset ==> g[my_rank*offset + k] == data[k];*/
-      /*@ ghost
-        j++;
-        /@ loop invariant my_rank+1 <= j <= active_procs;
-         @ loop invariant getFirst(get_type(protocol)) ==
-         @   getNext(split(getFirst(\at(get_type(protocol),l1)),j));
-         @ loop invariant getNext(get_type(protocol)) ==
-         @   getNext(\at(get_type(protocol),l1));
-         @ loop assigns protocol, j;
-         @ loop variant active_procs - j;
-         @/
-        while (j < active_procs) {
-          unroll();
-          assoc();
-          toskip();
-          j++;
-        }
-        toskip();
-      */
+
+      /*@ ghost fsimpl();
+       @*/
+
+      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l1));*/
 
       /*@ loop invariant 0 <= i <= offset;
         @ loop assigns sum, i;
@@ -198,93 +167,32 @@ int main(int argc, char **argv){
       for (int i = 0; i < offset; i++) {
         sum += data[i];
       }
+
       /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l1));*/
 
       /*@ ghost
         l2:;
-        j = 1;
-        /@ loop invariant 1 <= j <= my_rank;
-         @ loop invariant getFirst(get_type(protocol)) ==
-         @   getNext(split(getFirst(\at(get_type(protocol),l2)),j));
-         @ loop invariant getNext(get_type(protocol)) ==
-         @   getNext(\at(get_type(protocol),l2));
-         @ loop invariant (j+1) * offset <= MAX_LENGTH;
-         @ loop assigns protocol, j;
-         @ loop variant my_rank - j;
-         @/
-        while (j < my_rank) {
-           unroll();
-           assoc();
-           toskip();
-           j++;
-        }
-        unroll();
-        assoc();
-      */
-      // send total sum of received elements back to process 0 by mpi_send
+         split(my_rank);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();*/
+
       MPI_Ssend(&sum, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-      /*@ ghost
-        j++;
-        /@ loop invariant my_rank+1 <= j <= active_procs;
-         @ loop invariant getFirst(get_type(protocol)) ==
-         @   getNext(split(getFirst(\at(get_type(protocol),l2)),j));
-         @ loop invariant getNext(get_type(protocol)) ==
-         @   getNext(\at(get_type(protocol),l2));
-         @ loop assigns protocol, j;
-         @ loop variant active_procs - j;
-         @/
-        while (j < active_procs) {
-          unroll();
-          assoc();
-          toskip();
-          j++;
-        }
-        toskip();
-      */
+
+     /*@ ghost fsimpl();
+       @*/
+      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l2));*/
     }
     else {
 
       /*@ ghost
         int g[MAX_LENGTH];
         MPI_GIntBcast(g, MAX_LENGTH, 0);
-
         simpl();
         /@ assert get_type(protocol) == f(to_list(&g[0], 0, MAX_LENGTH));@/
-
-        l3:;
-        int j = 1;
-        /@ loop invariant 1 <= j <= active_procs;
-         @ loop invariant getFirst(get_type(protocol)) ==
-         @   getNext(split(getFirst(\at(get_type(protocol),l3)),j));
-         @ loop invariant getNext(get_type(protocol)) ==
-         @   getNext(\at(get_type(protocol),l3));
-         @ loop assigns protocol, j;
-         @ loop variant active_procs - j;
-         @/
-        while (j < active_procs) {
-           unroll();
-           assoc();
-           toskip();
-           j++;
-        }
-        toskip();
-        l4:;
-        j = 1;
-        /@ loop invariant 1 <= j <= active_procs;
-         @ loop invariant getFirst(get_type(protocol)) ==
-         @   getNext(split(getFirst(\at(get_type(protocol),l4)),j));
-         @ loop invariant isSkip(getNext(get_type(protocol)));
-         @ loop assigns protocol, j;
-         @ loop variant active_procs - j;
-         @/
-        while (j < active_procs) {
-           unroll();
-           assoc();
-           toskip();
-           j++;
-        }
-
-        toskip();
+        fsimpl();
+        fsimpl();
        */
     }
   }
