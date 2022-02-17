@@ -48,32 +48,14 @@ val constant size : int
 
 type protocol =
   | IntMessage int int int int (list int -> bool)
-    (* ++ sender and recever can go into the predicate.
-          Moreover information lenght data = count*)
   | IntBroadcast int int (list int -> bool) (list int  -> protocol)
-    (* ++ the root can go into the predicate and into the continuation.
-          Moreoverlenght data = count*)
   | IntGhostBroadcast int int (list int -> bool) (list int  -> protocol)
   | Gather int int mpi_datatype
   | Scatter int int mpi_datatype
   | Reduce int int mpi_datatype mpi_op
   | Allgather int mpi_datatype
   | Allreduce int mpi_datatype mpi_op
-  | Rec int int (int -> protocol)
-
-(* Wildcard (int -> bool) (int -> bool) int int int subprotocol
-	- only consume if the predicate is false for the rank of the source and false for any rank
-          for the targed.
-	- the source is not specified in the protocol
-	- we make a projection of the communication condition.
-	- the check of validity of the predication is done after a communication has take place.
-        - the received data must be expressed by a predicate valid for in any case
-        - in addition we have a predicate telling if I have to take place to the communication,
-          if not am not autorised to
-          communicate with the target
-        - subprotocol is the protocol in the protocol
-*)
-
+  | Foreach int int (int -> protocol)
   | If bool protocol protocol
   | Seq protocol protocol
   | Skip
@@ -186,13 +168,13 @@ axiom IsAllreduce: forall data_size: int, mt: mpi_datatype, op: mpi_op.
       isAllreduce(Allreduce data_size mt op)
 
 (* -------------------------------------------------------------------- *)
-(* --- isRec                                                        --- *)
+(* --- isForeach                                                    --- *)
 (* -------------------------------------------------------------------- *)
 
-predicate isRec (p: protocol)
+predicate isForeach (p: protocol)
 
-axiom IsRec: forall low high: int, body: int -> protocol.
-      isRec (Rec low high body)
+axiom IsForeach: forall low high: int, body: int -> protocol.
+      isForeach (Foreach low high body)
 
 (* -------------------------------------------------------------------- *)
 (* --- isSkip                                                       --- *)
@@ -234,6 +216,9 @@ axiom isPredIntMessage: forall src dst data_size t: int, data: list int, pre: li
 
 predicate isMessageforIntRecv (p:protocol) (source: int) (count: int) (tag: int)
 
+    (* ++ sender and recever can go into the predicate.
+          Moreover information lenght data = count*)
+
 axiom isforIntRecv: forall source count tag: int, src dst data_size t: int, pre: list int -> bool.
       (*Well define session type*)
       0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src /\
@@ -250,12 +235,15 @@ axiom PredIntMessage: forall src dst data_size t: int, data: list int, pre: list
       predIntMessage (IntMessage src dst data_size t pre) data -> pre data
 
 (* -------------------------------------------------------------------- *)
-(* --- IntBroadcast                                            --- *)
+(* --- IntBroadcast                                                 --- *)
 (* -------------------------------------------------------------------- *)
 
 (* --- isforIntBroadcast                                            --- *)
 
 predicate isforIntBroadcast (p: protocol) (root: int) (count: int) (data: list int)
+
+    (* ++ the root can go into the predicate and into the continuation.
+          Moreoverlenght data = count*)
 
 axiom isIntBroadcast: forall root r count data_size : int, data : (list int),
                             pred: (list int -> bool), cont: (list int  -> protocol).
@@ -369,10 +357,14 @@ axiom isAllreduce: forall data_size count: int, datatype mt: mpi_datatype, op op
       isforAllreduce (Allreduce data_size mt op) count datatype opera
 
 (* -------------------------------------------------------------------- *)
-(* --- simpl                                                        --- *)
+(* --- Simpl                                                        --- *)
 (* -------------------------------------------------------------------- *)
 
 function simpl (p: protocol) : protocol
+
+(*  Correspondance between the congruence (called R) and the induces homomorphisme
+    ("simple") for type "protocol" (simple(p) = {y | xRy})
+*)
 
 axiom simpl_seq_1: forall p: protocol. simpl(Seq Skip p) = p
 
@@ -389,15 +381,25 @@ axiom simpl_intmessage: forall source dest data_size tag: int, pre: (list int ->
       rank <> source /\ rank <> dest ->
       simpl(IntMessage source dest data_size tag pre) = Skip
 
-axiom simpl_rec_1: forall low high: int, body: (int -> protocol).
+axiom simpl_foreach_1: forall low high: int, body: (int -> protocol).
       low <= high ->
-      simpl(Rec low high body) = Seq (body low) (Rec (low + 1) high body)
+      simpl(Foreach low high body) = Seq (body low) (Foreach (low + 1) high body)
 
-axiom simpl_rec_2: forall low high: int, body: (int -> protocol).
+axiom simpl_foreach_2: forall low high: int, body: (int -> protocol).
       low > high ->
-      simpl(Rec low high body) = Skip
+      simpl(Foreach low high body) = Skip
 
 axiom simpl_Skip: simpl(Skip) = Skip
+
+(* -------------------------------------------------------------------- *)
+(* --- FSimpl                                                        --- *)
+(* -------------------------------------------------------------------- *)
+
+function fsimpl (p: protocol) : protocol
+
+axiom fsimpl_foreach: forall low high: int, body: (int -> protocol).
+      (forall i: int. low <= i <= high -> simpl (body i) = Skip) ->
+      (fsimpl(Foreach low high body) = Skip)
 
 (* -------------------------------------------------------------------- *)
 (* --- Split                                                        --- *)
@@ -405,17 +407,27 @@ axiom simpl_Skip: simpl(Skip) = Skip
 
 function split (p: protocol) (c : int): protocol
 
-axiom split_rec1: forall low high c: int, body: (int -> protocol).
+axiom split_foreach: forall low high c: int, body: (int -> protocol).
       low <= c <= high ->
-      split (Rec low high body) c = Seq (Rec low (c-1) body) (Rec c high body)
+      split (Foreach low high body) c = Seq (Foreach low (c-1) body) (Foreach c high body)
 
-axiom split_rec2: forall low high c: int, body: (int -> protocol).
-      low <= high < c ->
-      split (Rec low high body) c = Seq (Rec low high body) (Rec c high body)
+(* axiom split_foreach2: forall low high c: int, body: (int -> protocol). *)
+(*       low <= high < c -> *)
+(*       split (Foreach low high body) c = Seq (Foreach low high body) (Foreach c high body) *)
 
-axiom split_rec3: forall low high c: int, body: (int -> protocol).
-      c < low <= high ->
-      split (Rec low high body) c = Seq (Rec low c body) (Rec low high body)
+(* axiom split_foreach3: forall low high c: int, body: (int -> protocol). *)
+(*       c < low <= high -> *)
+(*       split (Foreach low high body) c = Seq (Foreach low c body) (Foreach low high body) *)
+
+(* -------------------------------------------------------------------- *)
+(* --- Split_right                                                        --- *)
+(* -------------------------------------------------------------------- *)
+
+function split_right (p: protocol) (c : int): protocol
+
+axiom split_right_foreach: forall low high c: int, body: (int -> protocol).
+      low <= high ->
+      split_right (Foreach low high body) c = Foreach c high body
 
 (* -------------------------------------------------------------------- *)
 (* --- Assoc                                                        --- *)
@@ -426,7 +438,7 @@ function assoc (p:protocol): protocol
 axiom Assoc: forall h q p: protocol. assoc (Seq (Seq h q) p) = Seq h (Seq q p)
 
 (* -------------------------------------------------------------------- *)
-(* --- GetFirst                                                        --- *)
+(* --- GetFirst                                                     --- *)
 (* -------------------------------------------------------------------- *)
 
 let rec function getFirst (p: protocol) : protocol variant {p} =
@@ -436,7 +448,7 @@ let rec function getFirst (p: protocol) : protocol variant {p} =
         end
 
 (* -------------------------------------------------------------------- *)
-(* --- GetNext                                                        --- *)
+(* --- GetNext                                                      --- *)
 (* -------------------------------------------------------------------- *)
 
 let rec function aux (p: protocol) : option protocol variant {p} =
@@ -454,42 +466,5 @@ let function getNext (p: protocol): protocol =
         | None -> Skip
         | Some p -> p
         end
-
-end
-
-module MPI_prop
-
-use MPI_Protocol
-use MPI_Protocol_Handler
-
-predicate isLineare (p : protocol) =
-        match p with
-        | Seq (Seq _ _ ) _ -> false
-        | _ -> true
-        end
-
-predicate isBasic (p : protocol) =
-        match p with
-        | Seq _ _  -> false
-        | _ -> true
-        end
-
-predicate isComposed (p : protocol) =
-        match p with
-        | Seq _ _  -> true
-        | _ -> false
-        end
-
-lemma test1: forall p1,p2:protocol. isLineare (Seq p1 p2) -> getNext (Seq p1 p2) = p2
-
-lemma test2: forall p1:protocol. isBasic p1 -> getNext p1 = Skip
-
-lemma test3: forall p1,p2:protocol. isLineare (Seq p1 p2) -> getFirst (Seq p1 p2) = p1
-
-lemma test4: forall p1:protocol. isBasic p1 -> getFirst p1 = p1
-
-lemma test5: forall p1:protocol. isBasic p1 -> p1 = simpl (Seq (getFirst p1) (getNext p1))
-
-lemma test6: forall p1:protocol. isComposed p1 /\ isLineare p1 -> p1 = Seq (getFirst p1 ) (getNext p1 )
 
 end

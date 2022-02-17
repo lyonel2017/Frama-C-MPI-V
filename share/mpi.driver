@@ -56,7 +56,7 @@ logic integer "MPI_COMM_WORLD_rank_ACSL" = "rank";
 logic logic_protocol "seq" (logic_protocol,logical_protocol) = "seq";
 
 predicate "isMessage" (logic_protocol) = "isMessage";
-predicate "isRec" (logic_protocol) = "isRec";
+predicate "isForeach" (logic_protocol) = "isForeach";
 predicate "isSkip" (logic_protocol) = "isSkip";
 predicate "isBroadcast" (logic_protocol) = "isBroadcast";
 predicate "isGather" (logic_protocol) = "isGather";
@@ -78,9 +78,11 @@ predicate "isforAllreduce" (logic_protocol,integer,mpi_datatype,mpi_op) = "isfor
 
 logic logic_protocol "simpl" (logic_protocol) = "simpl";
 logic logic_protocol "split" (logic_protocol,integer) = "split";
+logic logic_protocol "split_right" (logic_protocol,integer) = "split_right";
 logic logic_protocol "assoc" (logic_protocol) = "assoc";
 logic logic_protocol "getFirst" (logic_protocol) = "getFirst";
 logic logic_protocol "getNext" (logic_protocol) = "getNext";
+logic logic_protocol "fsimpl" (logic_protocol) = "fsimpl";
 
 predicate "predIntMessage" (logic_protocol,list) = "predIntMessage";
 predicate "isPredIntMessage" (logic_protocol,list) = "isPredIntMessage";
@@ -88,4 +90,3 @@ predicate "predIntBroadcast" (logic_protocol,list) = "predIntBroadcast";
 predicate "countiIntBroadcast" (logic_protocol,logic_protocol,logic_protocol,list) = "countiIntBroadcast";
 
 why3.file += "protocol.why:MPI_Protocol_Handler";
-why3.file += "protocol.why:MPI_prop";

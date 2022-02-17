@@ -549,7 +549,7 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ logic logic_protocol the_protocol;
   @
   @ predicate isMessage(logic_protocol p);
-  @ predicate isRec(logic_protocol p);
+  @ predicate isForeach(logic_protocol p);
   @ predicate isSkip(logic_protocol p);
   @ predicate isBroadcast(logic_protocol p);
   @ predicate isGather(logic_protocol p);
@@ -575,9 +575,11 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @
   @ logic logic_protocol simpl(logic_protocol p);
   @ logic logic_protocol split(logic_protocol p,integer i);
+  @ logic logic_protocol split_right(logic_protocol p,integer i);
   @ logic logic_protocol assoc(logic_protocol p);
   @ logic logic_protocol getFirst(logic_protocol p);
   @ logic logic_protocol getNext(logic_protocol p);
+  @ logic logic_protocol fsimpl(logic_protocol p);
 }*/
 
 /*@ axiomatic MPI_datatype {
@@ -639,16 +641,29 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @*/
 
 /*@ ghost
+     /@ assigns protocol;
+      @ ensures \let p = \old(get_type(protocol));
+                set_type(protocol,seq(split(getFirst(p),i),getNext(p)));@/
+     void split(int i);
+  @*/
+
+/*@ ghost
+     /@ requires isSkip(fsimpl(getFirst(get_type(protocol))));
+      @ assigns protocol;
+      @ ensures set_type(protocol,getNext(\old(get_type(protocol))));@/
+     void fsimpl();
+  @*/
+
+/*@ ghost
      /@ requires isSkip(simpl(getFirst(get_type(protocol))));
       @ assigns protocol;
       @ ensures set_type(protocol,getNext(\old(get_type(protocol))));@/
-     void toskip();
+     void next();
   @*/
 
 /*
  * Arrays to Lists
  */
-
 
 /*@ axiomatic to_list{
   @ logic \list<int> to_list{l} (int* a, integer i, integer n) reads a[i .. n-1];
