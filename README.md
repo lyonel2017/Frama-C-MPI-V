@@ -3,7 +3,7 @@
 This is the *MPI-V (Message Passing Interface Verifier)* plug-in for *Frama-C*.
 The plugin allow to verify deadlock freedom session fidelity and fonctional correcness in the case
 of distributed programming written in C using the *Message Passing Interface* [MPI](https://www.mpi-forum.org/).
-*MPI-V* is based on the concept of session types and inspired form the approach proposed in
+*MPI-V* is based on the concept of multiparty session types and inspired form the approach proposed in
 [ParTypes](http://rss.di.fc.ul.pt/tools/partypes/#Downloads).
 
 The tool support a small supset of the
@@ -45,11 +45,11 @@ int main(int argc, char **argv){
 	else{
 		if (my_rank == 1){
 			MPI_Recv(&data, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			//@ assert data == 0;
+			//@ check data == 0;
 		}
 		/*@ ghost
 			else {
-				toskip();
+				next();
 			}
 		*/
 	}
@@ -82,7 +82,7 @@ module MPI_size
 
 end
 ```
-Finaly you bind your protocol and your world size constraint with *Frama-C* using two drivers
+Finally you bind your protocol and your world size constraint with *Frama-C* using two drivers
 (called here `the_protocol.driver` and `size.driver`). More information about
 *Frama-C/WP* drivers can be found in the [Frama-C/WP manual](https://frama-c.com/download/frama-c-wp-manual.pdf):
 
