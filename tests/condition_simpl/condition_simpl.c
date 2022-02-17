@@ -27,11 +27,11 @@ int main(int argc, char **argv){
 
       /* Receive message from process 0 */
       MPI_Recv(&data, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      //@ assert data == 0;
+      //@ check data == 0;
     }
     /*@ ghost
        else {
-       toskip();
+       next();
        }
       */
   }

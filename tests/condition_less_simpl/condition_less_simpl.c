@@ -42,7 +42,7 @@ int main(int argc, char **argv){
     /*@ ghost
     else {
       simpl();
-      toskip();
+      next();
       simpl();
     }
     @*/

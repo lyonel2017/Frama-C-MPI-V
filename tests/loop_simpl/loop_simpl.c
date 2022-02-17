@@ -22,7 +22,7 @@ int main(int argc, char **argv){
     /* Send messages to all other processes */
     /*@ loop invariant 0 <= count <= 10;
       @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),count));
+      @    split_right(getFirst(\at(get_type(protocol),LoopEntry)),count);
       @ loop invariant getNext(get_type(protocol)) ==
       @    getNext(\at(get_type(protocol),LoopEntry));
       @ loop assigns count, protocol;
@@ -36,7 +36,7 @@ int main(int argc, char **argv){
       count++;
     }
 
-    //@ ghost toskip();
+    //@ ghost next();
 
   } else {
     if(my_rank == 1){
@@ -44,7 +44,7 @@ int main(int argc, char **argv){
       /* Receive messages from all other process */
       /*@ loop invariant 0 <= count <= 10;
 	@ loop invariant getFirst(get_type(protocol)) ==
-	@  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),count));
+	@    split_right (getFirst(\at(get_type(protocol),LoopEntry)),count);
 	@ loop invariant getNext(get_type(protocol)) ==
 	@    getNext(\at(get_type(protocol),LoopEntry));
 	@ loop assigns count, protocol,buf;
@@ -57,27 +57,12 @@ int main(int argc, char **argv){
 	count++;
       }
 
-      //@ ghost toskip();
+      //@ ghost next();
     }
 
     /*@ghost
     else {
-      int i = 0;
-      /@ loop invariant 0 <= i <= 10;
-	@ loop invariant getFirst(get_type(protocol)) ==
-	@  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),i));
-	@ loop invariant getNext(get_type(protocol)) ==
-	@    getNext(\at(get_type(protocol),LoopEntry));
-	@ loop assigns protocol,i;
-	@ loop variant 9 -i;
-      @/
-      while (i <= 9){
-	unroll();
-	assoc();
-	toskip();
-	i++;
-      }
-      toskip();
+         fsimpl();
     }
     @*/
   }

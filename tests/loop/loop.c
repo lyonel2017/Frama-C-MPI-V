@@ -24,7 +24,7 @@ int main(int argc, char **argv)
         /* Send messages to all other processes */
 	/*@ loop invariant 1 <= other_rank <= num_procs;
 	  @ loop invariant getFirst(get_type(protocol)) ==
-	  @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),other_rank));
+	  @   split_right (getFirst(\at(get_type(protocol),LoopEntry)),other_rank);
 	  @ loop invariant getNext(get_type(protocol)) ==
 	  @   getNext(\at(get_type(protocol),LoopEntry));
 	  @ loop assigns other_rank, protocol;
@@ -34,11 +34,11 @@ int main(int argc, char **argv)
 	  //@ ghost assoc();
 	  MPI_Ssend(&buf, 1, MPI_INT, other_rank,0, MPI_COMM_WORLD);
         }
-	//@ ghost toskip();
+	//@ ghost next();
         /* Receive messages from all other process */
 	/*@ loop invariant 1 <= other_rank <= num_procs;
 	  @ loop invariant getFirst(get_type(protocol)) ==
-	  @   getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),other_rank));
+	  @   split_right (getFirst(\at(get_type(protocol),LoopEntry)),other_rank);
 	  @ loop invariant getNext(get_type(protocol)) ==
 	  @   getNext(\at(get_type(protocol),LoopEntry));
 	  @ loop assigns other_rank, protocol,buf;
@@ -48,98 +48,34 @@ int main(int argc, char **argv)
 	  //@ ghost assoc();
 	  MPI_Recv(&buf, 1, MPI_INT, other_rank,0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
-	//@ ghost toskip();
+	//@ ghost next();
     } else {
 
-    /*@ ghost
-  l1:;
-    int i = 1;
-    /@ loop invariant 1 <= i <= my_rank;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
-      @ loop invariant getNext(get_type(protocol)) ==
-      @    getNext(\at(get_type(protocol),l1));
-      @ loop assigns protocol,i;
-      @ loop variant my_rank -i;
-      @/
-    while (i < my_rank){
-      unroll();
-      assoc();
-      toskip();
-      i++;
-    }
-
-    unroll();
-    assoc();
-    @*/
+      /*@ ghost
+         split(my_rank);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();
+     @*/
 
         /* Receive message from process #0 */
         MPI_Recv(&buf, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     /*@ ghost
-    i++;
-     /@ loop invariant my_rank + 1 <= i <= num_procs;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @    getNext(split (getFirst(\at(get_type(protocol),l1)),i));
-      @ loop invariant getNext(get_type(protocol)) ==
-      @    getNext(\at(get_type(protocol),l1));
-      @ loop assigns protocol,i;
-      @ loop variant num_procs -i;
-      @/
-    while (i < num_procs){
-      unroll();
-      assoc();
-      toskip();
-      i++;
-    }
-    toskip();
-    @*/
-
-    /*@ assert \at(get_type(protocol),Here) == getNext(\at(get_type(protocol),l1));*/
-
-    /*@ ghost
-  l2:;
-     i = 1;
-     /@ loop invariant 1 <= i <= my_rank;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
-      @ loop invariant getNext(get_type(protocol)) ==
-      @    getNext(\at(get_type(protocol),l2));
-      @ loop assigns protocol,i;
-      @ loop variant my_rank -i;
-      @/
-    while (i < my_rank){
-      unroll();
-      assoc();
-      toskip();
-      i++;
-    }
-
-    unroll();
-    assoc();
+         fsimpl();
+         split(my_rank);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();
     @*/
         buf = buf + 1;
         /* Send message to process #0 */
         MPI_Ssend(&buf, 1, MPI_INT, 0,0, MPI_COMM_WORLD);
 
-    /*@ ghost
-    i++;
-     /@ loop invariant my_rank + 1 <= i <= num_procs;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @    getNext(split (getFirst(\at(get_type(protocol),l2)),i));
-      @ loop invariant getNext(get_type(protocol)) ==
-      @    getNext(\at(get_type(protocol),l2));
-      @ loop assigns protocol,i;
-      @ loop variant num_procs -i;
-      @/
-    while (i < num_procs){
-      unroll();
-      assoc();
-      toskip();
-      i++;
-    }
-    toskip();
-    @*/
+    /*@ ghost fsimpl();
+      @*/
 
     }
     /* Tear down the communication infrastructure */

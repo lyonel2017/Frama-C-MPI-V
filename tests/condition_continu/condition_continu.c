@@ -3,8 +3,8 @@
 //frama-c-gui -mpi-v -wp-weak-int-model -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver condition_continu.c
 
 int main(int argc, char **argv){
-  int data = -1, my_rank = 0, num_procs = 0;
-  /*@ ghost int g = data;*/
+  int data, my_rank, num_procs;
+  /*@ ghost int g;*/
 
   /* Initialize the infrastructure necessary for communication */
   MPI_Init(&argc, &argv);
@@ -43,8 +43,8 @@ int main(int argc, char **argv){
        else {
           MPI_GIntBcast(&g, 1, 0);
           assoc();
-          toskip();
-          toskip();
+          next();
+          next();
        }
       */
   }

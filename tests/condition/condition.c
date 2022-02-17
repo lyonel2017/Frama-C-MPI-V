@@ -21,120 +21,46 @@ int main(int argc, char **argv){
 
     data = my_rank;
     /*@ ghost
-  l1:;
-    int i = 0;
-    /@ loop invariant 0 <= i <= my_rank;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
-      @ loop invariant getNext(get_type(protocol)) ==
-      @    getNext(\at(get_type(protocol),l1));
-      @ loop assigns protocol,i;
-      @ loop variant my_rank -i;
-      @/
-    while (i < my_rank){
-      unroll();
-      assoc();
-      toskip();
-      i++;
-    }
-
-    unroll();
-    assoc();
+       split(my_rank);
+       assoc();
+       fsimpl();
+       unroll();
+       assoc();
     @*/
 
     /* Send messages to other processes with my_rank + 5*/
     MPI_Ssend(&data, 1, MPI_INT, my_rank + 10, 1, MPI_COMM_WORLD);
 
-    /*@ ghost
-    i++;
-    /@ loop invariant my_rank + 1 <= i <= 10;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),l1)),i));
-      @ loop invariant getNext(get_type(protocol)) ==
-      @    getNext(\at(get_type(protocol),l1));
-      @ loop assigns protocol,i;
-      @ loop variant 9 -i;
-      @/
-    while (i <= 9){
-      unroll();
-      assoc();
-      toskip();
-      i++;
-    }
-    toskip();
-    @*/
+    /*@ ghost fsimpl();
+      @*/
 
   } else{
     if (my_rank < 20){
 
-      /*@ ghost
-    l2:;
-      int i = 0;
-      /@ loop invariant 0 <= i <= my_rank-10;
-	@ loop invariant getFirst(get_type(protocol)) ==
-	@  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
-	@ loop invariant getNext(get_type(protocol)) ==
-	@    getNext(\at(get_type(protocol),l2));
-	@ loop assigns protocol,i;
-	@ loop variant my_rank-10 -i;
-      @/
-      while (i < (my_rank-10)){
-	unroll();
-	assoc();
-	toskip();
-	i++;
-      }
+    /*@ ghost
+         split(my_rank-10);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();
+    @*/
 
-      unroll();
-      assoc();
-      @*/
-
-      /* Receive message from process my_rank-5 */
+      /* Receive message from process my_rank-10 */
       MPI_Recv(&data, 1, MPI_INT, my_rank-10, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-      /*@ ghost
-      i++;
-      /@ loop invariant my_rank + 1 -10 <= i <= 10;
-	@ loop invariant getFirst(get_type(protocol)) ==
-	@  getNext(split (getFirst(\at(get_type(protocol),l2)),i));
-	@ loop invariant getNext(get_type(protocol)) ==
-	@    getNext(\at(get_type(protocol),l2));
-	@ loop assigns protocol,i;
-	@ loop variant 9 -i;
-      @/
-      while (i <= 9){
-	unroll();
-	assoc();
-	toskip();
-	i++;
-      }
-      toskip();
+    /*@ ghost  fsimpl();
       @*/
 
     }
     /*@ ghost
     else {
-      int i = 0;
-      /@ loop invariant 0 <= i <= 10;
-	@ loop invariant getFirst(get_type(protocol)) ==
-	@  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),i));
-	@ loop invariant getNext(get_type(protocol)) ==
-	@    getNext(\at(get_type(protocol),LoopEntry));
-	@ loop assigns protocol,i;
-	@ loop variant 9 -i;
-      @/
-      while (i <= 9){
-	unroll();
-	assoc();
-	toskip();
-	i++;
-      }
-      toskip();
+         fsimpl();
     }
   @*/
   }
 
   /* Tear down the communication infrastructure */
   MPI_Finalize();
+
   return 0;
 }

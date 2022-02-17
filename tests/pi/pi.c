@@ -21,8 +21,8 @@ int get_n (void);
 
 
 /*@ assigns \nothing;*/
-void do_pi(float pi, float PI25DT);
-    //  printf("pi is approximately %.16f, Error is %.16f\n", pi, fabs(pi - PI25DT));
+void pp_pi(float pi, float PI25DT);
+//  printf("pi is approximately %.16f, Error is %.16f\n", pi, fabs(pi - PI25DT));
 
 //frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver pi.c
 
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
   }
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
   /*@ assert n > 0;*/
-  //@ ghost toskip();
+  //@ ghost next();
   h   = 1.0f / (float) n;
   sum = 0.0f;
   /*@
