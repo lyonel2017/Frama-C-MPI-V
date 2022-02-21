@@ -1,0 +1,25 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.ComputerDivision
+
+constant protocol_while_0 : protocol =
+      Allgather (div 10000 size) MPI_float
+
+constant protocol_4 : protocol =
+      Gather 0 (div 10000 size) MPI_float
+
+constant protocol_3 : protocol =
+     (Foreach 1 1000000 (fun _ -> protocol_while_0)) ++ protocol_4
+
+constant protocol_2 : protocol =
+     (Allgather (div 10000 size) MPI_float) ++ protocol_3
+
+constant protocol_1 : protocol =
+     (Scatter 0 (div 10000 size) MPI_float) ++ protocol_2
+
+constant the_protocol : protocol =
+     (Scatter 0 ((div 10000 size) * 10000) MPI_float) ++ protocol_1
+
+end

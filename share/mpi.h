@@ -845,7 +845,7 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
   @ requires datatype: sendtype == MPI_CHAR;
   @ requires recvcount_is_not_neg: 0 <= recvcount;
   @ requires datatype: recvtype == MPI_CHAR;
-  @ requires root_in_worlf: 0 <= root < MPI_COMM_WORLD_size_ACSL;
+  @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
   @
   @ requires protocol_for_gather: isforGather(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
@@ -909,11 +909,9 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @ requires datatype: sendtype == MPI_CHAR;
   @ requires recvcount_not_neg: 0 <= recvcount;
   @ requires datatype: recvtype == MPI_CHAR;
-  @ requires root_in_worlf: 0 <= root < MPI_COMM_WORLD_size_ACSL;
+  @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
-  @
-  @ requires protoocl_for_scatter: isforScatter(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
-  @
+  @ requires protocol_for_scatter: isforScatter(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && recvcount == 0) ||
