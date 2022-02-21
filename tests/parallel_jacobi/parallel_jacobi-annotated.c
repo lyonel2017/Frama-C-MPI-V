@@ -44,6 +44,8 @@ void Jacobi_iteration(float* A_local, float* x_local, float* b_local, float* x_o
   @ logic logic_protocol protocol_while_0;
 }*/
 
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver parallel_jacobi-annotated.c
+
 int main( int argc, char** argv){
 
     int    p;
@@ -84,14 +86,11 @@ int main( int argc, char** argv){
     x_new = x_temp1;
     x_old = x_temp1;
 
-    /** BOTTLENECK: 'NUM_ITER'-invariants **/
     /*@ loop invariant 1 <= iter <= NUM_ITER+1;
-      @ loop invariant iter < NUM_ITER+1 ==> getFirst(get_type(protocol)) ==
-      @  getNext(split (getFirst(\at(get_type(protocol),LoopEntry)),iter-1));
-      @ loop invariant iter < NUM_ITER+1 ==> getNext(get_type(protocol)) ==
+      @ loop invariant getFirst(get_type(protocol)) ==
+      @  split_right (getFirst(\at(get_type(protocol),LoopEntry)),iter);
+      @ loop invariant getNext(get_type(protocol)) ==
       @  getNext(\at(get_type(protocol),LoopEntry));
-      @ loop invariant iter == NUM_ITER+1 ==> get_type(protocol) ==
-      @   getNext(\at(get_type(protocol),LoopEntry));
       @ loop invariant \valid(x_old + (0..n_by_p*p-1));
       @ loop invariant \valid(x_new + (0..n_by_p*p-1));
       @ loop invariant \valid(x_local + (0..n_by_p-1));
@@ -107,19 +106,14 @@ int main( int argc, char** argv){
       tmp = x_old;
       x_old = x_new;
       x_new = tmp;
-
-      /*@ ghost
-      if (iter == NUM_ITER) {
-        /@ assert getFirst(get_type(protocol)) ==
-         @   getNext(split(getFirst(\at(get_type(protocol),LoopEntry)),iter));
-         @/
-        toskip();
-      }@*/
-
     }
 
-    /*@ assert \valid(x_new + (0..n_by_p*p-1));*/
+    /*@ ghost next();
+      @*/
+
     /*@ assert get_type(protocol) == protocol_4;*/
+
+    /*@ assert \valid(x_new + (0..n_by_p*p-1));*/
 
     MPI_Gather(x_new, n_by_p, MPI_FLOAT, x_final, n_by_p, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
@@ -128,6 +122,5 @@ int main( int argc, char** argv){
     }
 
     MPI_Finalize();
-    // uncomment for sanity check
-    // //@ assert \false;
+
 }
