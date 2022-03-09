@@ -56,7 +56,7 @@ type protocol =
   | Allgather int mpi_datatype
   | Allreduce int mpi_datatype mpi_op
   | Foreach int int (int -> protocol)
-  | If bool protocol protocol
+  | If bool protocol protocol  (* remove *)
   | Seq protocol protocol
   | Skip
 

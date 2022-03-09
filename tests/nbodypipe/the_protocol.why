@@ -4,29 +4,23 @@ use protocol.MPI_Protocol
 use int.Int
 use int.EuclideanDivision
 
-val constant protocol_1 : protocol
-val constant protocol_2 : protocol
-val constant protocol_0 : protocol
-val constant protocol_01 : protocol
-
-let function protocol_foo_1 (i: int) : protocol =
-  (Message i (if (i+1) <= (size-1)
-              then (i+1)
-              else 0)
-              ((div 1000000 size)*4) 0 MPI_float)
-
-axiom p_2 : protocol_2 =
+constant protocol_4 : protocol =
   Allreduce 1 MPI_float MPI_min
 
-axiom p_1 : protocol_1 =
-  Foreach 0 (size-1) (fun i -> (protocol_foo_1 i))
+function f (i: int) : protocol =
+  (IntMessage i
+              (if (i+1) <= (size-1) then (i+1) else 0)
+              ((div 1000000 size)*4) 0 (fun _ -> true))
 
-axiom p_0 : protocol_0 =
-  While (size-1) protocol_1
+constant protocol_3 : protocol =
+  Foreach 0 (size-1) (fun i -> (f i))
 
-axiom p_01 : protocol_01 =
-  (Seq protocol_0 protocol_2)
+constant protocol_2 : protocol =
+  Foreach 0 (size-1) (fun _ -> protocol_3)
 
-let constant the_protocol : protocol =
-  While 1000000 protocol_01
+constant protocol_1 : protocol =
+  protocol_2 ++ protocol_4
+
+constant the_protocol : protocol =
+  Foreach 0 1000000 (fun _ -> protocol_1)
 end
