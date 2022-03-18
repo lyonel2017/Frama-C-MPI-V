@@ -1,4 +1,4 @@
-n/**
+/**
  * N-body pipeline program.
  *
  * Adapted from "Using MPI, 2nd Edition", Gropp et al., MIT Press
@@ -16,13 +16,13 @@ n/**
 #define MAX_PARTICLES 1000000
 #define NUM_ITER      1000000
 
-void InitParticles( float* part, float* vel, int npart);
+void InitParticles( int* part, int* vel, int npart);
 
 //@ assigns \result;
-float ComputeForces( float* part,  float* other_part, float* vel, int npart);
+int ComputeForces( int* part,  int* other_part, int* vel, int npart);
 
 //@ assigns \result;
-float ComputeNewPos( float* part, float* pv, int npart, float );
+int ComputeNewPos( int* part, int* pv, int npart, int );
 
 /*@ axiomatic MPI_aux_driver {
   @ logic logic_protocol protocol_1;
@@ -33,14 +33,14 @@ float ComputeNewPos( float* part, float* pv, int npart, float );
   @ }
   @*/
 
-//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver nbodypipe.c
+//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver nbodypipe-annotated.c
 
 int main(int argc,char** argv) {
   int        rank = 0, procs = 0, npart = 0, left = 0, right = 0, iter, pipe, i;
-  float      sim_t, dt, dt_local, max_f, max_f_seg;
-  float      particles[MAX_PARTICLES * 4];   /* Particles on ALL nodes */
-  float      pv[MAX_PARTICLES * 6];          /* Particle velocity */
-  float      sendbuf[MAX_PARTICLES * 4],     /* Pipeline buffers */
+  int      sim_t, dt, dt_local, max_f, max_f_seg;
+  int      particles[MAX_PARTICLES * 4];   /* Particles on ALL nodes */
+  int      pv[MAX_PARTICLES * 6];          /* Particle velocity */
+  int      sendbuf[MAX_PARTICLES * 4],     /* Pipeline buffers */
              recvbuf[MAX_PARTICLES * 4];
 
   MPI_Init( &argc, &argv );
@@ -53,107 +53,89 @@ int main(int argc,char** argv) {
   InitParticles(particles, pv, npart);
   sim_t = 0.0f;
 
-  /*@ loop invariant 1 <= iter <= NUM_ITER+1;
-    @ loop invariant  getFirst(get_type(protocol)) ==
-    @   split_right(getFirst(\at(get_type(protocol),LoopEntry)),iter-1);
-    @ loop invariant  getNext(get_type(protocol)) ==
-    @   getNext(\at(get_type(protocol),LoopEntry));
+  /*@ loop invariant 0 <= iter <= NUM_ITER;
+    @ loop invariant getLeft(get_type(protocol)) ==
+    @   split_right(\at(get_type(protocol),LoopEntry),iter);
+    @ loop invariant isSkip(getRight(get_type(protocol)));
     @ loop assigns pipe,protocol,recvbuf[0..npart*4-1],max_f_seg,max_f,iter;
     @ loop assigns dt_local,sim_t;
     @ loop variant NUM_ITER+1-iter;
     @*/
-  for (iter = 1; iter <= NUM_ITER; iter++) {
+  for (iter = 0; iter < NUM_ITER; iter++) {
   /*@ ghost
      unroll();
      assoc();
      assoc();
     @*/
 
-  /*@ assert getFirst(get_type(protocol)) == protocol_0;*/
+  /*@ assert getLeft(get_type(protocol)) == protocol_2;*/
   /*@ loop invariant 1 <= pipe <= procs;
-    @ loop invariant  getFirst(get_type(protocol)) ==
-    @   split_right(getFirst(\at(get_type(protocol),LoopEntry)),pipe-1));
-    @ loop invariant  getNext(get_type(protocol)) ==
-    @   getNext(\at(get_type(protocol),LoopEntry));
+    @ loop invariant getLeft(get_type(protocol)) ==
+    @   split_right(getLeft(\at(get_type(protocol),LoopEntry)),pipe);
+    @ loop invariant getRight(get_type(protocol)) ==
+    @   getRight(\at(get_type(protocol),LoopEntry));
     @ loop assigns pipe,protocol,recvbuf[0..npart*4-1],max_f_seg,max_f;
     @ loop variant procs-pipe;
     @*/
     for (pipe=1; pipe < procs; pipe++) {
-    /*@ ghost
-       unroll();
-       assoc();
-       assoc();
-      @*/
-      /*@ assert getFirst(get_type(protocol)) == protocol_1;*/
-
-    if (rank == 0) {
       /*@ ghost
-        l1:;
-        unroll();
-        assoc();
-        @*/
-
-      /*@ assert getFirst(get_type(protocol)) == protocol_foo_1(j);*/
-
-      MPI_Ssend(sendbuf, npart * 4, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
-
-      /*@ ghost
-        l2:;
-         split(procs - 1);
-         assoc();
-         fsimpl();
-         unroll();
-         assoc();*/
-
-      //@ assert getFirst(get_type(protocol)) == protocol_foo_1(j);
-      MPI_Recv(recvbuf, npart * 4, MPI_FLOAT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      /*@ ghost next();
-        @*/
-      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l1));*/
-    } else {
-
-      /*@ ghost
-        l1:;
-         split(my_rank-1);
-         assoc();
-         fsimpl();
-         unroll();
-         assoc();*/
-
-        //@ assert getFirst(get_type(protocol)) == protocol_foo_1(j);
-        MPI_Recv(recvbuf, npart * 4, MPI_FLOAT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        /*@ ghost
-          j++;*/
-
-	//@ assert getFirst(get_type(protocol)) ==  getNext(split(getFirst(\at(get_type(protocol),l2)),j));
-        //@ assert getNext(get_type(protocol)) ==  getNext(\at(get_type(protocol),l2));
-
-	/*@ ghost
           unroll();
           assoc();
+        @*/
+        /*@ assert getLeft(get_type(protocol)) == protocol_3;*/
+
+      if (rank == 0) {
+        /*@ ghost
+            unroll();
+            assoc();
           @*/
-	//@ assert getFirst(get_type(protocol)) == protocol_foo_1(j);
-        MPI_Ssend(sendbuf, npart * 4, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
-      /*@ ghost fsimpl();
-	@*/
-	/*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l2));*/
-    }
-    max_f_seg = ComputeForces( particles, recvbuf, pv, npart );
-    if (max_f_seg > max_f) max_f = max_f_seg;
+
+        MPI_Ssend(sendbuf, npart * 4, MPI_INT, right, 0, MPI_COMM_WORLD);
+
+        /*@ ghost
+            split(procs - 1);
+            assoc();
+            fsimpl();
+            unroll();
+            assoc();*/
+
+         MPI_Recv(recvbuf, npart * 4, MPI_INT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+         /*@ ghost next();
+           @*/
+       } else {
+
+         /*@ ghost
+             split(rank-1);
+             assoc();
+             fsimpl();
+             unroll();
+             assoc();*/
+
+          MPI_Recv(recvbuf, npart * 4, MPI_INT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+          /*@ ghost
+              unroll();
+              assoc();
+             @*/
+          MPI_Ssend(sendbuf, npart * 4, MPI_INT, right, 0, MPI_COMM_WORLD);
+         /*@ ghost fsimpl();
+           @*/
+       }
+       max_f_seg = ComputeForces( particles, recvbuf, pv, npart );
+       if (max_f_seg > max_f) max_f = max_f_seg;
     }
     /*@ ghost next();
       @ */
-    /*@ assert getFirst(get_type(protocol)) == protocol_2;*/
+    /*@ assert getLeft(get_type(protocol)) == protocol_4;*/
 
     dt_local = ComputeNewPos( particles, pv, npart, max_f);
 
-    MPI_Allreduce( &dt, &dt_local, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce( &dt, &dt_local, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     sim_t += dt;
   }
   /*@ ghost next();
     @ */
 
   MPI_Finalize();
-  // assert \false;
   return 0;
 }

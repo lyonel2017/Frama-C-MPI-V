@@ -5,7 +5,7 @@ use int.Int
 use int.EuclideanDivision
 
 constant protocol_4 : protocol =
-  Allreduce 1 MPI_float MPI_min
+  Allreduce 1 MPI_int MPI_min
 
 function f (i: int) : protocol =
   (IntMessage i
@@ -16,11 +16,11 @@ constant protocol_3 : protocol =
   Foreach 0 (size-1) (fun i -> (f i))
 
 constant protocol_2 : protocol =
-  Foreach 0 (size-1) (fun _ -> protocol_3)
+  Foreach 1 (size-1) (fun _ -> protocol_3)
 
 constant protocol_1 : protocol =
   protocol_2 ++ protocol_4
 
 constant the_protocol : protocol =
-  Foreach 0 1000000 (fun _ -> protocol_1)
+  Foreach 0 999999 (fun _ -> protocol_1)
 end
