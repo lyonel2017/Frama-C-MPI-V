@@ -68,12 +68,12 @@ int main(int argc, char** argv)
   if (rank == 0) {
     Scan_vector (local_x, n);
     /*@ loop invariant 1 <= i <= procs;
-      @ loop invariant procs > 1 ==> getFirst(get_type(protocol)) ==
-      @    split_right(getFirst(\at(get_type(protocol),LoopEntry)),i);
+      @ loop invariant procs > 1 ==> getLeft(get_type(protocol)) ==
+      @    split_right(getLeft(\at(get_type(protocol),LoopEntry)),i);
       @ loop invariant
       @    procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
-      @ loop invariant getNext(get_type(protocol)) ==
-      @   getNext(\at(get_type(protocol),LoopEntry));
+      @ loop invariant getRight(get_type(protocol)) ==
+      @   getRight(\at(get_type(protocol),LoopEntry));
       @ loop assigns protocol, i, temp[0..1000000-1];
       @ loop variant procs - i;
       @*/
@@ -103,12 +103,12 @@ int main(int argc, char** argv)
     Scan_vector (local_y, n);
     /*@ loop invariant 1 <= i <= procs;
       @ loop invariant
-      @   procs > 1 ==> getFirst(get_type(protocol)) ==
-      @   split_right(getFirst(\at(get_type(protocol),LoopEntry)),i);
+      @   procs > 1 ==> getLeft(get_type(protocol)) ==
+      @   split_right(getLeft(\at(get_type(protocol),LoopEntry)),i);
       @ loop invariant
       @   procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
-      @ loop invariant getNext(get_type(protocol)) ==
-      @   getNext(\at(get_type(protocol),LoopEntry));
+      @ loop invariant getRight(get_type(protocol)) ==
+      @   getRight(\at(get_type(protocol),LoopEntry));
       @ loop assigns protocol, i, temp[0..1000000-1];
       @ loop variant procs - i;
       @*/
@@ -149,11 +149,11 @@ int main(int argc, char** argv)
   if (rank == 0) {
     /*@ loop invariant 1 <= i <= procs;
       @ loop invariant
-      @   procs > 1 ==> getFirst(get_type(protocol)) == split_right(protocol_4,i);
+      @   procs > 1 ==> getLeft(get_type(protocol)) == split_right(protocol_4,i);
       @ loop invariant
       @   procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
-      @ loop invariant getNext(get_type(protocol)) ==
-      @   getNext(\at(get_type(protocol),LoopEntry));
+      @ loop invariant getRight(get_type(protocol)) ==
+      @   getRight(\at(get_type(protocol),LoopEntry));
       @ loop assigns protocol, i, remote_dot;
       @ loop variant procs - i;
       @*/

@@ -1,0 +1,26 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.EuclideanDivision
+
+constant protocol_4 : protocol =
+  Allreduce 1 MPI_int MPI_min
+
+function f (i: int) : protocol =
+  (IntMessage i
+              (if (i+1) <= (size-1) then (i+1) else 0)
+              ((div 1000000 size)*4) 0 (fun _ -> true))
+
+constant protocol_3 : protocol =
+  Foreach 0 (size-1) (fun i -> (f i))
+
+constant protocol_2 : protocol =
+  Foreach 1 (size-1) (fun _ -> protocol_3)
+
+constant protocol_1 : protocol =
+  protocol_2 ++ protocol_4
+
+constant the_protocol : protocol =
+  Foreach 0 999999 (fun _ -> protocol_1)
+end

@@ -23,10 +23,10 @@ int main(int argc, char **argv)
         int other_rank;
         /* Send messages to all other processes */
 	/*@ loop invariant 1 <= other_rank <= num_procs;
-	  @ loop invariant getFirst(get_type(protocol)) ==
-	  @   split_right (getFirst(\at(get_type(protocol),LoopEntry)),other_rank);
-	  @ loop invariant getNext(get_type(protocol)) ==
-	  @   getNext(\at(get_type(protocol),LoopEntry));
+	  @ loop invariant getLeft(get_type(protocol)) ==
+	  @   split_right (getLeft(\at(get_type(protocol),LoopEntry)),other_rank);
+	  @ loop invariant getRight(get_type(protocol)) ==
+	  @   getRight(\at(get_type(protocol),LoopEntry));
 	  @ loop assigns other_rank, protocol;
 	  @ loop variant num_procs - other_rank;*/
         for (other_rank = 1; other_rank < num_procs; other_rank++){
@@ -37,10 +37,10 @@ int main(int argc, char **argv)
 	//@ ghost next();
         /* Receive messages from all other process */
 	/*@ loop invariant 1 <= other_rank <= num_procs;
-	  @ loop invariant getFirst(get_type(protocol)) ==
-	  @   split_right (getFirst(\at(get_type(protocol),LoopEntry)),other_rank);
-	  @ loop invariant getNext(get_type(protocol)) ==
-	  @   getNext(\at(get_type(protocol),LoopEntry));
+	  @ loop invariant getLeft(get_type(protocol)) ==
+	  @   split_right (getLeft(\at(get_type(protocol),LoopEntry)),other_rank);
+	  @ loop invariant getRight(get_type(protocol)) ==
+	  @   getRight(\at(get_type(protocol),LoopEntry));
 	  @ loop assigns other_rank, protocol,buf;
 	  @ loop variant num_procs - other_rank;*/
 	for (other_rank = 1; other_rank < num_procs; other_rank++){

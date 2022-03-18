@@ -42,7 +42,7 @@ int main(int argc,char** argv) {
       if (rank == 0) {
         MPI_Send(sendbuf, npart * 4, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
 	    MPI_Recv(recvbuf, npart * 4, MPI_FLOAT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      } 
+      }
       else {
         MPI_Recv(recvbuf, npart * 4, MPI_FLOAT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Send(sendbuf, npart * 4, MPI_FLOAT, right, 0, MPI_COMM_WORLD);

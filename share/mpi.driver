@@ -80,9 +80,9 @@ logic logic_protocol "simpl" (logic_protocol) = "simpl";
 logic logic_protocol "split" (logic_protocol,integer) = "split";
 logic logic_protocol "split_right" (logic_protocol,integer) = "split_right";
 logic logic_protocol "assoc" (logic_protocol) = "assoc";
-logic logic_protocol "getFirst" (logic_protocol) = "getFirst";
-logic logic_protocol "getNext" (logic_protocol) = "getNext";
 logic logic_protocol "fsimpl" (logic_protocol) = "fsimpl";
+logic logic_protocol "getLeft" (logic_protocol) = "getLeft";
+logic logic_protocol "getRight" (logic_protocol) = "getRight";
 
 predicate "predIntMessage" (logic_protocol,list) = "predIntMessage";
 predicate "isPredIntMessage" (logic_protocol,list) = "isPredIntMessage";

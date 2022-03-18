@@ -87,10 +87,10 @@ int main( int argc, char** argv){
     x_old = x_temp1;
 
     /*@ loop invariant 1 <= iter <= NUM_ITER+1;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @  split_right (getFirst(\at(get_type(protocol),LoopEntry)),iter);
-      @ loop invariant getNext(get_type(protocol)) ==
-      @  getNext(\at(get_type(protocol),LoopEntry));
+      @ loop invariant getLeft(get_type(protocol)) ==
+      @  split_right (getLeft(\at(get_type(protocol),LoopEntry)),iter);
+      @ loop invariant getRight(get_type(protocol)) ==
+      @  getRight(\at(get_type(protocol),LoopEntry));
       @ loop invariant \valid(x_old + (0..n_by_p*p-1));
       @ loop invariant \valid(x_new + (0..n_by_p*p-1));
       @ loop invariant \valid(x_local + (0..n_by_p-1));
@@ -101,7 +101,7 @@ int main( int argc, char** argv){
 
       //@ ghost unroll();
       //@ ghost assoc();
-      //@ assert getFirst(get_type(protocol)) == protocol_while_0;
+      //@ assert getLeft(get_type(protocol)) == protocol_while_0;
       MPI_Allgather(x_local, n_by_p, MPI_FLOAT, x_new, n_by_p, MPI_FLOAT, MPI_COMM_WORLD);
       tmp = x_old;
       x_old = x_new;

@@ -79,10 +79,10 @@ int main(int argc, char **argv){
 
     int i = 1;
     /*@ loop invariant 1 <= i <= active_procs;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @   split_right (getFirst(\at(get_type(protocol),LoopEntry)),i);
-      @ loop invariant getNext(get_type(protocol)) ==
-      @   getNext(\at(get_type(protocol),LoopEntry));
+      @ loop invariant getLeft(get_type(protocol)) ==
+      @   split_right (getLeft(\at(get_type(protocol),LoopEntry)),i);
+      @ loop invariant getRight(get_type(protocol)) ==
+      @   getRight(\at(get_type(protocol),LoopEntry));
       @ loop assigns protocol, i;
       @ loop variant active_procs - i;
       @ */
@@ -108,9 +108,9 @@ int main(int argc, char **argv){
 
     i = 1;
     /*@ loop invariant 1 <= i <= active_procs;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @      split_right (getFirst(\at(get_type(protocol),LoopEntry)),i);
-      @ loop invariant isSkip(getNext(get_type(protocol)));
+      @ loop invariant getLeft(get_type(protocol)) ==
+      @      split_right (getLeft(\at(get_type(protocol),LoopEntry)),i);
+      @ loop invariant isSkip(getRight(get_type(protocol)));
       @ loop invariant sum == sum(&data[0],0,i*offset);
       @ loop assigns i, protocol, sum;
       @ loop variant active_procs - i;
@@ -156,7 +156,7 @@ int main(int argc, char **argv){
       /*@ ghost fsimpl();
        @*/
 
-      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l1));*/
+      /*@ assert get_type(protocol) == getRight(\at(get_type(protocol),l1));*/
 
       /*@ loop invariant 0 <= i <= offset;
         @ loop assigns sum, i;
@@ -168,7 +168,7 @@ int main(int argc, char **argv){
         sum += data[i];
       }
 
-      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l1));*/
+      /*@ assert get_type(protocol) == getRight(\at(get_type(protocol),l1));*/
 
       /*@ ghost
         l2:;
@@ -182,7 +182,7 @@ int main(int argc, char **argv){
 
      /*@ ghost fsimpl();
        @*/
-      /*@ assert get_type(protocol) == getNext(\at(get_type(protocol),l2));*/
+      /*@ assert get_type(protocol) == getRight(\at(get_type(protocol),l2));*/
     }
     else {
 

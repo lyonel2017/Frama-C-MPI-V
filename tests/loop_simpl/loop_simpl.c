@@ -21,10 +21,10 @@ int main(int argc, char **argv){
     int count = 0;
     /* Send messages to all other processes */
     /*@ loop invariant 0 <= count <= 10;
-      @ loop invariant getFirst(get_type(protocol)) ==
-      @    split_right(getFirst(\at(get_type(protocol),LoopEntry)),count);
-      @ loop invariant getNext(get_type(protocol)) ==
-      @    getNext(\at(get_type(protocol),LoopEntry));
+      @ loop invariant getLeft(get_type(protocol)) ==
+      @    split_right(getLeft(\at(get_type(protocol),LoopEntry)),count);
+      @ loop invariant getRight(get_type(protocol)) ==
+      @    getRight(\at(get_type(protocol),LoopEntry));
       @ loop assigns count, protocol;
       @ loop variant 9 - count;*/
     while (count <= 9) {
@@ -43,10 +43,10 @@ int main(int argc, char **argv){
       int count = 0;
       /* Receive messages from all other process */
       /*@ loop invariant 0 <= count <= 10;
-	@ loop invariant getFirst(get_type(protocol)) ==
-	@    split_right (getFirst(\at(get_type(protocol),LoopEntry)),count);
-	@ loop invariant getNext(get_type(protocol)) ==
-	@    getNext(\at(get_type(protocol),LoopEntry));
+	@ loop invariant getLeft(get_type(protocol)) ==
+	@    split_right (getLeft(\at(get_type(protocol),LoopEntry)),count);
+	@ loop invariant getRight(get_type(protocol)) ==
+	@    getRight(\at(get_type(protocol),LoopEntry));
 	@ loop assigns count, protocol,buf;
 	@ loop variant 9 - count;*/
       while (count <= 9){
