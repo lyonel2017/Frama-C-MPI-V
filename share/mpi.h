@@ -577,8 +577,6 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
   @ logic logic_protocol split(logic_protocol p,integer i);
   @ logic logic_protocol split_right(logic_protocol p,integer i);
   @ logic logic_protocol assoc(logic_protocol p);
-  @ logic logic_protocol getFirst(logic_protocol p);
-  @ logic logic_protocol getNext(logic_protocol p);
   @ logic logic_protocol fsimpl(logic_protocol p);
   @ logic logic_protocol getLeft(logic_protocol p);
   @ logic logic_protocol getRight(logic_protocol p);
@@ -638,28 +636,28 @@ extern struct mpi_datatype_t mpi_mpi_long_double;
 /*@ ghost
      /@ assigns protocol;
       @ ensures \let p = \old(get_type(protocol));
-                set_type(protocol,seq(simpl(getFirst(p)),getNext(p)));@/
+                set_type(protocol,seq(simpl(getLeft(p)),getRight(p)));@/
       void unroll();
   @*/
 
 /*@ ghost
      /@ assigns protocol;
       @ ensures \let p = \old(get_type(protocol));
-                set_type(protocol,seq(split(getFirst(p),i),getNext(p)));@/
+                set_type(protocol,seq(split(getLeft(p),i),getRight(p)));@/
      void split(int i);
   @*/
 
 /*@ ghost
-     /@ requires isSkip(fsimpl(getFirst(get_type(protocol))));
+     /@ requires isSkip(fsimpl(getLeft(get_type(protocol))));
       @ assigns protocol;
-      @ ensures set_type(protocol,getNext(\old(get_type(protocol))));@/
+      @ ensures set_type(protocol,getRight(\old(get_type(protocol))));@/
      void fsimpl();
   @*/
 
 /*@ ghost
-     /@ requires isSkip(simpl(getFirst(get_type(protocol))));
+     /@ requires isSkip(simpl(getLeft(get_type(protocol))));
       @ assigns protocol;
-      @ ensures set_type(protocol,getNext(\old(get_type(protocol))));@/
+      @ ensures set_type(protocol,getRight(\old(get_type(protocol))));@/
      void next();
   @*/
 
@@ -758,9 +756,9 @@ int MPI_Finalize(void);
   @ requires datatype: datatype == MPI_CHAR;
   @ assigns \result,protocol;
 
-  //@ requires protocol_for_ssend: isMessageforIntSend(getFirst(get_type(protocol)),dest,count,tag,to_list(buf, 0, count));
-  //@ requires is_pred_Message: isPredIntMessage(getFirst(get_type(protocol)), to_list(buf, 0, count));
-  //@ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  //@ requires protocol_for_ssend: isMessageforIntSend(getLeft(get_type(protocol)),dest,count,tag,to_list(buf, 0, count));
+  //@ requires is_pred_Message: isPredIntMessage(getLeft(get_type(protocol)), to_list(buf, 0, count));
+  //@ ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
 */
 int MPI_Ssend(const void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 
@@ -777,9 +775,9 @@ int MPI_Ssend(const void* buf, int count, MPI_Datatype datatype, int dest, int t
   @ assigns \result,protocol;
   @ assigns assigns_buf: ((char *)buf)[0..count-1];
 
-  //@ requires protocol_for_recv: isMessageforIntRecv(getFirst(get_type(protocol)),source,count,tag);
-  //@ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
-  //@ ensures pred_Message: predIntMessage(getFirst(\old(get_type(protocol))), to_list(buf, 0, count));
+  //@ requires protocol_for_recv: isMessageforIntRecv(getLeft(get_type(protocol)),source,count,tag);
+  //@ ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
+  //@ ensures pred_Message: predIntMessage(getLeft(\old(get_type(protocol))), to_list(buf, 0, count));
 
 */
 int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status* status);
@@ -790,11 +788,11 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, M
   @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires datatype: datatype == MPI_CHAR;
 
-  //@ requires protocol_for_bcast: isforIntBroadcast(getFirst(get_type(protocol)),root,count,to_list(buf, 0, count));
+  //@ requires protocol_for_bcast: isforIntBroadcast(getLeft(get_type(protocol)),root,count,to_list(buf, 0, count));
   //@ ensures continu_protocol:
   //      \let p = \old(get_type(protocol));
-  //            countiIntBroadcast (getFirst(p),getNext(p),get_type(protocol), to_list(buf, 0, count));
-  //@ ensures pred_Message: predIntBroadcast (getFirst(\old(get_type(protocol))), to_list(buf, 0, count));
+  //            countiIntBroadcast (getLeft(p),getRight(p),get_type(protocol), to_list(buf, 0, count));
+  //@ ensures pred_Message: predIntBroadcast (getLeft(\old(get_type(protocol))), to_list(buf, 0, count));
 
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
@@ -819,11 +817,11 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
  /@ requires in_mpi_section: priority == 1;
   @  requires count_is_not_neg: 0 <= count;
   @  requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
-  @  requires protocol_for_bcast: isforIntGhostBroadcast(getFirst(get_type(protocol)),root,count,to_list(buf, 0, count));
+  @  requires protocol_for_bcast: isforIntGhostBroadcast(getLeft(get_type(protocol)),root,count,to_list(buf, 0, count));
   @  ensures continu_protocol:
         \let p = \old(get_type(protocol));
-              countiIntBroadcast (getFirst(p),getNext(p),get_type(protocol), to_list(buf, 0, count));
-  @  ensures pred_Message: predIntBroadcast (getFirst(\old(get_type(protocol))), to_list(buf, 0, count));
+              countiIntBroadcast (getLeft(p),getRight(p),get_type(protocol), to_list(buf, 0, count));
+  @  ensures pred_Message: predIntBroadcast (getLeft(\old(get_type(protocol))), to_list(buf, 0, count));
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: ((\block_length(buf) == 0 && \offset(buf) == 0) && count == 0) ||
@@ -850,7 +848,7 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
   @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
   @
-  @ requires protocol_for_gather: isforGather(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
+  @ requires protocol_for_gather: isforGather(getLeft(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
   @
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
@@ -863,7 +861,7 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < recvcount*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)recvbuf + i);
   @   assigns ((char *)recvbuf)[0..recvcount*MPI_COMM_WORLD_size_ACSL-1],\result,protocol;
   @
-  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @   ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
   @
   @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
@@ -873,7 +871,7 @@ int MPI_Bcast(void* buf, int count, MPI_Datatype datatype, int root, MPI_Comm co
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < sendcount ⇒ ¬\dangling((char*)sendbuf + i);
   @   assigns \result,protocol;
   @
-  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @   ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
 */
 int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                void *recvbuf, int recvcount, MPI_Datatype recvtype,
@@ -886,8 +884,8 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @ requires recvcount_is_not_neg: 0 <= recvcount;
   @ requires datatype: recvtype == MPI_CHAR;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
-  @ requires protocol_for_allgather: isforAllgather(getFirst(get_type(protocol)),sendcount,c_to_why_mpi_datatype(sendtype));
-  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @ requires protocol_for_allgather: isforAllgather(getLeft(get_type(protocol)),sendcount,c_to_why_mpi_datatype(sendtype));
+  @ ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
   @ assigns \result,protocol;
   // no root specific behavior
   // compared to gather all processes are root
@@ -913,7 +911,7 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @ requires datatype: recvtype == MPI_CHAR;
   @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @ requires recvtype == sendtype && recvcount == sendcount; //limitation l2
-  @ requires protocol_for_scatter: isforScatter(getFirst(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
+  @ requires protocol_for_scatter: isforScatter(getLeft(get_type(protocol)),root,sendcount,c_to_why_mpi_datatype(sendtype));
   @ behavior type_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL == root;
   @   requires valid_buf: ((\block_length((char*)recvbuf) == 0 && \offset((char*)recvbuf) == 0) && recvcount == 0) ||
@@ -925,7 +923,7 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < sendcount*MPI_COMM_WORLD_size_ACSL ⇒ ¬\dangling((char*)sendbuf + i);
   @   assigns ((char *)recvbuf)[0..recvcount-1],\result,protocol;
   @
-  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @   ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
   @
  @ behavior type_not_root :
   @   assumes MPI_COMM_WORLD_rank_ACSL != root;
@@ -934,7 +932,7 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @   requires danglingness_buf: \forall integer i; 0 ≤ i < recvcount ⇒ ¬\dangling((char*)recvbuf + i);
   @   assigns ((char *)recvbuf)[0..recvcount-1],\result,protocol;
   @
-  @   ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @   ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
 */
 int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 void *recvbuf, int recvcount, MPI_Datatype recvtype,
@@ -946,8 +944,8 @@ int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   @ requires datatype: datatype == MPI_CHAR;
   @ requires root_in_world: 0 <= root < MPI_COMM_WORLD_size_ACSL;
   @
-  @ requires protocol_for_reduce: isforReduce(getFirst(get_type(protocol)),root,count,c_to_why_mpi_datatype(datatype),c_to_why_mpi_op(op));
-  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @ requires protocol_for_reduce: isforReduce(getLeft(get_type(protocol)),root,count,c_to_why_mpi_datatype(datatype),c_to_why_mpi_op(op));
+  @ ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
   @
   @ assigns \result, protocol;
   @ behavior type_root:
@@ -974,8 +972,8 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count,
   @ requires is_comm_world: comm == MPI_COMM_WORLD; //limitation l1
   @ requires count_not_neg : 0 <= count;
   @ requires datatype: datatype == MPI_CHAR;
-  @ requires protocol_for_allreduce: isforAllreduce(getFirst(get_type(protocol)),count,c_to_why_mpi_datatype(datatype),c_to_why_mpi_op(op));
-  @ ensures reduce_protocol: set_type(protocol,getNext(\old(get_type(protocol))));
+  @ requires protocol_for_allreduce: isforAllreduce(getLeft(get_type(protocol)),count,c_to_why_mpi_datatype(datatype),c_to_why_mpi_op(op));
+  @ ensures reduce_protocol: set_type(protocol,getRight(\old(get_type(protocol))));
   @ assigns \result, protocol;
   // no root specific behavior
   // compared to gather all processes are root

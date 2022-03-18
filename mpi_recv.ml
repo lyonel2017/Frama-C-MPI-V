@@ -28,21 +28,21 @@ let protocol_for_intrecv f =
   let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
   let t4 = Mpi_utils.integer_var (List.nth f.sformals 4) in
   let p =
-    Mpi_utils.papp "isMessageforIntRecv" (t1 :: t2 :: t3 :: t4:: []) []
+    Mpi_utils.isMessageforIntRecv (t1 :: t2 :: t3 :: t4:: []) []
   in
   Mpi_utils.make_pred p "protocol_for_recv"
 
 let pred_message f =
   let t1 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "protocol")) in
-  let t1 = Mpi_utils.tapp "get_type" (t1 :: []) [] in
+  let t1 = Mpi_utils.get_type (t1 :: []) [] in
   let t1 = Logic_const.told t1 in
-  let t1 = Mpi_utils.tapp "getFirst" (t1 :: []) [] in
+  let t1 = Mpi_utils.getLeft (t1 :: []) [] in
 
   let t2 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
   let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
   let t2 = Mpi_utils.to_list t2 t3 in
 
-  let p = Mpi_utils.papp "predIntMessage" (t1 :: t2 :: []) [] in
+  let p = Mpi_utils.predIntMessage (t1 :: t2 :: []) [] in
   Normal, Mpi_utils.make_pred p "pred_message"
 
 let reduce_protocol () =
@@ -67,11 +67,11 @@ let generate_function_type t =
     [
       ("buf" , Mpi_utils.ptr_of t, []) ;
       ("count", Cil.intType, []);
-      ("datatype", Mpi_utils.get_type "MPI_Datatype", []);
+      ("datatype", Mpi_utils.get_typ "MPI_Datatype", []);
       ("source", Cil.intType, []);
       ("tag", Cil.intType, []);
-      ("comm", Mpi_utils.get_type "MPI_Comm", []);
-      ("status", Mpi_utils.ptr_of (Mpi_utils.get_type "MPI_Status"), [])
+      ("comm", Mpi_utils.get_typ "MPI_Comm", []);
+      ("status", Mpi_utils.ptr_of (Mpi_utils.get_typ "MPI_Status"), [])
     ]
   in
   TFun(ret, Some ps, false, [])
@@ -87,9 +87,12 @@ let well_typed_call _ret _fct = function
       Cil.isIntegralType (Cil.typeOf count) &&
       Cil.isIntegralType (Cil.typeOf source) &&
       Cil.isIntegralType (Cil.typeOf tag) &&
-      Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.get_type "MPI_Datatype") &&
-      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.get_type "MPI_Comm") &&
-      Cil_datatype.Typ.equal (Cil.typeOf status) (Mpi_utils.ptr_of (Mpi_utils.get_type "MPI_Status"))
+      Cil_datatype.Typ.equal (Cil.typeOf datatype)
+                             (Mpi_utils.get_typ "MPI_Datatype") &&
+      Cil_datatype.Typ.equal (Cil.typeOf comm)
+                             (Mpi_utils.get_typ "MPI_Comm") &&
+      Cil_datatype.Typ.equal (Cil.typeOf status)
+                             (Mpi_utils.ptr_of (Mpi_utils.get_typ "MPI_Status"))
     in
     begin
       match Mpi_utils.exp_type_of_pointed buf with

@@ -34,12 +34,12 @@ let generate_function_type t =
     [
       ("sendbuf" , Mpi_utils.const_of(Mpi_utils.ptr_of t), []) ;
       ("sendcount", Cil.intType, []);
-      ("sendtype", Mpi_utils.get_type "MPI_Datatype", []);
+      ("sendtype", Mpi_utils.get_typ "MPI_Datatype", []);
       ("recvbuf" , Mpi_utils.ptr_of t, []) ;
       ("recvcount", Cil.intType, []);
-      ("recvtype", Mpi_utils.get_type "MPI_Datatype", []);
+      ("recvtype", Mpi_utils.get_typ "MPI_Datatype", []);
       ("root", Cil.intType, []);
-      ("comm", Mpi_utils.get_type "MPI_Comm", [])
+      ("comm", Mpi_utils.get_typ "MPI_Comm", [])
     ]
   in
   TFun(ret, Some ps, false, [])
@@ -54,10 +54,10 @@ let well_typed_call _ret _fct = function
     let test =
       Cil.isIntegralType (Cil.typeOf sendcount) &&
       Cil.isIntegralType (Cil.typeOf recvcount) &&
-      Cil_datatype.Typ.equal (Cil.typeOf sendtype) (Mpi_utils.get_type "MPI_Datatype") &&
-      Cil_datatype.Typ.equal (Cil.typeOf recvtype) (Mpi_utils.get_type "MPI_Datatype") &&
+      Cil_datatype.Typ.equal (Cil.typeOf sendtype) (Mpi_utils.get_typ "MPI_Datatype") &&
+      Cil_datatype.Typ.equal (Cil.typeOf recvtype) (Mpi_utils.get_typ "MPI_Datatype") &&
       Cil.isIntegralType (Cil.typeOf root) &&
-      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.get_type "MPI_Comm")
+      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.get_typ "MPI_Comm")
     in
     let ts = Mpi_utils.exp_type_of_pointed sendbuf in
     let tr = Mpi_utils.exp_type_of_pointed recvbuf in

@@ -57,7 +57,7 @@ let cil_typ_to_mpi_string t =
   | TInt(IChar,[]) -> "mpi_mpi_char"
   | _ -> MPI_V_options.Self.abort "Unsupported type %a" Cil_printer.pp_typ t
 
-let get_type s =
+let get_typ s =
     Globals.Types.find_type Logic_typing.Typedef s
 
 let get_var s =
@@ -247,10 +247,16 @@ let make_pred p name =
   let pred = {p with pred_name = [name] } in
   Logic_const.new_predicate pred
 
+let get_type = tapp "get_type"
+
+let getLeft = tapp "getLeft"
+
+let getRight = tapp "getRight"
+
 let getFirst_get_type_protocol () =
   let t1 = Logic_const.tvar (Cil.cvar_to_lvar (get_var "protocol")) in
-  let t4 = tapp "get_type" (t1 :: []) [] in
-  tapp "getFirst" (t4 :: []) []
+  let t4 = get_type (t1 :: []) [] in
+  getLeft (t4 :: []) []
 
 let to_list t1 t3 =
   let t2 = Logic_const.tinteger 0 in
@@ -261,13 +267,29 @@ let integer_var v =
   let t = Logic_const.tvar (Cil.cvar_to_lvar v) in
   Logic_const.tlogic_coerce t (Cil_types.Linteger)
 
+let set_type = papp "set_type"
+
+let isPredIntMessage = papp "isPredIntMessage"
+
+let predIntMessage = papp "predIntMessage"
+
+let isMessageforIntSend = papp "isMessageforIntSend"
+
+let isMessageforIntRecv = papp "isMessageforIntRecv"
+
+let isforIntBroadcast = papp "isforIntBroadcast"
+
+let predIntBroadcast = papp "predIntBroadcast"
+
+let countiIntBroadcast = papp "countiIntBroadcast"
+
 let reduce_protocol () =
   let t1 = Logic_const.tvar (Cil.cvar_to_lvar (get_var "protocol")) in
-  let t2 = tapp "get_type" (t1 :: []) [] in
+  let t2 = get_type (t1 :: []) [] in
   let t2 = Logic_const.told t2 in
-  let t2 = tapp "getNext" (t2 :: []) [] in
+  let t2 = getRight (t2 :: []) [] in
 
-  papp "set_type" (t1 :: t2 :: []) []
+  set_type (t1 :: t2 :: []) []
 
 let same_array var1 var2 =
   let t1 = Logic_const.tvar (Cil.cvar_to_lvar var1) in

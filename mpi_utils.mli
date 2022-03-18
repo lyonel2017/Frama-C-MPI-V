@@ -28,16 +28,33 @@ val return_type: Cil_types.logic_info -> Cil_types.logic_type
 
 class visitor_beh: Cil_types.typ -> Cil_types.varinfo list -> Visitor.generic_frama_c_visitor
 
-val get_type: string -> Cil_types.typ
+val get_typ: string -> Cil_types.typ
 val get_var: string -> Cil_types.varinfo
 val get_l_info: string -> Cil_types.logic_info
 
 val getFirst_get_type_protocol: unit -> Cil_types.term
-val to_list: Cil_types.term -> Cil_types.term -> Cil_types.term
 val integer_var: Cil_types.varinfo -> Cil_types.term
-val tapp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.term
 
-val papp: string -> Cil_types.term list -> Cil_types.logic_label list -> Cil_types.predicate
+val to_list: Cil_types.term -> Cil_types.term -> Cil_types.term
+val get_type: Cil_types.term list -> Cil_types.logic_label list -> Cil_types.term
+val getLeft: Cil_types.term list -> Cil_types.logic_label list -> Cil_types.term
+val getRight: Cil_types.term list -> Cil_types.logic_label list -> Cil_types.term
+
+val isPredIntMessage: Cil_types.term list ->
+                      Cil_types.logic_label list -> Cil_types.predicate
+val predIntMessage: Cil_types.term list ->
+                    Cil_types.logic_label list -> Cil_types.predicate
+val isMessageforIntSend: Cil_types.term list ->
+                         Cil_types.logic_label list -> Cil_types.predicate
+val isMessageforIntRecv: Cil_types.term list ->
+                         Cil_types.logic_label list -> Cil_types.predicate
+val isforIntBroadcast: Cil_types.term list ->
+                         Cil_types.logic_label list -> Cil_types.predicate
+val predIntBroadcast: Cil_types.term list ->
+                         Cil_types.logic_label list -> Cil_types.predicate
+val countiIntBroadcast: Cil_types.term list ->
+                         Cil_types.logic_label list -> Cil_types.predicate
+
 val same_array: Cil_types.varinfo -> Cil_types.varinfo -> Cil_types.predicate
 val reduce_protocol: unit -> Cil_types.predicate
 

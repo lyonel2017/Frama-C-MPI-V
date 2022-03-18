@@ -29,26 +29,26 @@ let protocol_for_intbcast f =
   let t4 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
   let t4 = Mpi_utils.to_list t4 t3 in
   let p =
-    Mpi_utils.papp "isforIntBroadcast" (t1 :: t2 :: t3 :: t4 :: []) []
+    Mpi_utils.isforIntBroadcast (t1 :: t2 :: t3 :: t4 :: []) []
   in
   Mpi_utils.make_pred p "protocol_for_intbcast"
 
 let pred_message f =
   let t1 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "protocol")) in
-  let t1 = Mpi_utils.tapp "get_type" (t1 :: []) [] in
+  let t1 = Mpi_utils.get_type (t1 :: []) [] in
   let t1 = Logic_const.told t1 in
-  let t1 = Mpi_utils.tapp "getFirst" (t1 :: []) [] in
+  let t1 = Mpi_utils.getLeft (t1 :: []) [] in
 
   let t2 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
   let t3 = Mpi_utils.integer_var (List.nth f.sformals 1) in
   let t2 = Mpi_utils.to_list t2 t3 in
 
-  let p = Mpi_utils.papp "predIntBroadcast" (t1 :: t2 :: []) [] in
+  let p = Mpi_utils.predIntBroadcast (t1 :: t2 :: []) [] in
   Normal, Mpi_utils.make_pred p "pred_message"
 
 let continu_protocol f =
   let t3 = Logic_const.tvar (Cil.cvar_to_lvar (Mpi_utils.get_var "protocol")) in
-  let t3 = Mpi_utils.tapp "get_type" (t3 :: []) [] in
+  let t3 = Mpi_utils.get_type (t3 :: []) [] in
   let t1 = Logic_const.told t3 in
 
   let info =
@@ -62,14 +62,14 @@ let continu_protocol f =
 
   let tmp =  Logic_const.tvar info.l_var_info in
 
-  let t1 = Mpi_utils.tapp "getFirst" (tmp :: []) [] in
-  let t2 = Mpi_utils.tapp "getNext" (tmp :: []) [] in
+  let t1 = Mpi_utils.getLeft (tmp :: []) [] in
+  let t2 = Mpi_utils.getRight (tmp :: []) [] in
 
   let t5 = Logic_const.tvar (Cil.cvar_to_lvar (List.nth f.sformals 0)) in
   let t4 = Mpi_utils.integer_var (List.nth f.sformals 1) in
   let t4 = Mpi_utils.to_list t5 t4 in
 
-  let p = Mpi_utils.papp "countiIntBroadcast" (t1 :: t2 :: t3 :: t4 :: []) [] in
+  let p = Mpi_utils.countiIntBroadcast (t1 :: t2 :: t3 :: t4 :: []) [] in
 
   let p = Logic_const.plet info p in
 
@@ -102,9 +102,9 @@ let generate_function_type t =
     [
       ("buf" , Mpi_utils.ptr_of t, []) ;
       ("count", Cil.intType, []);
-      ("datatype", Mpi_utils.get_type "MPI_Datatype", []);
+      ("datatype", Mpi_utils.get_typ "MPI_Datatype", []);
       ("root", Cil.intType, []);
-      ("comm", Mpi_utils.get_type "MPI_Comm", [])
+      ("comm", Mpi_utils.get_typ "MPI_Comm", [])
     ]
   in
   TFun(ret, Some ps, false, [])
@@ -119,8 +119,8 @@ let well_typed_call _ret _fct = function
     let test =
       Cil.isIntegralType (Cil.typeOf count) &&
       Cil.isIntegralType (Cil.typeOf root) &&
-      Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.get_type "MPI_Datatype") &&
-      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.get_type "MPI_Comm")
+      Cil_datatype.Typ.equal (Cil.typeOf datatype) (Mpi_utils.get_typ "MPI_Datatype") &&
+      Cil_datatype.Typ.equal (Cil.typeOf comm) (Mpi_utils.get_typ "MPI_Comm")
     in
     begin
       match Mpi_utils.exp_type_of_pointed buf with

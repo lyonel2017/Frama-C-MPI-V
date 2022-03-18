@@ -438,34 +438,8 @@ function assoc (p:protocol): protocol
 axiom Assoc: forall h q p: protocol. assoc (Seq (Seq h q) p) = Seq h (Seq q p)
 
 (* -------------------------------------------------------------------- *)
-(* --- GetFirst                                                     --- *)
+(* --- GetLeft                                                      --- *)
 (* -------------------------------------------------------------------- *)
-
-let rec function getFirst (p: protocol) : protocol variant {p} =
-        match p with
-        | Seq h _ -> getFirst h
-        | p -> p
-        end
-
-(* -------------------------------------------------------------------- *)
-(* --- GetNext                                                      --- *)
-(* -------------------------------------------------------------------- *)
-
-let rec function aux (p: protocol) : option protocol variant {p} =
-          match p with
-          | Seq h q ->
-                   match (aux h) with
-                   | None -> Some q
-                   | Some p ->  Some (Seq p q)
-                   end
-          | _ -> None
-          end
-
-let function getNext (p: protocol): protocol =
-        match aux p with
-        | None -> Skip
-        | Some p -> p
-        end
 
 let function getLeft (p: protocol) : protocol =
   match p with
@@ -473,10 +447,14 @@ let function getLeft (p: protocol) : protocol =
   | _ -> p
   end
 
+(* -------------------------------------------------------------------- *)
+(* --- GetRight                                                     --- *)
+(* -------------------------------------------------------------------- *)
+
 let function getRight (p: protocol): protocol =
   match p with
   | Seq _ q -> q
-  | _ -> p
+  | _ -> Skip
   end
 
 end
