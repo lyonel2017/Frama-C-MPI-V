@@ -63,10 +63,7 @@ predicate "isGather" (logic_protocol) = "isGather";
 predicate "isAllgather" (logic_protocol) = "isAllgather";
 predicate "isScatter" (logic_protocol) ="isScatter";
 predicate "isReduce" (logic_protocol) = "isReduce";
-<<<<<<< HEAD
 predicate "isAllreduce" (logic_protocol) = "isAllreduce";
-=======
->>>>>>> Removes trailing whitespaces
 
 predicate "isMessageforIntSend" (logic_protocol,integer,integer,integer,list) = "isMessageforIntSend";
 predicate "isMessageforIntRecv" (logic_protocol,integer,integer,integer) = "isMessageforIntRecv";
