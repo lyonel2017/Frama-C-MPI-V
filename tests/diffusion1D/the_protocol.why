@@ -1,0 +1,41 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.EuclideanDivision
+use frama_c_wp.vlist.Vlist
+
+function f1 (n i: int): protocol =
+    IntMessage 0 i (div n size) 0 (fun _ -> true)
+
+function f2 (i: int): protocol =
+    IntMessage (size-i) (size-i-1) 1 0 (fun _ -> true)
+
+function f3 (i: int): protocol =
+    IntMessage i (i+1) 1 0 (fun _ -> true)
+
+constant protocol_7 : protocol =
+    Foreach 0 (size-2) (fun i -> (f3 i))
+
+constant protocol_6 : protocol =
+    Foreach 1 (size-1) (fun i -> (f2 i))
+
+constant protocol_5 : protocol =
+    protocol_6 ++ protocol_7
+
+function protocol_4 (numIter: int) : protocol =
+    Foreach 0 (numIter-1) (fun _ -> protocol_5)
+
+function protocol_3 (n: int) (numIter: int) (wstep : int) : protocol =
+    (Foreach 1 (size-1) (fun i -> (f1 n i))) ++ (protocol_4 numIter)
+
+function protocol_2 (n:int) (numIter: int) : protocol =
+    IntBroadcast 0 1 (fun _ -> true) (fun l -> protocol_3 n numIter (nth l 0))
+
+function protocol_1 (n : int) : protocol =
+    IntBroadcast 0 1 (fun l -> 0 < (nth l 0)) (fun l -> protocol_2 n (nth l 0))
+
+constant the_protocol : protocol =
+    IntBroadcast 0 1 (fun l -> 0 < (nth l 0) <= 10000 * size) (fun l -> protocol_1 (nth l 0))
+
+end
