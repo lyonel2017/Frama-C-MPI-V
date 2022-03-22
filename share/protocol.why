@@ -141,7 +141,7 @@ axiom IsScatter: forall r data_size: int, mt: mpi_datatype.
       isScatter (Scatter r data_size mt)
 
 (* -------------------------------------------------------------------- *)
-(* --- isReduce                                                    --- *)
+(* --- isReduce                                                     --- *)
 (* -------------------------------------------------------------------- *)
 
 predicate isReduce (p: protocol)
@@ -185,7 +185,7 @@ predicate isSkip (p: protocol)
 axiom IsSkip:  isSkip (Skip)
 
 (* -------------------------------------------------------------------- *)
-(* --- IntSend                                          --- *)
+(* --- IntSend                                                      --- *)
 (* -------------------------------------------------------------------- *)
 
 (* --- isMessageforIntSend                                          --- *)
@@ -200,7 +200,7 @@ axiom isforIntSend: forall dest count tag : int, src dst data_size t: int,
       src = rank /\ dest = dst /\ data_size = count /\ tag = t (*/\ pre data*) ->
       isMessageforIntSend (IntMessage src dst data_size t pre) dest count tag data
 
-(* --- isPredIntMessage                                               --- *)
+(* --- isPredIntMessage                                             --- *)
 
 predicate isPredIntMessage (p: protocol) (data: list int)
 
@@ -296,7 +296,7 @@ axiom CountiIntGhostBroadcast:
              new_p = Seq (cont data) old_n
 
 (* -------------------------------------------------------------------- *)
-(* --- isforGather                                                 --- *)
+(* --- isforGather                                                  --- *)
 (* -------------------------------------------------------------------- *)
 
 predicate isforGather (p: protocol) (root: int) (count: int) (datatype: mpi_datatype)
@@ -335,7 +335,7 @@ axiom isReduce: forall root r count data_size: int, datatype mt : mpi_datatype, 
       isforReduce (Reduce r data_size mt op) root count datatype opera
 
 (* -------------------------------------------------------------------- *)
-(* --- isforAllgather                                                  --- *)
+(* --- isforAllgather                                               --- *)
 (* -------------------------------------------------------------------- *)
 
 predicate isforAllgather (p: protocol) (count: int) (datatype: mpi_datatype)
@@ -392,7 +392,7 @@ axiom simpl_foreach_2: forall low high: int, body: (int -> protocol).
 axiom simpl_Skip: simpl(Skip) = Skip
 
 (* -------------------------------------------------------------------- *)
-(* --- FSimpl                                                        --- *)
+(* --- FSimpl                                                       --- *)
 (* -------------------------------------------------------------------- *)
 
 function fsimpl (p: protocol) : protocol
@@ -420,7 +420,7 @@ axiom split_foreach: forall low high c: int, body: (int -> protocol).
 (*       split (Foreach low high body) c = Seq (Foreach low c body) (Foreach low high body) *)
 
 (* -------------------------------------------------------------------- *)
-(* --- Split_right                                                        --- *)
+(* --- Split_right                                                  --- *)
 (* -------------------------------------------------------------------- *)
 
 function split_right (p: protocol) (c : int): protocol
