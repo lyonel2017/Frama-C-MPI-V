@@ -78,11 +78,11 @@ module MPI_the_protocol
 
 end
 ```
-First parameter of constructor `IntMessage` specifies the source of the message,
+The first parameter of constructor `IntMessage` specifies the source of the message,
 the second parameter the destination, the third parameter the size of the send data,
 the fourth parameter the message tag,
-and fifth parameter the property satified by the send data (the send data is
-represented by a list.
+and the fifth parameter the property satified by the send data (the send data is
+represented by a list).
 
 We can also constraine the world size in a *Why3* file (we name it `size.why`).
 For the `code_mpi.c` to be correct, it is required that the number of processes
