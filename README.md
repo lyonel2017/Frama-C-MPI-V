@@ -15,7 +15,7 @@ standard. Support function included :
 
 ## Installation
 
-*MPI-V v0.0.0* requires [Frama-C v24.0 (Chromium)](https://git.frama-c.com/pub/frama-c).
+*MPI-V <!-- v0.0.0 -->* requires [Frama-C v24.0 (Chromium)](https://git.frama-c.com/pub/frama-c).
 For more information see [Frama-C](http://frama-c.com).
 
 For installation, run following commands in the *MPI-V* project directory
