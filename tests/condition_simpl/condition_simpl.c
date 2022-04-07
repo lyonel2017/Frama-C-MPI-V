@@ -3,8 +3,7 @@
 //frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver condition_simpl.c
 
 int main(int argc, char **argv){
-  int data = -1;
-  int my_rank = 0, num_procs = 0;
+  int data, my_rank, num_procs;
 
   /* Initialize the infrastructure necessary for communication */
   MPI_Init(&argc, &argv);
