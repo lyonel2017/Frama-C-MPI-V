@@ -1,0 +1,23 @@
+module MPI_the_protocol
+
+use protocol.MPI_Protocol
+use int.Int
+use int.ComputerDivision
+use frama_c_wp.vlist.Vlist
+
+function f3 (r: int) : int =
+  if (r+1) <= (size-1) then (r+1) else 0
+
+predicate f4 (r: int) (i: int) (l1 : list int) =
+  (i <= r -> nth l1 0 = r - i) /\
+  (r < i -> nth l1 0 = (size-i) + r)
+
+function f2 (r: int) (i: int) : protocol =
+  IntMessage r (f3 r) 1 0 (f4 r i)
+
+function f1 (i: int) : protocol =
+   Foreach 0 (size-1) (fun r -> f2 r i)
+
+constant the_protocol : protocol =
+  Foreach 0 (size-1) (fun i -> f1 i)
+end
