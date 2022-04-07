@@ -41,7 +41,7 @@ int main(int argc,char** argv) {
 	for (pipe=1; pipe < procs; pipe++) {
       if (rank == 0) {
         MPI_Send(sendbuf, npart * 4, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
-	    MPI_Recv(recvbuf, npart * 4, MPI_FLOAT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(recvbuf, npart * 4, MPI_FLOAT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       }
       else {
         MPI_Recv(recvbuf, npart * 4, MPI_FLOAT, left,  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -57,4 +57,3 @@ int main(int argc,char** argv) {
   MPI_Finalize();
   return 0;
 }
-
