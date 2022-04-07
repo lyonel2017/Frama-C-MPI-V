@@ -216,9 +216,6 @@ axiom isPredIntMessage: forall src dst data_size t: int, data: list int, pre: li
 
 predicate isMessageforIntRecv (p:protocol) (source: int) (count: int) (tag: int)
 
-    (* ++ sender and recever can go into the predicate.
-          Moreover information lenght data = count*)
-
 axiom isforIntRecv: forall source count tag: int, src dst data_size t: int, pre: list int -> bool.
       (*Well define session type*)
       0 <= src /\ src < size /\ 0 <= dst /\ dst < size /\ dst <> src /\
@@ -241,9 +238,6 @@ axiom PredIntMessage: forall src dst data_size t: int, data: list int, pre: list
 (* --- isforIntBroadcast                                            --- *)
 
 predicate isforIntBroadcast (p: protocol) (root: int) (count: int) (data: list int)
-
-    (* ++ the root can go into the predicate and into the continuation.
-          Moreoverlenght data = count*)
 
 axiom isIntBroadcast: forall root r count data_size : int, data : (list int),
                             pred: (list int -> bool), cont: (list int  -> protocol).
