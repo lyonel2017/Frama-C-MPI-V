@@ -85,7 +85,7 @@ and the fifth parameter the property satified by the send data (the send data is
 represented by a list).
 
 We can also constraine the world size in a *Why3* file (we name it `size.why`).
-For the `code_mpi.c` to be correct, it is required that the number of processes
+For the program in `code_mpi.c` to be correct, it is required that the number of processes
 is greater than 1. Using the `size_constrain`, we can specifies this constrain:
 
 ```ml
