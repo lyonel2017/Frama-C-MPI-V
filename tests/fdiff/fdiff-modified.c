@@ -171,99 +171,99 @@ int main(int argc,char** argv) {
         toskip();
       }
     @*/
-  //   // case right: [1 .. procs-2] -> [2 .. procs-1]
-  //   // skip [2 .. rank-1]
-  //   /*@ ghost 
-  //     if (rank != 1) {
-  //       int i = 2; 
-  //       l4:; 
-  //       /@
-  //         loop invariant 0 <= i <= rank; 
-  //         loop invariant getFirst(get_type(protocol)) ==
-  //           getNext(split (getFirst(\at(get_type(protocol),l4)),i));
-  //         loop invariant getNext(get_type(protocol)) ==
-  //           getNext(\at(get_type(protocol),l4));
-  //         loop assigns protocol, i; 
-  //         loop variant rank - i; 
-  //       @/
-  //       while (i < rank) {
-  //         unroll(); 
-  //         assoc();
-  //         toskip();  
-  //         i++;
-  //       }
+    // case right: [1 .. procs-2] -> [2 .. procs-1]
+    // skip [2 .. rank-1]
+    /*@ ghost 
+      if (rank != 1) {
+        int i = 2; 
+        l4:; 
+        /@
+          loop invariant 0 <= i <= rank; 
+          loop invariant getFirst(get_type(protocol)) ==
+            getNext(split (getFirst(\at(get_type(protocol),l4)),i));
+          loop invariant getNext(get_type(protocol)) ==
+            getNext(\at(get_type(protocol),l4));
+          loop assigns protocol, i; 
+          loop variant rank - i; 
+        @/
+        while (i < rank) {
+          unroll(); 
+          assoc();
+          toskip();  
+          i++;
+        }
         
-  //       unroll(); 
-  //       assoc(); 
-  //     }
-  //   @*/
-  //   MPI_Recv(&local[0], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  //   // skip [rank+1 .. procs-2]
-  //   /*@ ghost 
-  //     int i = rank+1; 
-  //     l5:; 
-  //     /@
-  //       loop invariant rank+1 <= i <= procs-1; 
-  //       loop invariant getFirst(get_type(protocol)) ==
-  //         getNext(split (getFirst(\at(get_type(protocol),l5)),i));
-  //       loop invariant getNext(get_type(protocol)) ==
-  //         getNext(\at(get_type(protocol),l5));
-  //       loop assigns protocol, i; 
-  //       loop variant procs - 1 - i; 
-  //     @/
-  //     while (i < procs - 1) {
-  //       unroll(); 
-  //       assoc();
-  //       toskip();  
-  //       i++;
-  //     }
-  //   @*/
+        unroll(); 
+        assoc(); 
+      }
+    @*/
+    MPI_Recv(&local[0], 1, MPI_FLOAT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    // skip [rank+1 .. procs-2]
+    /*@ ghost 
+      int i = rank+1; 
+      l5:; 
+      /@
+        loop invariant rank+1 <= i <= procs-1; 
+        loop invariant getFirst(get_type(protocol)) ==
+          getNext(split (getFirst(\at(get_type(protocol),l5)),i));
+        loop invariant getNext(get_type(protocol)) ==
+          getNext(\at(get_type(protocol),l5));
+        loop assigns protocol, i; 
+        loop variant procs - 1 - i; 
+      @/
+      while (i < procs - 1) {
+        unroll(); 
+        assoc();
+        toskip();  
+        i++;
+      }
+    @*/
     
-  //   // case right: [1 .. procs-2] -> [2 .. procs-1]
-  //   // skip [1 .. rank-1]
-  //   /*@ ghost 
-  //     int i6 = 1; 
-  //     l6:; 
-  //     /@
-  //       loop invariant 0 <= i6 <= rank; 
-  //       loop invariant getFirst(get_type(protocol)) ==
-  //         getNext(split (getFirst(\at(get_type(protocol),l6)),i6));
-  //       loop invariant getNext(get_type(protocol)) ==
-  //         getNext(\at(get_type(protocol),l6));
-  //       loop assigns protocol, i6; 
-  //       loop variant rank - i6; 
-  //     @/
-  //     while (i6 < rank) {
-  //       unroll(); 
-  //       assoc();
-  //       toskip();  
-  //       i6++;
-  //     }
+    // case right: [1 .. procs-2] -> [2 .. procs-1]
+    // skip [1 .. rank-1]
+    /*@ ghost 
+      int i6 = 1; 
+      l6:; 
+      /@
+        loop invariant 0 <= i6 <= rank; 
+        loop invariant getFirst(get_type(protocol)) ==
+          getNext(split (getFirst(\at(get_type(protocol),l6)),i6));
+        loop invariant getNext(get_type(protocol)) ==
+          getNext(\at(get_type(protocol),l6));
+        loop assigns protocol, i6; 
+        loop variant rank - i6; 
+      @/
+      while (i6 < rank) {
+        unroll(); 
+        assoc();
+        toskip();  
+        i6++;
+      }
       
-  //     unroll(); 
-  //     assoc(); 
-  //   @*/
-  //   MPI_Ssend(&local[local_n], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
-  //   // skip [rank+1 .. procs-2]
-  //   /*@ ghost 
-  //     int i7 = rank+1; 
-  //     l7:; 
-  //     /@
-  //       loop invariant rank+1 <= i7 <= procs - 1; 
-  //       loop invariant getFirst(get_type(protocol)) ==
-  //         getNext(split (getFirst(\at(get_type(protocol),l7)),i7));
-  //       loop invariant getNext(get_type(protocol)) ==
-  //         getNext(\at(get_type(protocol),l7));
-  //       loop assigns protocol, i7; 
-  //       loop variant procs - 1 - i7; 
-  //     @/
-  //     while (i7 < procs - 1) {
-  //       unroll(); 
-  //       assoc();
-  //       toskip();  
-  //       i7++;
-  //     }
-  //   @*/
+      unroll(); 
+      assoc(); 
+    @*/
+    MPI_Ssend(&local[local_n], 1, MPI_FLOAT, right, 0, MPI_COMM_WORLD);
+    // skip [rank+1 .. procs-2]
+    /*@ ghost 
+      int i7 = rank+1; 
+      l7:; 
+      /@
+        loop invariant rank+1 <= i7 <= procs - 1; 
+        loop invariant getFirst(get_type(protocol)) ==
+          getNext(split (getFirst(\at(get_type(protocol),l7)),i7));
+        loop invariant getNext(get_type(protocol)) ==
+          getNext(\at(get_type(protocol),l7));
+        loop assigns protocol, i7; 
+        loop variant procs - 1 - i7; 
+      @/
+      while (i7 < procs - 1) {
+        unroll(); 
+        assoc();
+        toskip();  
+        i7++;
+      }
+    @*/
 
     // case right: procs-1 -> 0
     //@ ghost toskip();
