@@ -7,9 +7,9 @@ the *Message Passing Interface* [MPI](https://www.mpi-forum.org/).
 *MPI-V* is based on the concept of multiparty session types and inspired from
 the idea proposed in [ParTypes](http://rss.di.fc.ul.pt/tools/partypes/#Downloads).
 
-The tool support a small supset of the
+The tool support a small supset of the API specified by the
 [MPI v3.1](https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report.pdf)
-standard. Support function included :
+standard. For example, the following features are supported:
 * Synchronous point-to-point communication: `MPI_Ssend` and `MPI_Recv`
 * Collective communication: `MPI_Bcast`, `MPI_Gather`, `MPI_Scatter`
 
