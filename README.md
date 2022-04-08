@@ -8,7 +8,7 @@ the *Message Passing Interface* [MPI](https://www.mpi-forum.org/).
 the idea proposed in [ParTypes](http://rss.di.fc.ul.pt/tools/partypes/#Downloads).
 
 The tool support a small supset of the
-[MPI v4.0](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf)
+[MPI v3.1](https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report.pdf)
 standard. Support function included :
 * Synchronous point-to-point communication: `MPI_Ssend` and `MPI_Recv`
 * Collective communication: `MPI_Bcast`, `MPI_Gather`, `MPI_Scatter`
@@ -60,7 +60,7 @@ int main(int argc, char **argv){
 The MPI program performes a synchronous point-to-point communication
 from processes with rank `0` to `1`. The size of the transfert data is `1` and of type `MPI_INT`.
 The tag used for the communication is `1`.
-Not action is performed by the processes with rank different form `0` and `1`.
+Not action is performed by the processes with rank different from `0` and `1`.
 
 This behaviour can be define by a protocol constant `the_protocol`
 of type `protocol` (defined in `share/protocol.why`)
