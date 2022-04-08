@@ -1,6 +1,6 @@
 #include <mpi.h>
 
-//frama-c-gui -mpi-v -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver cyclic_syc.c
+//frama-c-gui -mpi-v -wp-driver ../../../share/mpi.driver,the_protocol.driver,size.driver cyclic_syc.c
 
 int main(int argc,char** argv) {
   int rank, procs, left, right, iter, sendbuf, recvbuf;
@@ -32,9 +32,7 @@ int main(int argc,char** argv) {
     if (rank == 0) {
       /*@ ghost
 	unroll();
-	assoc();
-	@*/
-      // message 0 1
+	assoc();*/
       MPI_Ssend(&sendbuf, 1, MPI_INT, right, 0, MPI_COMM_WORLD);
       /*@ ghost
 	split(procs - 1);
@@ -58,8 +56,7 @@ int main(int argc,char** argv) {
 
       /*@ ghost
 	unroll();
-	assoc();
-	@*/
+	assoc();*/
       MPI_Ssend(&sendbuf, 1, MPI_INT, right, 0, MPI_COMM_WORLD);
       /*@ ghost fsimpl();*/
 
@@ -67,7 +64,7 @@ int main(int argc,char** argv) {
 
     }
   }
-  /*@ ghost next(); */
+  /*@ ghost next();*/
   /*@ check recvbuf == rank;*/
   MPI_Finalize();
   return 0;
