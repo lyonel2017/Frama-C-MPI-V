@@ -8,7 +8,7 @@ the *Message Passing Interface* [MPI](https://www.mpi-forum.org/).
 the idea proposed in [ParTypes](http://rss.di.fc.ul.pt/tools/partypes/#Downloads).
 
 The tool support a small supset of the
-[MPI v1.3](https://www.mpi-forum.org/docs/mpi-1.3/mpi-report-1.3-2008-05-30.pdf)
+[MPI v4.0](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf)
 standard. Support function included :
 * Synchronous point-to-point communication: `MPI_Ssend` and `MPI_Recv`
 * Collective communication: `MPI_Bcast`, `MPI_Gather`, `MPI_Scatter`
