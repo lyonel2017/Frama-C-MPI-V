@@ -127,7 +127,7 @@ int main(int argc, char **argv){
       sum += tmp;
       i ++;
     }
-    /*@ assert sum == sum(&data[0],0,MAX_LENGTH);*/
+    /*@ check sum == sum(&data[0],0,MAX_LENGTH);*/
     //@ ghost next();
 
   } else {
