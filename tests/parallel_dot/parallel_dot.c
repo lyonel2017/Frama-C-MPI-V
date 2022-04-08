@@ -8,50 +8,49 @@
  * Version: $Id: parallel_dot.c 4635 2015-06-09 14:05:04Z edrdo $
  * ParTypes - http://gloss.di.fc.ul.pt/ParTypes
  */
+
 #include <stdio.h>
 #include <mpi.h>
 
 #define MAXLEN 1000000
 
-void Scan_vector(float* v, int len) {
-  printf("Enter vector:\n");
-  int i;
-  for (i = 0; i < len; i++)
-    scanf("%f", &v[i]);
-}
+/*@ requires len > 0;
+  @ requires \valid(v + (0..(len-1)));
+  @ assigns v[0 .. len-1];
+  @*/
+void Scan_vector(int* v, int len);
 
-float  Serial_dot(float *x, float *y, int n) {
-    int    i;
-    float  sum = 0.0f;
-    for (i = 0; i < n; i++)
-        sum = sum + x[i]*y[i];
-    return sum;
-}
+/*@ requires \valid(x + (0..(n-1)));
+  @ requires \valid(y + (0..(n-1)));
+  @ requires n > 0;
+  @ assigns \result;
+*/
+float Serial_dot(int* x, int *y, int n);
 
+/*@ assigns \nothing;
+  @ ensures MAXLEN > \result > 0;
+  @*/
+int getProblemSize(int procs);
 
-int getProblemSize(int procs)
-{
-  int n;
-  printf("Vector size? ");
-  scanf("%d", &n);
-  return n;
-}
+/*@ axiomatic MPI_aux_driver{
+  @ logic logic_protocol protocol_1 (\list<int> l);
+  @ logic logic_protocol protocol_2 (\list<int> l);
+  @ logic logic_protocol protocol_3;
+  @ logic logic_protocol protocol_4;
+}*/
 
-int main(int argc, char** argv)
-{
-  int    procs; // number of processes
-  int    rank;  // process rank
-  int    n;     // problem size (size of vector at each process)
-  float  dot, local_dot, remote_dot;
-  int    i;
-  MPI_Status status;
-  float  local_x[MAXLEN];
-  float  local_y[MAXLEN];
-  float  temp[MAXLEN];
+//frama-c-gui -mpi-v -wp-weak-int-model -wp-driver ../../share/mpi.driver,the_protocol.driver,size.driver parallel_dot_annotated.c
+
+int main(int argc, char** argv){
+  int  procs = 0, rank = 0, n = 0, i = 0;
+  int  dot = 0, local_dot = 0, remote_dot = 0;
+  int  local_x[MAXLEN];
+  int  local_y[MAXLEN];
+  int  temp[MAXLEN];
 
   MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &procs);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procs);
 
   if (rank == 0) {
     n = getProblemSize(procs);
@@ -59,44 +58,120 @@ int main(int argc, char** argv)
 
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+  /*@ assert get_type(protocol) == seq(protocol_1(to_list(&n, 0, 1)),protocol_3);*/
+  /*@ ghost assoc();*/
   if (rank == 0) {
     Scan_vector (local_x, n);
+    /*@ loop invariant 1 <= i <= procs;
+      @ loop invariant procs > 1 ==> getLeft(get_type(protocol)) ==
+      @    split_right(getLeft(\at(get_type(protocol),LoopEntry)),i);
+      @ loop invariant
+      @    procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
+      @ loop invariant getRight(get_type(protocol)) ==
+      @   getRight(\at(get_type(protocol),LoopEntry));
+      @ loop assigns protocol, i, temp[0..1000000-1];
+      @ loop variant procs - i;
+      @*/
     for (i = 1; i < procs; i++) {
-      Scan_vector (temp, n);
-      MPI_Send(temp, n, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+      Scan_vector(temp, n);
+      //@ ghost unroll();
+      //@ ghost assoc();
+      MPI_Ssend(temp, n, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
+    //@ ghost next();
   }
   else {
-    MPI_Recv(local_x, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
+      /*@ ghost
+         split(rank);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();*/
+    MPI_Recv(local_x, n, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+     /*@ ghost fsimpl();
+       @*/
   }
+
+  /*@ assert get_type(protocol) == seq(protocol_2(to_list(&n, 0, 1)),protocol_3);*/
 
   if (rank == 0) {
     Scan_vector (local_y, n);
+    /*@ loop invariant 1 <= i <= procs;
+      @ loop invariant
+      @   procs > 1 ==> getLeft(get_type(protocol)) ==
+      @   split_right(getLeft(\at(get_type(protocol),LoopEntry)),i);
+      @ loop invariant
+      @   procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
+      @ loop invariant getRight(get_type(protocol)) ==
+      @   getRight(\at(get_type(protocol),LoopEntry));
+      @ loop assigns protocol, i, temp[0..1000000-1];
+      @ loop variant procs - i;
+      @*/
     for(i = 1; i < procs; i++) {
-      Scan_vector (temp, n);
-      MPI_Send(temp, n, MPI_FLOAT, i, 0, MPI_COMM_WORLD);
+        Scan_vector (temp, n);
+        //@ ghost unroll();
+        //@ ghost assoc();
+        MPI_Ssend(temp, n, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
+    //@ ghost next();
   }
   else {
-    MPI_Recv(local_y, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
+      /*@ ghost
+         split(rank);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();*/
+    MPI_Recv(local_y, n, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+     /*@ ghost fsimpl();
+       @*/
   }
+
+  /*@ assert get_type(protocol) == protocol_3;*/
+
   // Local computation followed by reduction
   local_dot = Serial_dot(local_x, local_y, n);
-  MPI_Allreduce(&local_dot, &dot, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&local_dot, &dot, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   // Print result
-  printf("Result: %f\n", dot);
+  // printf("Result: %f\n", dot);
 
   // Print local at each process
+
+  /*@ assert get_type(protocol) == protocol_4;*/
+
   if (rank == 0) {
+    /*@ loop invariant 1 <= i <= procs;
+      @ loop invariant
+      @   procs > 1 ==> getLeft(get_type(protocol)) == split_right(protocol_4,i);
+      @ loop invariant
+      @   procs == 1 ==> get_type(protocol) == \at(get_type(protocol),LoopEntry);
+      @ loop invariant getRight(get_type(protocol)) ==
+      @   getRight(\at(get_type(protocol),LoopEntry));
+      @ loop assigns protocol, i, remote_dot;
+      @ loop variant procs - i;
+      @*/
     for (i = 1; i < procs; i++) {
-      MPI_Recv(&remote_dot, 1, MPI_FLOAT, i, 0, MPI_COMM_WORLD, &status);
-      printf("Result at process %d : %f\n", i, remote_dot);
+      //@ ghost unroll();
+      //@ ghost assoc();
+      MPI_Recv(&remote_dot, 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      // printf("Result at process %d : %f\n", i, remote_dot);
     }
+    //@ ghost next();
   }
   else {
-    MPI_Send(&local_dot, 1, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
+      /*@ ghost
+         split(rank);
+         assoc();
+         fsimpl();
+         unroll();
+         assoc();*/
+
+    MPI_Ssend(&local_dot, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+     /*@ ghost fsimpl();*/
   }
+
   MPI_Finalize();
   return 0;
 }
