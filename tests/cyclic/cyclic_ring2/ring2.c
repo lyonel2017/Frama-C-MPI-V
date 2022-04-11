@@ -16,42 +16,51 @@ int main(int argc,char** argv) {
 
   x = rank;
   if (rank%2 == 0) {
-    /* ghost
-      split(rank/2);
+    /*@ ghost
+      split(rank);
       assoc();
       fsimpl();
       unroll();
       assoc();*/
-    //MPI_Ssend(&x, 1, MPI_INT, right, 0, MPI_COMM_WORLD);
-    /* ghost  fsimpl(); */
+    MPI_Ssend(&x, 1, MPI_INT, right, 0, MPI_COMM_WORLD);
+    /*@ ghost  fsimpl(); */
 
   /*@ ghost
-      split(rank/2);
+    if (rank == 0){
+           split(nprocs-1);
+           assoc();
+           fsimpl();
+    } else{
+           split(rank-1);
+           assoc();
+           fsimpl();
+    }
+      unroll();
+      assoc();*/
+    MPI_Recv(&y, 1, MPI_INT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    /*@ ghost fsimpl();*/
+    /* assert rank > 0 ==> y == rank - 1;*/
+    /* assert rank == 0 ==> y == nprocs - 1;*/
+  } else {
+    /*@ ghost
+      split(rank-1);
       assoc();
       fsimpl();
       unroll();
       assoc();*/
     MPI_Recv(&y, 1, MPI_INT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     /*@ ghost fsimpl();*/
-  } else {
-    /* ghost
-      split(rank/2);
-      assoc();
-      fsimpl();
-      unroll();
-      assoc();*/
-    //MPI_Recv(&y, 1, MPI_INT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    /* ghost fsimpl();*/
 
   /*@ ghost
-      split(rank/2);
+      split(rank);
       assoc();
       fsimpl();
       unroll();
       assoc();*/
     MPI_Ssend(&x, 1, MPI_INT, right, 0, MPI_COMM_WORLD);
     /*@ ghost fsimpl();*/
+    /* assert y == rank - 1;*/
   }
-  /* check y == (rank + nprocs - 1)%nprocs;*/
+  /*@ check y == left;*/
   MPI_Finalize();
 }
