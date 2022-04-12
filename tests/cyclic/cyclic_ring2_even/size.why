@@ -1,0 +1,7 @@
+module MPI_size
+use int.Int
+use int.ComputerDivision
+
+predicate size_constrain (s: int) = s > 1 /\ mod s 2 = 0
+
+end
