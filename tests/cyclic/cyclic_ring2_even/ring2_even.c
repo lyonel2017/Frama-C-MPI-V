@@ -23,9 +23,8 @@ int main(int argc,char** argv) {
       unroll();
       assoc();*/
     MPI_Ssend(&x, 1, MPI_INT, right, 0, MPI_COMM_WORLD);
-    /*@ ghost  fsimpl(); */
-
     /*@ ghost
+    fsimpl();
     if (rank == 0){
            split(nprocs-1);
            assoc();
@@ -47,9 +46,8 @@ int main(int argc,char** argv) {
       unroll();
       assoc();*/
     MPI_Recv(&y, 1, MPI_INT, left, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    /*@ ghost fsimpl();*/
-
-  /*@ ghost
+    /*@ ghost
+      fsimpl();
       split(rank);
       assoc();
       fsimpl();
