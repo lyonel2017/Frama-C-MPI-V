@@ -60,7 +60,7 @@ int main(int argc, char **argv){
 The MPI program performes a synchronous point-to-point communication
 from processes with rank `0` to `1`. The size of the transfert data is `1` and of type `MPI_INT`.
 The tag used for the communication is `1`.
-Not action is performed by the processes with rank different from `0` and `1`.
+No action is performed by the processes with rank different from `0` and `1`.
 
 This behaviour can be define by a protocol constant `the_protocol`
 of type `protocol` (defined in `share/protocol.why`)
